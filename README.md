@@ -1,37 +1,191 @@
-# Course Repository: Unsupervised Learning (INT396)
+# CSE252 — Introduction to Artificial Intelligence and Machine Learning
 
-This repository contains learning materials, worksheets, solutions, and practical implementations for the course.
+Course material for **CSE252**, Lovely Professional University, session 2026–27
+(August–February).
 
-> **Important Note:** If you experience access issues, preview errors, or are unable to view any PDF or file directly on GitHub, please **download the file** to your local machine to view it properly.
-
----
-
-## Course Content
-
-| Unit | Broad Topic | Sub-Topics & Key Concepts | Practical Applications |
-| :--- | :--- | :--- | :--- |
-| **Unit I** | Foundations of Unsupervised Learning | Learning paradigms (Supervised vs. Unsupervised vs. Semi-supervised), problem formulation, exploratory data analysis, pattern discovery, similarity & distance metrics (Euclidean, Manhattan, Cosine), real-world use cases[cite: 1] | Customer segmentation, anomaly & fraud detection, recommendation systems, social network analysis, bioinformatics, document clustering, exploratory data analysis for business intelligence.[cite: 1] |
-| **Unit II** | Partition-Based Clustering | Clustering fundamentals, hard vs. soft clustering, K-Means, K-Means++, K-Medoids (PAM), MiniBatch K-Means, data standardization, cluster validation (WCSS, Silhouette Score, Davies-Bouldin Index, Elbow Method)[cite: 1] | Customer segmentation, retail analytics, image segmentation, telecom user profiling, hospital patient grouping, marketing campaign optimization.[cite: 1] |
-| **Unit III** | Hierarchical & Density-Based Clustering | Agglomerative & Divisive Clustering, linkage methods, dendrogram interpretation, DBSCAN, $\epsilon$-neighborhood, MinPts, noise handling, comparison of clustering algorithms[cite: 1] | Geographic hotspot detection, crime mapping, earthquake analysis, biological taxonomy, network intrusion detection, spatial data mining, geospatial analytics.[cite: 1] |
-| **Unit IV** | Dimensionality Reduction & Representation Learning | Curse of dimensionality, Principal Component Analysis (PCA), manifold learning, t-SNE, UMAP, autoencoder intuition, feature representation[cite: 1] | Data visualization, face recognition, handwritten digit analysis, gene expression analysis, feature extraction, image compression, high-dimensional data exploration.[cite: 1] |
-| **Unit V** | Association Rule Mining & Anomaly Detection | Support, Confidence, Lift, Conviction, Apriori, FP-Growth, Market Basket Analysis, Isolation Forest, Local Outlier Factor (LOF), novelty detection[cite: 1] | Product recommendation, market basket analysis, fraud detection, cybersecurity, credit card anomaly detection, predictive maintenance, healthcare monitoring.[cite: 1] |
-| **Unit VI** | Evaluation & Applications of Unsupervised Learning | Internal & external clustering validation metrics, Silhouette Score, stability analysis, interpretability, ethical AI, visualization dashboards, real-world case studies[cite: 1] | End-to-end customer analytics dashboard, AI-based business intelligence, healthcare analytics, educational data mining, smart city applications, explainable unsupervised learning solutions.[cite: 1] |
+> **Important Note:** If you experience access issues, preview errors, or are
+>unable to view any PDF or script directly on GitHub, please download the file
+> to your local machine to access it properly.
 
 ---
 
-## List of Practicals
+## Course at a glance
 
-1. Analyze customer behavior patterns by performing exploratory data analysis and evaluating Euclidean, Manhattan, and Cosine similarity measures on an unlabeled customer dataset.[cite: 1]
-2. Develop a customer segmentation solution by implementing and comparing k-Means and k-Medoids clustering techniques on the Mall Customers dataset.[cite: 1]
-3. Design a scalable clustering model by implementing k-Means from scratch and validating its performance using the Scikit-learn framework.[cite: 1]
-4. Investigate the influence of data preprocessing by examining the effect of feature scaling and standardization on clustering quality and model convergence.[cite: 1]
-5. Determine the optimal clustering configuration by applying Elbow Method, Silhouette Score, and Davies-Bouldin Index on a real-world marketing dataset.[cite: 1]
-6. Analyze hierarchical relationships in unlabelled data by constructing dendrograms and comparing multiple linkage strategies using Hierarchical Clustering.[cite: 1]
-7. Develop a density-based clustering solution by applying DBSCAN and evaluating the impact of $\epsilon$ (epsilon) and MinPts parameters on cluster formation and noise detection.[cite: 1]
-8. Evaluate clustering techniques for diverse data distributions by benchmarking k-Means, Hierarchical Clustering, and DBSCAN using clustering validation metrics.[cite: 1]
-9. Develop an efficient feature representation model by applying Principal Component Analysis (PCA) to reduce dimensionality while preserving maximum variance.[cite: 1]
-10. Compare dimensionality reduction techniques by visualizing high-dimensional datasets using PCA, t-SNE, and UMAP for exploratory data analysis.[cite: 1]
-11. Extract actionable business insights by implementing Apriori and FP-Growth algorithms for Market Basket Analysis and interpreting association rules.[cite: 1]
-12. Develop an anomaly detection framework by comparing Isolation Forest and Local Outlier Factor (LOF) for identifying unusual observations in cybersecurity or financial datasets.[cite: 1]
-13. Assess the quality of unsupervised learning models using clustering validation metrics, visualization techniques, and stability analysis to support model selection.[cite: 1]
-14. Develop an end-to-end unsupervised learning solution by integrating data preprocessing, clustering, dimensionality reduction, anomaly detection, visualization, evaluation, and presentation of insights for a real-world application in healthcare, finance, education, agriculture, cybersecurity, or retail.[cite: 1]
+| | |
+|---|---|
+| **Course code** | CSE252 |
+| **Course title** | Introduction to Artificial Intelligence and Machine Learning |
+| **L : T : P** | 2 : 0 : 2 |
+| **Credits** | 3 |
+| **Course planner** | 32952 :: Sumit Mittu |
+| **Weightage** | ATT 5 · CA 25 · MTT 20 · ETT 50 |
+| **Mid Term** | Applicable |
+
+---
+
+## Course outcomes
+
+Through this course students should be able to:
+
+| CO | Outcome |
+|---|---|
+| **CO1** | Understand the fundamental concepts of Artificial Intelligence, Machine Learning, intelligent agents, and their applications in robotics and autonomous systems. |
+| **CO2** | Apply preprocessing, feature engineering, and visualization techniques on datasets for developing AI models. |
+| **CO3** | Build supervised machine learning models for solving regression and classification problems using appropriate algorithms. |
+| **CO4** | Apply unsupervised learning techniques for clustering and dimensionality reduction to discover hidden patterns in data. |
+| **CO5** | Examine and improve machine learning models using appropriate performance metrics and validation techniques. |
+| **CO6** | Build simple AI-enabled solutions for real-world robotics and automation problems using Python and Scikit-learn. |
+
+---
+
+## Units
+
+### Unit I — Foundations of Artificial Intelligence
+Introduction to AI and its evolution · Types of Artificial Intelligence ·
+AI vs ML vs Deep Learning vs Data Science · Problem-solving using AI and the AI
+development lifecycle · Intelligent agents and agent environments ·
+Applications of AI in robotics, healthcare, manufacturing and smart cities ·
+Ethics in AI and Responsible AI · Introduction to Generative AI
+
+### Unit II — Data Preparation and Machine Learning Workflow
+Introduction to NumPy, Pandas and Matplotlib · Understanding data — types of
+datasets, data collection and exploratory data analysis · Data preprocessing —
+handling missing values and detecting outliers · Feature engineering — feature
+scaling, encoding and selection · Training and validation — train-test split
+and cross validation
+
+### Unit III — Supervised Machine Learning
+Regression — linear regression, polynomial regression, decision tree
+regression · Classification — logistic regression, K-nearest neighbour,
+decision tree classifier, random forest, Naïve Bayes · Concepts of bias,
+variance, underfitting and overfitting
+
+### Unit IV — Unsupervised Learning
+Clustering — K-means clustering, hierarchical clustering, concept of DBSCAN ·
+Dimensionality reduction and Principal Component Analysis · Pattern discovery
+— association rule mining and the Apriori algorithm · Unsupervised learning
+applications in robotics and sensor data
+
+### Unit V — Model Evaluation and Improvement
+Regression metrics — MAE, MSE, RMSE, R² score · Confusion matrix and
+classification metrics — accuracy, precision, recall, F1-score, ROC-AUC ·
+Model improvement — cross validation, hyperparameter tuning, grid search,
+random search · Introduction to Explainable AI
+
+### Unit VI — AI for Intelligent Systems and Robotics
+Computer vision — overview of image classification and object detection ·
+Natural language processing — NLP fundamentals, chatbots and conversational
+AI · Reinforcement learning — agent, state, action, reward · AI for autonomous
+robots and future trends
+
+---
+
+## Practicals
+
+| # | Practical | Unit |
+|---|---|---|
+| 1 | Installation and familiarisation with Python, Jupyter Notebook and Google Colab | I |
+| 2 | Data manipulation using NumPy and Pandas | II |
+| 3 | Data visualisation using Matplotlib | II |
+| 4 | Exploratory data analysis on a real-world dataset | II |
+| 5 | Data preprocessing — missing values, encoding and feature scaling | II |
+| 6 | Implementation of linear regression | III |
+| 7 | Implementation of logistic regression | III |
+| 8 | Classification using K-nearest neighbour | III |
+| 9 | Classification using decision tree and random forest | III |
+| 10 | Clustering using K-means | IV |
+| 11 | Dimensionality reduction using PCA | IV |
+| 12 | Performance evaluation — confusion matrix, precision, recall, F1-score | V |
+| 13 | Hyperparameter tuning using grid search | V |
+| 14 | Mini project — an AI solution for robotics, automation or a smart system | VI |
+
+Each practical ships as two notebooks: a **student** copy with `# TODO` gaps to
+complete, and an **instructor** copy with the gaps filled and teaching notes
+attached. Both run offline — datasets are either bundled with scikit-learn or
+generated inside the notebook, so no internet connection is required.
+
+---
+
+## Continuous assessment
+
+| Task | Detail | Marks | Weeks |
+|---|---|---|---|
+| **Project** | A machine-learning solution to a real-world problem. Group work, submitted online. Rubric: innovation and societal benefit (10), technical quality and completeness (10), report and viva (10). | 30 | 3 / 11 |
+| **Test 1** | Subjective test on Units I–II. Concept-based, numerical and coding questions of 5 or 10 marks. | 30 | 4 / 5 |
+| **Test 2** | Subjective test on Units I–III. | 30 | 11 / 12 |
+
+CA category **A0203** — best 2 of 3.
+
+---
+
+## Repository layout
+
+```
+CSE252/
+├── Unit_1_Foundations_of_AI/          Unit - 1.pptx, notes (.tex / .pdf)
+├── Unit_2_Data_Prep_and_ML_Workflow/
+├── Unit_3_Supervised_Machine_Learning/
+├── Unit_4_Unsupervised_Learning/
+├── Unit_5_Model_Evaluation/
+├── Unit_6_AI_for_Intelligent_Systems/
+├── Practicals/
+│   ├── Unit_1_Foundations_of_AI/      P01 … student copies
+│   │   └── instructor/                P01 … _INSTRUCTOR copies
+│   └── …                              one folder per unit
+├── _build_tools/                      scripts that generate the notes
+├── CSE252_Master_Notes.pdf            all six units in one document
+└── CSE252 __ INTRODUCTION TO ….pdf    the official syllabus
+```
+
+Slide decks and notes are **generated from scripts**, not hand-edited. To change
+a deck, edit its build script and rebuild — editing the `.pptx` directly will be
+overwritten on the next build.
+
+---
+
+## Running the practicals
+
+```bash
+pip install numpy pandas matplotlib scikit-learn jupyter
+jupyter notebook
+```
+
+Open any notebook under `Practicals/` and run the cells in order, top to bottom.
+Practical 1 checks your environment and tells you what is missing, so start
+there.
+
+---
+
+## Reading
+
+**Textbook**
+
+- **T-1** — *Artificial Intelligence: A Modern Approach*, Stuart Russell and
+  Peter Norvig (Pearson)
+
+**Reference books**
+
+- **R-1** — *Machine Learning with PyTorch and Scikit-Learn*, Sebastian Raschka,
+  Yuxi (Hayden) Liu, Vahid Mirjalili (Packt)
+- **R-2** — *Python Machine Learning by Example*, Yuxi (Hayden) Liu (Packt)
+- **R-3** — *A First Course in Artificial Intelligence*, Deepak Khemani
+  (McGraw Hill)
+- **R-4** — *Fundamentals of Machine Learning: A Business Perspective*,
+  Pratyush Banerjee, Supriti Mishra, Shivashankar Chari (McGraw Hill)
+- **R-5** — *Data Science and Machine Learning Using Python*, Reema Thareja
+  (McGraw Hill)
+
+---
+
+## A note on scope
+
+The instruction plan is a tentative plan and may change during delivery.
+Students should use the syllabus when preparing for examinations, and are
+expected to keep up with contemporary developments — **up to 20% of the
+questions in any examination or academic task may be drawn from current issues
+even where they are not named explicitly in the instruction plan.**
+
+---
+
+*Maintained for teaching use. Question banks and assessment material are
+confidential and are deliberately not included in this repository.*
