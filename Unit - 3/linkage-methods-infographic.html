@@ -1,0 +1,372 @@
+<title>Linkage &amp; Dendrograms</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
+<style>
+  :root {
+    --bg: oklch(0.965 0.006 250);
+    --surface: oklch(0.995 0.003 250);
+    --surface-2: oklch(0.95 0.01 250);
+    --ink: oklch(0.26 0.03 250);
+    --ink-muted: oklch(0.48 0.02 250);
+    --border: oklch(0.885 0.012 250);
+
+    --band: oklch(0.29 0.055 250);
+    --band-deep: oklch(0.21 0.045 250);
+    --band-ink: oklch(0.97 0.006 250);
+    --band-ink-muted: oklch(0.8 0.03 250);
+
+    --l-border: 0.55;
+    --l-tint: 0.95;
+    --l-ink: 0.36;
+    --c-border: 0.13;
+    --c-tint: 0.025;
+    --c-ink: 0.12;
+
+    --h-a: 25;  --h-b: 70;  --h-c: 140; --h-d: 195; --h-e: 255; --h-f: 320;
+    --h-single: 300; --h-complete: 235; --h-average: 155; --h-ward: 340;
+    --h-rules: 200; --h-warn: 60; --h-danger: 22; --h-orange: 50;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: oklch(0.18 0.018 250);
+      --surface: oklch(0.235 0.018 250);
+      --surface-2: oklch(0.28 0.02 250);
+      --ink: oklch(0.93 0.008 250);
+      --ink-muted: oklch(0.73 0.015 250);
+      --border: oklch(0.37 0.02 250);
+      --band: oklch(0.32 0.06 250);
+      --band-deep: oklch(0.24 0.05 250);
+      --band-ink: oklch(0.97 0.006 250);
+      --band-ink-muted: oklch(0.79 0.025 250);
+      --l-border: 0.72; --l-tint: 0.29; --l-ink: 0.86;
+      --c-border: 0.13; --c-tint: 0.05; --c-ink: 0.1;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: oklch(0.18 0.018 250);
+    --surface: oklch(0.235 0.018 250);
+    --surface-2: oklch(0.28 0.02 250);
+    --ink: oklch(0.93 0.008 250);
+    --ink-muted: oklch(0.73 0.015 250);
+    --border: oklch(0.37 0.02 250);
+    --band: oklch(0.32 0.06 250);
+    --band-deep: oklch(0.24 0.05 250);
+    --band-ink: oklch(0.97 0.006 250);
+    --band-ink-muted: oklch(0.79 0.025 250);
+    --l-border: 0.72; --l-tint: 0.29; --l-ink: 0.86;
+    --c-border: 0.13; --c-tint: 0.05; --c-ink: 0.1;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Karla', sans-serif; }
+  a { color: var(--ink); }
+  a:hover { color: oklch(var(--l-border) var(--c-border) var(--h-complete)); }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .serif { font-family: 'Newsreader', Georgia, serif; }
+  h1, h2, h3 { font-family: 'Newsreader', Georgia, serif; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+</style>
+
+<div style="min-height:100vh; background:var(--bg); padding:44px 24px; display:flex; justify-content:center;">
+<div style="overflow-x:auto; max-width:100%;">
+<div style="width:1500px; display:flex; flex-direction:column; gap:16px;">
+
+  <!-- ============ HEADER ============ -->
+  <div style="display:flex; gap:16px; align-items:stretch;">
+    <div style="flex:2.2; background:var(--band); border-radius:14px; padding:30px 34px; display:flex; flex-direction:column; justify-content:center; gap:10px;">
+      <h1 style="font-weight:600; font-style:italic; font-size:42px; color:var(--band-ink); letter-spacing:-0.3px;">Linkage Methods in Hierarchical Clustering</h1>
+      <p style="font-size:15.5px; line-height:1.55; color:var(--band-ink-muted); max-width:900px;">Linkage tells us how to measure the distance between two clusters when we decide which ones to merge. The same data can produce different clusters, depending on the method.</p>
+    </div>
+    <div style="flex:1; background:oklch(var(--l-tint) 0.035 var(--h-warn)); border:1.5px solid oklch(var(--l-border) 0.09 var(--h-warn)); border-radius:14px; padding:22px 24px; display:flex; flex-direction:column; gap:10px; justify-content:center;">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18h6M10 21h4M8.5 14.5a5.5 5.5 0 1 1 7 0c-.8.7-1.5 1.6-1.5 2.5h-4c0-.9-.7-1.8-1.5-2.5Z" stroke="oklch(var(--l-ink) var(--c-ink) var(--h-warn))" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="mono" style="font-weight:600; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:oklch(var(--l-ink) var(--c-ink) var(--h-warn));">The Big Picture</span>
+      </div>
+      <p class="serif" style="font-weight:500; font-style:italic; font-size:19px; line-height:1.5; color:oklch(var(--l-ink) var(--c-ink) var(--h-warn));">Linkage = how we define the distance between two clusters<br>= how we decide which groups to merge next.</p>
+    </div>
+  </div>
+
+  <!-- ============ ROW 2: story + 4 methods ============ -->
+  <div style="display:flex; gap:16px; align-items:stretch;">
+
+    <!-- Story card -->
+    <div style="flex:0.95; background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--ink-muted); border-radius:0 0 12px 12px; padding:18px; display:flex; flex-direction:column; gap:11px;">
+      <h3 style="font-weight:600; font-size:16px; color:var(--ink);">A Story: Grouping Students in a Hostel</h3>
+      <p style="font-size:12.5px; line-height:1.55; color:var(--ink-muted);">Imagine a hostel with 6 students. We want to group them by how similar their study habits are &mdash; sleep time, coffee, study hours. Different linkage rules produce different groupings.</p>
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; justify-items:center; padding:6px 0;">
+        <div class="mono" style="width:42px;height:42px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-a));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-a));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:oklch(var(--l-ink) var(--c-ink) var(--h-a));">A</div>
+        <div class="mono" style="width:42px;height:42px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-b));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-b));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:oklch(var(--l-ink) var(--c-ink) var(--h-b));">B</div>
+        <div class="mono" style="width:42px;height:42px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-c));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-c));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:oklch(var(--l-ink) var(--c-ink) var(--h-c));">C</div>
+        <div class="mono" style="width:42px;height:42px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-d));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-d));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:oklch(var(--l-ink) var(--c-ink) var(--h-d));">D</div>
+        <div class="mono" style="width:42px;height:42px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-e));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-e));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:oklch(var(--l-ink) var(--c-ink) var(--h-e));">E</div>
+        <div class="mono" style="width:42px;height:42px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-f));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-f));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:oklch(var(--l-ink) var(--c-ink) var(--h-f));">F</div>
+      </div>
+      <div style="background:var(--surface-2); border-radius:8px; padding:10px 12px; font-size:11.5px; line-height:1.5; color:var(--ink-muted); font-style:italic;">Each student is a point in space &mdash; the closer two points are, the more similar their habits.</div>
+    </div>
+
+    <!-- Single Linkage -->
+    <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-top:4px solid oklch(var(--l-border) var(--c-border) var(--h-single)); border-radius:0 0 12px 12px; padding:18px; display:flex; flex-direction:column; gap:9px;">
+      <h3 style="font-weight:600; font-size:15.5px; color:oklch(var(--l-ink) var(--c-ink) var(--h-single));">1. Single Linkage <span style="font-family:'Karla',sans-serif; font-weight:500; color:var(--ink-muted); font-size:11.5px;">Nearest Neighbor</span></h3>
+      <p style="font-size:12px; line-height:1.5; color:var(--ink-muted);">Distance between two clusters = the <strong>minimum</strong> distance between any pair of points, one from each cluster.</p>
+      <svg viewBox="0 0 200 120" style="width:100%; height:112px;">
+        <ellipse cx="33" cy="52" rx="30" ry="42" fill="oklch(var(--l-tint) var(--c-tint) var(--h-complete))" stroke="oklch(var(--l-border) var(--c-border) var(--h-complete))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <ellipse cx="161" cy="60" rx="30" ry="45" fill="oklch(var(--l-tint) var(--c-tint) var(--h-average))" stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <circle cx="26" cy="30" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="46" cy="20" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="18" cy="65" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="42" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="150" cy="25" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="174" cy="45" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="140" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="178" cy="95" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <line x1="42" y1="80" x2="140" y2="80" stroke="oklch(var(--l-border) 0.19 var(--h-danger))" stroke-width="2.2"/>
+      </svg>
+      <p style="font-size:11px; color:var(--ink-muted);">Uses the <strong>closest pair</strong>.</p>
+      <div style="background:oklch(var(--l-tint) var(--c-tint) var(--h-single)); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:oklch(var(--l-ink) var(--c-ink) var(--h-single));"><strong>In our story:</strong> two groups merge as soon as at least one pair of students &mdash; one from each group &mdash; are very similar.</div>
+      <p style="font-size:11px; line-height:1.4; color:var(--ink-muted);"><strong>Good for:</strong> long, chain-like clusters; irregular shapes.</p>
+    </div>
+
+    <!-- Complete Linkage -->
+    <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-top:4px solid oklch(var(--l-border) var(--c-border) var(--h-complete)); border-radius:0 0 12px 12px; padding:18px; display:flex; flex-direction:column; gap:9px;">
+      <h3 style="font-weight:600; font-size:15.5px; color:oklch(var(--l-ink) var(--c-ink) var(--h-complete));">2. Complete Linkage <span style="font-family:'Karla',sans-serif; font-weight:500; color:var(--ink-muted); font-size:11.5px;">Farthest Neighbor</span></h3>
+      <p style="font-size:12px; line-height:1.5; color:var(--ink-muted);">Distance between two clusters = the <strong>maximum</strong> distance between any pair of points, one from each cluster.</p>
+      <svg viewBox="0 0 200 120" style="width:100%; height:112px;">
+        <ellipse cx="33" cy="52" rx="30" ry="42" fill="oklch(var(--l-tint) var(--c-tint) var(--h-complete))" stroke="oklch(var(--l-border) var(--c-border) var(--h-complete))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <ellipse cx="161" cy="60" rx="30" ry="45" fill="oklch(var(--l-tint) var(--c-tint) var(--h-average))" stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <circle cx="26" cy="30" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="46" cy="20" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="18" cy="65" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="42" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="150" cy="25" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="174" cy="45" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="140" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="178" cy="95" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <line x1="18" y1="65" x2="178" y2="95" stroke="oklch(var(--l-border) 0.19 var(--h-danger))" stroke-width="2.2"/>
+      </svg>
+      <p style="font-size:11px; color:var(--ink-muted);">Uses the <strong>farthest pair</strong>.</p>
+      <div style="background:oklch(var(--l-tint) var(--c-tint) var(--h-complete)); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:oklch(var(--l-ink) var(--c-ink) var(--h-complete));"><strong>In our story:</strong> two groups merge only once even their most distant students are still reasonably similar.</div>
+      <p style="font-size:11px; line-height:1.4; color:var(--ink-muted);"><strong>Good for:</strong> compact, well-separated clusters; avoids chaining.</p>
+    </div>
+
+    <!-- Average Linkage -->
+    <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-top:4px solid oklch(var(--l-border) var(--c-border) var(--h-average)); border-radius:0 0 12px 12px; padding:18px; display:flex; flex-direction:column; gap:9px;">
+      <h3 style="font-weight:600; font-size:15.5px; color:oklch(var(--l-ink) var(--c-ink) var(--h-average));">3. Average Linkage <span style="font-family:'Karla',sans-serif; font-weight:500; color:var(--ink-muted); font-size:11.5px;">UPGMA</span></h3>
+      <p style="font-size:12px; line-height:1.5; color:var(--ink-muted);">Distance between two clusters = the <strong>average</strong> of all pairwise distances between the two clusters' points.</p>
+      <svg viewBox="0 0 200 120" style="width:100%; height:112px;">
+        <ellipse cx="33" cy="52" rx="30" ry="42" fill="oklch(var(--l-tint) var(--c-tint) var(--h-complete))" stroke="oklch(var(--l-border) var(--c-border) var(--h-complete))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <ellipse cx="161" cy="60" rx="30" ry="45" fill="oklch(var(--l-tint) var(--c-tint) var(--h-average))" stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <g stroke="var(--border)" stroke-width="0.8" stroke-dasharray="2 2">
+          <line x1="26" y1="30" x2="150" y2="25"/><line x1="26" y1="30" x2="174" y2="45"/><line x1="26" y1="30" x2="140" y2="80"/><line x1="26" y1="30" x2="178" y2="95"/>
+          <line x1="46" y1="20" x2="150" y2="25"/><line x1="46" y1="20" x2="174" y2="45"/><line x1="46" y1="20" x2="140" y2="80"/><line x1="46" y1="20" x2="178" y2="95"/>
+          <line x1="18" y1="65" x2="150" y2="25"/><line x1="18" y1="65" x2="174" y2="45"/><line x1="18" y1="65" x2="140" y2="80"/><line x1="18" y1="65" x2="178" y2="95"/>
+          <line x1="42" y1="80" x2="150" y2="25"/><line x1="42" y1="80" x2="174" y2="45"/><line x1="42" y1="80" x2="140" y2="80"/><line x1="42" y1="80" x2="178" y2="95"/>
+        </g>
+        <circle cx="26" cy="30" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="46" cy="20" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="18" cy="65" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="42" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="150" cy="25" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="174" cy="45" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="140" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="178" cy="95" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+      </svg>
+      <p style="font-size:11px; color:var(--ink-muted);">Uses the <strong>average of all pairs</strong>.</p>
+      <div style="background:oklch(var(--l-tint) var(--c-tint) var(--h-average)); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:oklch(var(--l-ink) var(--c-ink) var(--h-average));"><strong>In our story:</strong> groups merge based on overall similarity between every pair of students across both groups.</div>
+      <p style="font-size:11px; line-height:1.4; color:var(--ink-muted);"><strong>Good for:</strong> balanced, real-world results; less outlier-sensitive.</p>
+    </div>
+
+    <!-- Ward Linkage -->
+    <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-top:4px solid oklch(var(--l-border) var(--c-border) var(--h-ward)); border-radius:0 0 12px 12px; padding:18px; display:flex; flex-direction:column; gap:9px;">
+      <h3 style="font-weight:600; font-size:15.5px; color:oklch(var(--l-ink) var(--c-ink) var(--h-ward));">4. Ward Linkage <span style="font-family:'Karla',sans-serif; font-weight:500; color:var(--ink-muted); font-size:11.5px;">Minimum Variance</span></h3>
+      <p style="font-size:12px; line-height:1.5; color:var(--ink-muted);">Distance between two clusters = the <strong>increase in total within-cluster variance</strong> that results from merging them.</p>
+      <svg viewBox="0 0 200 120" style="width:100%; height:112px;">
+        <ellipse cx="33" cy="52" rx="30" ry="42" fill="oklch(var(--l-tint) var(--c-tint) var(--h-complete))" stroke="oklch(var(--l-border) var(--c-border) var(--h-complete))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <ellipse cx="161" cy="60" rx="30" ry="45" fill="oklch(var(--l-tint) var(--c-tint) var(--h-average))" stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <circle cx="26" cy="30" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="46" cy="20" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="18" cy="65" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="42" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="150" cy="25" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="174" cy="45" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="140" cy="80" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <circle cx="178" cy="95" r="4" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+        <line x1="33" y1="52" x2="161" y2="60" stroke="oklch(var(--l-border) var(--c-border) var(--h-ward))" stroke-width="1.3" stroke-dasharray="3 2"/>
+        <path d="M33 44v16M25 52h16" stroke="oklch(var(--l-border) var(--c-border) var(--h-ward))" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M161 52v16M153 60h16" stroke="oklch(var(--l-border) var(--c-border) var(--h-ward))" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <p style="font-size:11px; color:var(--ink-muted);">Marks each cluster's <strong>centroid</strong>.</p>
+      <div style="background:oklch(var(--l-tint) var(--c-tint) var(--h-ward)); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:oklch(var(--l-ink) var(--c-ink) var(--h-ward));"><strong>In our story:</strong> two groups merge when doing so keeps each group's students as tightly bunched as possible, minimizing the added spread inside the merged group.</div>
+      <p style="font-size:11px; line-height:1.4; color:var(--ink-muted);"><strong>Good for:</strong> compact, similarly-sized clusters; the common default in practice (assumes Euclidean distance).</p>
+    </div>
+  </div>
+
+  <!-- ============ WHY MOVE BEYOND SINGLE LINKAGE ============ -->
+  <div style="background:var(--surface); border:1px solid var(--border); border-top:4px solid oklch(var(--l-border) var(--c-border) var(--h-danger)); border-radius:0 0 14px 14px; padding:20px 26px; display:flex; align-items:center; gap:26px;">
+    <div style="flex:1.05; display:flex; flex-direction:column; gap:8px;">
+      <h3 style="font-weight:600; font-size:16px; color:oklch(var(--l-ink) var(--c-ink) var(--h-danger));">Why Move Beyond Single Linkage?</h3>
+      <div style="display:flex; gap:8px; align-items:flex-start;">
+        <svg width="18" height="18" viewBox="0 0 24 24" style="flex:none; margin-top:1px;"><circle cx="12" cy="12" r="10" fill="none" stroke="oklch(var(--l-border) 0.19 var(--h-danger))" stroke-width="1.8"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke="oklch(var(--l-border) 0.19 var(--h-danger))" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <p style="font-size:11.5px; line-height:1.5; color:var(--ink-muted);">It can create a <strong>&ldquo;chaining&rdquo; effect</strong> &mdash; one close pair can link two large, otherwise different clusters.</p>
+      </div>
+    </div>
+    <div style="flex:0.65; display:flex; flex-direction:column; align-items:center; gap:4px; border-left:1px solid var(--border); border-right:1px solid var(--border); padding:0 22px;">
+      <svg viewBox="0 0 200 60" style="width:100%; height:52px;">
+        <polyline points="14,44 42,18 70,40 98,16 126,38 154,20 182,32" fill="none" stroke="var(--border)" stroke-width="2" stroke-dasharray="3 3"/>
+        <circle cx="14" cy="44" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/><circle cx="42" cy="18" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/><circle cx="70" cy="40" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-complete))"/>
+        <circle cx="98" cy="16" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/><circle cx="126" cy="38" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/><circle cx="154" cy="20" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/><circle cx="182" cy="32" r="4.5" fill="oklch(var(--l-border) var(--c-border) var(--h-average))"/>
+      </svg>
+      <p style="font-size:10.5px; color:var(--ink-muted); text-align:center; font-style:italic;">Looks like a chain, not real groups.</p>
+    </div>
+    <div style="flex:1.05; display:flex; gap:8px; align-items:flex-start;">
+      <svg width="18" height="18" viewBox="0 0 24 24" style="flex:none; margin-top:1px;"><circle cx="12" cy="12" r="10" fill="none" stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="1.8"/><path d="M7.5 12.5l3 3 6-7" stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <p style="font-size:11.5px; line-height:1.5; color:var(--ink-muted);">Complete, average, and Ward linkage give more <strong>compact, meaningful clusters</strong> by weighing overall distance or variance, not just one pair.</p>
+    </div>
+    <div style="flex:1.1; background:oklch(var(--l-tint) var(--c-tint) var(--h-danger)); border-radius:8px; padding:10px 13px; font-size:11px; line-height:1.55; color:oklch(var(--l-ink) var(--c-ink) var(--h-danger));">We reach for complete, average, or Ward linkage when we want: well-separated, compact clusters &middot; stable, meaningful groups &middot; less sensitivity to outliers and chaining.</div>
+  </div>
+
+  <!-- ============ DENDROGRAM MEGA-SECTION ============ -->
+  <div style="display:flex; gap:16px; align-items:stretch;">
+
+    <!-- LEFT: header band + 3-col content -->
+    <div style="flex:4; display:flex; flex-direction:column; gap:16px;">
+
+      <div style="background:var(--band); border-radius:14px; padding:18px 24px;">
+        <h2 style="font-weight:600; font-style:italic; font-size:25px; color:var(--band-ink);">Dendrogram: The Tree of Clusters</h2>
+        <p style="margin-top:5px; font-size:13.5px; color:var(--band-ink-muted);">A dendrogram is a tree diagram that shows how clusters are merged, step by step.</p>
+      </div>
+
+      <div style="display:flex; gap:16px; align-items:stretch; flex:1;">
+
+        <!-- Family tree story -->
+        <div style="flex:0.85; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:11px;">
+          <h3 style="font-weight:600; font-size:15.5px; color:var(--ink);">The Story: Building a Family Tree</h3>
+          <p style="font-size:12px; line-height:1.55; color:var(--ink-muted);">Picture the 6 students again. We keep merging the two most similar ones according to a linkage rule. The dendrogram records the order and distance at which this &ldquo;family tree&rdquo; is built.</p>
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; justify-items:center; padding:6px 0;">
+            <div class="mono" style="width:38px;height:38px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-a));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-a));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:oklch(var(--l-ink) var(--c-ink) var(--h-a));">A</div>
+            <div class="mono" style="width:38px;height:38px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-b));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-b));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:oklch(var(--l-ink) var(--c-ink) var(--h-b));">B</div>
+            <div class="mono" style="width:38px;height:38px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-c));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-c));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:oklch(var(--l-ink) var(--c-ink) var(--h-c));">C</div>
+            <div class="mono" style="width:38px;height:38px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-d));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-d));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:oklch(var(--l-ink) var(--c-ink) var(--h-d));">D</div>
+            <div class="mono" style="width:38px;height:38px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-e));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-e));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:oklch(var(--l-ink) var(--c-ink) var(--h-e));">E</div>
+            <div class="mono" style="width:38px;height:38px;border-radius:50%;background:oklch(var(--l-tint) var(--c-tint) var(--h-f));border:2px solid oklch(var(--l-border) var(--c-border) var(--h-f));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:oklch(var(--l-ink) var(--c-ink) var(--h-f));">F</div>
+          </div>
+          <div style="background:var(--surface-2); border-radius:8px; padding:10px 12px; font-size:11px; line-height:1.5; color:var(--ink-muted);">The dendrogram shows which points are grouped together, and at what distance.</div>
+        </div>
+
+        <!-- Steps -->
+        <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:10px;">
+          <h3 style="font-weight:600; font-size:15.5px; color:var(--ink);">How to Build a Dendrogram</h3>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-complete)); color:var(--surface); font-weight:600; font-size:11px; display:flex; align-items:center; justify-content:center;">1</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Compute the distance matrix</strong><br>Pairwise distances between all points (e.g., Euclidean).</div></div>
+            <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-complete)); color:var(--surface); font-weight:600; font-size:11px; display:flex; align-items:center; justify-content:center;">2</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Choose a linkage method</strong><br>Single, complete, average, or Ward.</div></div>
+            <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-complete)); color:var(--surface); font-weight:600; font-size:11px; display:flex; align-items:center; justify-content:center;">3</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Start with each point as its own cluster</strong><br>Every data point begins separate.</div></div>
+            <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-complete)); color:var(--surface); font-weight:600; font-size:11px; display:flex; align-items:center; justify-content:center;">4</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Merge the closest pair</strong><br>Combine the two clusters with the smallest linkage distance.</div></div>
+            <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-complete)); color:var(--surface); font-weight:600; font-size:11px; display:flex; align-items:center; justify-content:center;">5</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Update distances and repeat</strong><br>Recompute until one cluster remains.</div></div>
+            <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-complete)); color:var(--surface); font-weight:600; font-size:11px; display:flex; align-items:center; justify-content:center;">6</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Plot the dendrogram</strong><br>The y-axis shows the distance at each merge.</div></div>
+          </div>
+        </div>
+
+        <!-- Example chart -->
+        <div style="flex:1.3; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+          <h3 style="font-weight:600; font-size:15.5px; color:var(--ink);">Example Dendrogram <span style="font-family:'Karla',sans-serif; font-weight:500; font-size:11.5px; color:var(--ink-muted);">average linkage</span></h3>
+          <svg viewBox="0 0 460 260" style="width:100%; height:200px;">
+            <g stroke="var(--border)" stroke-width="1">
+              <line x1="46" y1="220" x2="430" y2="220"/>
+              <line x1="46" y1="188" x2="430" y2="188"/>
+              <line x1="46" y1="156" x2="430" y2="156"/>
+              <line x1="46" y1="124" x2="430" y2="124"/>
+              <line x1="46" y1="92" x2="430" y2="92"/>
+              <line x1="46" y1="60" x2="430" y2="60"/>
+              <line x1="46" y1="28" x2="430" y2="28"/>
+            </g>
+            <g class="mono" font-size="10.5" fill="var(--ink-muted)" text-anchor="end">
+              <text x="40" y="223">0</text>
+              <text x="40" y="191">0.5</text>
+              <text x="40" y="159">1.0</text>
+              <text x="40" y="127">1.5</text>
+              <text x="40" y="95">2.0</text>
+              <text x="40" y="63">2.5</text>
+            </g>
+            <text x="14" y="125" class="mono" font-size="10.5" fill="var(--ink-muted)" text-anchor="middle" transform="rotate(-90 14 125)">Distance</text>
+
+            <g stroke="oklch(var(--l-border) var(--c-border) var(--h-rules))" stroke-width="2.2" fill="none">
+              <line x1="66" y1="220" x2="66" y2="188"/>
+              <line x1="136" y1="220" x2="136" y2="188"/>
+              <line x1="66" y1="188" x2="136" y2="188"/>
+            </g>
+            <g stroke="oklch(var(--l-border) var(--c-border) var(--h-single))" stroke-width="2.2" fill="none">
+              <line x1="276" y1="220" x2="276" y2="176"/>
+              <line x1="346" y1="220" x2="346" y2="176"/>
+              <line x1="276" y1="176" x2="346" y2="176"/>
+            </g>
+            <g stroke="oklch(var(--l-border) var(--c-border) var(--h-average))" stroke-width="2.2" fill="none">
+              <line x1="206" y1="220" x2="206" y2="152"/>
+              <line x1="101" y1="188" x2="101" y2="152"/>
+              <line x1="101" y1="152" x2="206" y2="152"/>
+            </g>
+            <g stroke="oklch(var(--l-border) var(--c-border) var(--h-orange))" stroke-width="2.2" fill="none">
+              <line x1="416" y1="220" x2="416" y2="116"/>
+              <line x1="311" y1="176" x2="311" y2="116"/>
+              <line x1="311" y1="116" x2="416" y2="116"/>
+            </g>
+            <g stroke="var(--ink)" stroke-width="2.2" fill="none">
+              <line x1="153.5" y1="152" x2="153.5" y2="28"/>
+              <line x1="363.5" y1="116" x2="363.5" y2="28"/>
+              <line x1="153.5" y1="28" x2="363.5" y2="28"/>
+            </g>
+
+            <g class="mono" font-weight="600" font-size="12" fill="var(--ink)" text-anchor="middle">
+              <text x="66" y="236">A</text>
+              <text x="136" y="236">B</text>
+              <text x="206" y="236">C</text>
+              <text x="276" y="236">D</text>
+              <text x="346" y="236">E</text>
+              <text x="416" y="236">F</text>
+            </g>
+          </svg>
+          <div style="display:flex; flex-direction:column; gap:3px; font-size:11px; line-height:1.4; color:var(--ink-muted);">
+            <div>&bull; A and B are most similar (merged at the lowest distance).</div>
+            <div>&bull; D and E are next (small distance).</div>
+            <div>&bull; C joins the A&ndash;B cluster later.</div>
+            <div>&bull; F is the last to join &mdash; the most different point overall.</div>
+          </div>
+          <div style="background:var(--surface-2); border-radius:8px; padding:9px 11px; font-size:10.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">What the y-axis means:</strong> the distance (dissimilarity) at which clusters were merged. Higher = less similar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR: rules + warning -->
+    <div style="flex:1; display:flex; flex-direction:column; gap:16px;">
+      <div style="background:var(--surface); border:1px solid var(--border); border-top:4px solid oklch(var(--l-border) var(--c-border) var(--h-rules)); border-radius:0 0 12px 12px; padding:18px; display:flex; flex-direction:column; gap:11px;">
+        <h3 style="font-weight:600; font-size:15.5px; color:oklch(var(--l-ink) var(--c-ink) var(--h-rules));">Rules to Remember</h3>
+        <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:24px; height:24px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-rules)); color:var(--surface); font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;">1</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Lower height = more similar.</strong><br>Clusters merged at a low distance are more alike.</div></div>
+        <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:24px; height:24px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-rules)); color:var(--surface); font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;">2</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">The order of merges matters.</strong><br>The dendrogram records the exact merge sequence.</div></div>
+        <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:24px; height:24px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-rules)); color:var(--surface); font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;">3</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Cut height sets cluster count.</strong><br>Cut the dendrogram at a chosen height.</div></div>
+        <div style="display:flex; gap:9px;"><div class="mono" style="flex:none; width:24px; height:24px; border-radius:50%; background:oklch(var(--l-border) var(--c-border) var(--h-rules)); color:var(--surface); font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center;">4</div><div style="font-size:11.5px; line-height:1.45; color:var(--ink-muted);"><strong style="color:var(--ink);">Left-to-right order is arbitrary.</strong><br>It shows merge sequence, not similarity.</div></div>
+      </div>
+
+      <div style="background:oklch(var(--l-tint) 0.035 var(--h-warn)); border:1.5px solid oklch(var(--l-border) 0.09 var(--h-warn)); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:10px; flex:1;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 2.5 20h19L12 3.5Z" stroke="oklch(var(--l-ink) var(--c-ink) var(--h-warn))" stroke-width="1.7" stroke-linejoin="round"/><line x1="12" y1="9.5" x2="12" y2="14.5" stroke="oklch(var(--l-ink) var(--c-ink) var(--h-warn))" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="17.2" r="0.9" fill="oklch(var(--l-ink) var(--c-ink) var(--h-warn))"/></svg>
+          <h3 style="font-weight:600; font-size:15px; color:oklch(var(--l-ink) var(--c-ink) var(--h-warn));">What to Look Out For</h3>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:7px; font-size:11.5px; line-height:1.5; color:oklch(var(--l-ink) var(--c-ink) var(--h-warn));">
+          <div>&bull; Chaining effect, especially with single linkage.</div>
+          <div>&bull; Unequal cluster sizes &mdash; possible with any method.</div>
+          <div>&bull; Outliers can distort distances, especially with single linkage.</div>
+          <div>&bull; The right cut-off height depends on your goal and data.</div>
+          <div>&bull; Don't over-interpret small distance differences near the top.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div style="background:var(--band-deep); border-radius:14px; padding:16px; text-align:center;">
+    <span class="serif" style="font-weight:600; font-style:italic; font-size:16px; color:var(--band-ink);">Same data. Different rules. Different clusters.</span>
+    <span style="font-weight:500; font-size:14px; color:var(--band-ink-muted);"> &rarr; Choose the linkage method that fits your data, your goal, and the shape of your clusters.</span>
+  </div>
+
+</div>
+</div>
+</div>

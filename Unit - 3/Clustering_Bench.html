@@ -1,0 +1,1816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interactive clustering visualiser: k-Means, k-Medoids, MiniBatch k-Means and agglomerative hierarchical clustering, with the implementation shown alongside.">
+<style>
+  html{color-scheme:light}
+  body{margin:0}
+  img{max-width:100%}
+  [hidden]{display:none !important}
+</style>
+<title>Clustering Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+
+<style>
+/* Single light theme, committed deliberately: a white instrument panel.
+   Every colour is painted explicitly so the page holds on any host ground. */
+:root{
+  --paper:#FFFFFF; --panel:#FFFFFF; --well:#FFFFFF; --tint:#F7F8F5;
+  --ink:#14181F; --slate:#5A6472; --faint:#8B929B;
+  --rule:#E3E5E0; --rule-strong:#C9CCC4; --grid:#EEF0EA;
+  --accent:#8E1B34; --accent-soft:#FAF0F2; --accent-ink:#FFFFFF;
+  /* Okabe-Ito, adjusted so every hue holds contrast on white */
+  --c0:#0072B2; --c1:#D98C00; --c2:#009E73; --c3:#C0568F;
+  --c4:#3D9AD1; --c5:#D55E00; --c6:#8A7500; --c7:#6B7280;
+  --unassigned:#C4C9D0; --noise:#8B929B;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:Archivo,"Segoe UI",system-ui,sans-serif; font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; text-wrap:balance}
+.wrap{max-width:1300px; margin:0 auto; padding:22px 20px 40px}
+
+header.top{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  padding-bottom:14px; margin-bottom:18px; border-bottom:2px solid var(--ink);
+}
+.brand h1{font-size:26px; font-weight:700; letter-spacing:-.02em}
+.brand p{margin:3px 0 0; color:var(--slate); font-size:13px; font-family:"Source Serif 4",Georgia,serif}
+.unitmap{display:flex; gap:8px; flex-wrap:wrap}
+.unitmap span{
+  font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; font-weight:600;
+  color:var(--slate); border:1px solid var(--rule-strong); border-radius:2px; padding:4px 8px;
+}
+
+.layout{display:grid; grid-template-columns:262px minmax(0,1fr); gap:18px; align-items:start}
+@media (max-width:940px){ .layout{grid-template-columns:1fr} }
+
+.rail{display:flex; flex-direction:column; gap:16px}
+.group{border-top:1px solid var(--rule); padding-top:12px}
+.group:first-child{border-top:none; padding-top:0}
+.group > h2{font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); font-weight:600; margin-bottom:9px; display:flex; justify-content:space-between}
+.group > h2 b{font-family:"IBM Plex Mono",monospace; font-weight:500; color:var(--ink); letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums}
+
+.algos{display:flex; flex-direction:column; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.algo{appearance:none; border:none; text-align:left; cursor:pointer; background:var(--panel); color:var(--ink); font:inherit; font-weight:500; padding:9px 11px; display:flex; justify-content:space-between; align-items:center; gap:8px}
+.algo small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:600}
+.algo:hover{background:var(--tint)}
+.algo[aria-pressed="true"]{background:var(--ink); color:#FFFFFF}
+.algo[aria-pressed="true"] small{color:#FFFFFF; opacity:.66}
+
+.field{display:flex; flex-direction:column; gap:5px; margin-bottom:11px}
+.field[hidden]{display:none}
+.field label{font-size:11.5px; font-weight:600; color:var(--slate); display:flex; justify-content:space-between; gap:8px}
+.field label b{font-family:"IBM Plex Mono",monospace; font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums}
+select{font:inherit; font-size:13px; padding:6px 8px; width:100%; color:var(--ink); background:var(--panel); border:1px solid var(--rule-strong); border-radius:3px}
+input[type=range]{width:100%; accent-color:var(--accent); height:20px}
+.check{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--slate); margin-bottom:8px; cursor:pointer}
+.check input{accent-color:var(--accent); margin-top:2px; flex:none}
+
+.btns{display:grid; grid-template-columns:1fr 1fr; gap:7px}
+button.act{appearance:none; font:inherit; font-weight:600; font-size:12.5px; padding:8px 6px; border-radius:3px; cursor:pointer; border:1px solid var(--rule-strong); background:var(--panel); color:var(--ink)}
+button.act:hover{border-color:var(--ink)}
+button.act.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+button.act.primary:hover{filter:brightness(1.09)}
+button.act.wide{grid-column:1 / -1}
+button.act:disabled{opacity:.4; cursor:not-allowed}
+button:focus-visible, select:focus-visible, input:focus-visible, .chip:focus-visible, .tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{appearance:none; font:inherit; font-size:11.5px; font-weight:500; cursor:pointer; padding:5px 9px; border-radius:99px; color:var(--slate); border:1px solid var(--rule-strong); background:var(--panel)}
+.chip:hover{color:var(--ink); border-color:var(--ink)}
+
+main{display:flex; flex-direction:column; gap:14px; min-width:0}
+.card{background:var(--panel); border:1px solid var(--rule); border-radius:4px}
+.card > .head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:9px 13px; border-bottom:1px solid var(--rule); flex-wrap:wrap}
+.card > .head h3{font-size:12px; letter-spacing:.09em; text-transform:uppercase; font-weight:600}
+.card > .head .hint{font-size:11.5px; color:var(--faint); font-family:"IBM Plex Mono",monospace}
+
+#plotWrap{position:relative; padding:10px}
+#plot{width:100%; aspect-ratio:3/2; display:block; cursor:crosshair; touch-action:none; border:1px solid var(--rule); border-radius:2px; background:var(--well)}
+.stage{position:absolute; left:22px; top:22px; font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:500; padding:4px 8px; border-radius:2px; background:var(--accent); color:var(--accent-ink); max-width:calc(100% - 44px)}
+.stage[data-idle="1"]{background:var(--tint); color:var(--slate); border:1px solid var(--rule-strong)}
+.legend{position:absolute; right:22px; top:22px; display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--slate); background:rgba(255,255,255,.9); padding:4px 7px; border:1px solid var(--rule); border-radius:2px}
+.legend i{display:inline-block; width:8px; height:8px; border-radius:99px; margin-right:4px; vertical-align:-1px}
+
+#panelBody{padding:10px 13px 13px}
+canvas.panelcv{width:100%; display:block; background:var(--well)}
+#curve, #kdist{height:196px}
+#dendro{height:252px; cursor:ns-resize; touch-action:none}
+.dcap{margin:8px 0 0; font-size:12px; color:var(--slate); font-family:"Source Serif 4",Georgia,serif; max-width:80ch}
+
+.metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); border:1px solid var(--rule); border-radius:4px; background:var(--panel); overflow:hidden}
+.metric{padding:10px 13px; border-left:1px solid var(--rule)}
+.metric:first-child{border-left:none}
+.metric[hidden]{display:none}
+.metric dt{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:600}
+.metric dd{margin:3px 0 0; font-family:"IBM Plex Mono",monospace; font-size:19px; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.metric dd small{font-size:11px; color:var(--faint); letter-spacing:0}
+
+.logcard .body{padding:0; max-height:180px; overflow-y:auto}
+.logline{display:grid; grid-template-columns:42px 1fr; gap:11px; padding:7px 13px; border-bottom:1px solid var(--rule); font-family:"Source Serif 4",Georgia,serif; font-size:13.5px; line-height:1.45}
+.logline:last-child{border-bottom:none}
+.logline .n{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint); font-variant-numeric:tabular-nums; padding-top:2px}
+.logline.mark{background:var(--accent-soft)}
+.logline.mark .n{color:var(--accent); font-weight:500}
+.logline em{font-style:italic; color:var(--slate)}
+.logline b{font-weight:600}
+
+.tabs{display:flex; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden; flex-wrap:wrap}
+.tab{appearance:none; border:none; cursor:pointer; font:inherit; font-size:11.5px; font-weight:600; padding:6px 11px; background:var(--panel); color:var(--slate)}
+.tab:hover{background:var(--tint); color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink); color:#FFFFFF}
+#codeBody{padding:12px 13px}
+#codeScroll{max-height:420px; overflow:auto; border:1px solid var(--rule); border-radius:3px; background:var(--tint)}
+pre.src{margin:0; padding:12px 14px; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; line-height:1.62; color:var(--ink); white-space:pre; tab-size:2}
+.fnhead{display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:8px 14px 0; font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:600; color:var(--accent)}
+.fnhead.sep{border-top:1px solid var(--rule)}
+.fnhead span{font-family:"Source Serif 4",Georgia,serif; font-size:12.5px; letter-spacing:0; text-transform:none; font-weight:400; color:var(--slate); text-align:right}
+
+footer.note{margin-top:22px; padding-top:12px; border-top:1px solid var(--rule); color:var(--faint); font-size:12px; max-width:76ch; font-family:"Source Serif 4",Georgia,serif}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Clustering Bench</h1>
+      <p>Place points, pick a method, step it one operation at a time &mdash; and read the code that ran.</p>
+    </div>
+    <div class="unitmap">
+      <span>Unit 2 &middot; Partition-Based</span>
+      <span>Unit 3 &middot; Hierarchical &amp; Density</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail">
+      <div class="group">
+        <h2>Method</h2>
+        <div class="algos" id="algos">
+          <button class="algo" data-algo="kmeans"    aria-pressed="true"><span>k-Means</span><small>U2</small></button>
+          <button class="algo" data-algo="kmedoids"  aria-pressed="false"><span>k-Medoids</span><small>U2</small></button>
+          <button class="algo" data-algo="minibatch" aria-pressed="false"><span>MiniBatch k-Means</span><small>U2</small></button>
+          <button class="algo" data-algo="agglo"     aria-pressed="false"><span>Agglomerative</span><small>U3</small></button>
+          <button class="algo" data-algo="divisive"  aria-pressed="false"><span>Divisive &middot; DIANA</span><small>U3</small></button>
+          <button class="algo" data-algo="dbscan"    aria-pressed="false"><span>DBSCAN</span><small>U3</small></button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Parameters</h2>
+        <div class="field" id="fK">
+          <label for="k">Clusters <b id="kOut">3</b></label>
+          <input type="range" id="k" min="1" max="8" step="1" value="3">
+        </div>
+        <div class="field" id="fIter">
+          <label for="maxIter">Iteration limit <b id="maxIterOut">25</b></label>
+          <input type="range" id="maxIter" min="1" max="60" step="1" value="25">
+        </div>
+        <div class="field" id="fInit">
+          <label for="init">Initialisation</label>
+          <select id="init"><option value="pp">k-Means++</option><option value="rand">Random points</option></select>
+        </div>
+        <div class="field" id="fLink" hidden>
+          <label for="link">Linkage</label>
+          <select id="link"><option value="ward">Ward</option><option value="single">Single</option><option value="complete">Complete</option><option value="average">Average</option></select>
+        </div>
+        <div class="field" id="fLeaves" hidden>
+          <label for="leaves">Split until <b id="leavesOut">20</b> groups</label>
+          <input type="range" id="leaves" min="4" max="40" step="2" value="20">
+        </div>
+        <div class="field" id="fEps" hidden>
+          <label for="eps">eps <b id="epsOut">6%</b></label>
+          <input type="range" id="eps" min="1" max="25" step="1" value="6">
+        </div>
+        <div class="field" id="fMinPts" hidden>
+          <label for="minPts">MinPts <b id="minPtsOut">4</b></label>
+          <input type="range" id="minPts" min="2" max="12" step="1" value="4">
+        </div>
+        <div class="field" id="fBatch" hidden>
+          <label for="batch">Batch size <b id="batchOut">20</b></label>
+          <input type="range" id="batch" min="5" max="60" step="5" value="20">
+        </div>
+        <div class="field">
+          <label for="seed">Random seed <b id="seedOut">7</b></label>
+          <input type="range" id="seed" min="1" max="40" step="1" value="7">
+        </div>
+        <label class="check" id="fScan" hidden><input type="checkbox" id="showScan" checked> Show the pair each rule is eyeing next</label>
+        <label class="check"><input type="checkbox" id="stdz"> Standardise both axes before clustering</label>
+      </div>
+
+      <div class="group">
+        <h2>Run</h2>
+        <div class="btns">
+          <button class="act primary" id="run">Run</button>
+          <button class="act" id="step">Step</button>
+          <button class="act wide" id="finish" hidden>Finish the tree</button>
+          <button class="act wide" id="compareBtn" hidden>Compare all four linkages</button>
+          <button class="act wide" id="reset">Reset method</button>
+        </div>
+        <div class="field" style="margin-top:11px">
+          <label for="speed">Step delay <b id="speedOut">340 ms</b></label>
+          <input type="range" id="speed" min="40" max="900" step="20" value="340">
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Data <b id="nPts">120 pts</b></h2>
+        <div class="field">
+          <label for="npoints">Points per dataset <b id="npointsOut">120</b></label>
+          <input type="range" id="npoints" min="30" max="400" step="10" value="120">
+        </div>
+        <div class="chips">
+          <button class="chip" data-gen="blobs">3 blobs</button>
+          <button class="chip" data-gen="rings">2 rings</button>
+          <button class="chip" data-gen="moons">2 moons</button>
+          <button class="chip" data-gen="aniso">Stretched</button>
+          <button class="chip" data-gen="uniform">Uniform</button>
+          <button class="chip" data-gen="clear">Clear</button>
+        </div>
+        <p style="margin:9px 0 0;font-size:11.5px;color:var(--faint);font-family:'Source Serif 4',Georgia,serif">Click the plot to add a point; drag to scatter several. Hierarchical methods slow past about 250 points.</p>
+      </div>
+    </aside>
+
+    <main>
+      <section class="card">
+        <div class="head">
+          <h3 id="plotTitle">k-Means &middot; Lloyd's algorithm</h3>
+          <span class="hint" id="plotHint">assign &rarr; update, repeated</span>
+        </div>
+        <div id="plotWrap">
+          <div class="stage" id="stage" data-idle="1">ready</div>
+          <div class="legend" id="legend" hidden></div>
+          <canvas id="plot"></canvas>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="head">
+          <h3 id="panelTitle">Convergence</h3>
+          <span class="hint" id="panelHint">within-cluster sum of squares per iteration</span>
+        </div>
+        <div id="panelBody">
+          <canvas id="curve" class="panelcv"></canvas>
+          <canvas id="dendro" class="panelcv" hidden></canvas>
+          <canvas id="kdist" class="panelcv" hidden></canvas>
+          <canvas id="compare" class="panelcv" hidden></canvas>
+          <p class="dcap" id="ccap" hidden>
+            The same points, the same cut, four different rules for the distance between two
+            clusters. Single linkage takes the closest pair, so a thin bridge of points chains
+            two groups together; complete takes the furthest pair and so insists on compactness;
+            average sits between them; Ward merges whichever pair adds least to the total
+            within-cluster spread.
+          </p>
+          <p class="dcap" id="dcap" hidden>
+            The tree is drawn as it is built. The height of a join is the distance at which those
+            two branches came together, so a tall join means two unlike groups. The dashed line
+            marks where the algorithm currently stands; once the tree is complete you can drag it
+            to re-cut.
+          </p>
+          <p class="dcap" id="kcap" hidden>
+            Every point's distance to its MinPts-th nearest neighbour, sorted from largest to
+            smallest. The knee of this curve is the usual way to choose eps: above the line the
+            neighbourhood is too sparse to be dense, below it the point has enough company.
+          </p>
+        </div>
+      </section>
+
+      <dl class="metrics">
+        <div class="metric"><dt>Clusters</dt><dd id="mK">3</dd></div>
+        <div class="metric" id="mNoiseBox" hidden><dt>Noise</dt><dd id="mNoise">0</dd></div>
+        <div class="metric"><dt>Inertia (WCSS)</dt><dd id="mIn">&mdash;</dd></div>
+        <div class="metric"><dt>Silhouette</dt><dd id="mSil">&mdash;</dd></div>
+        <div class="metric"><dt>Davies&ndash;Bouldin</dt><dd id="mDb">&mdash;</dd></div>
+        <div class="metric"><dt id="mItLbl">Iterations</dt><dd id="mIt">0</dd></div>
+      </dl>
+
+      <section class="card logcard">
+        <div class="head"><h3>What just happened</h3><span class="hint">newest last</span></div>
+        <div class="body" id="log"></div>
+      </section>
+
+      <section class="card">
+        <div class="head">
+          <h3>Implementation</h3>
+          <span class="hint">read straight off the running functions</span>
+        </div>
+        <div id="codeBody">
+          <div class="tabs" id="codeTabs">
+            <button class="tab" data-src="kmeans"    aria-selected="true">k-Means</button>
+            <button class="tab" data-src="kmedoids"  aria-selected="false">k-Medoids</button>
+            <button class="tab" data-src="minibatch" aria-selected="false">MiniBatch</button>
+            <button class="tab" data-src="agglo"     aria-selected="false">Agglomerative</button>
+            <button class="tab" data-src="divisive"  aria-selected="false">Divisive</button>
+            <button class="tab" data-src="dbscan"    aria-selected="false">DBSCAN</button>
+            <button class="tab" data-src="metrics"   aria-selected="false">Metrics</button>
+            <button class="tab" data-src="all"       aria-selected="false">Everything</button>
+          </div>
+          <div id="codeScroll" style="margin-top:10px"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="note">
+    Distances are Euclidean throughout. Silhouette and Davies&ndash;Bouldin are undefined for a single
+    cluster and for a cluster of one point, and are reported as &ldquo;n/a&rdquo; rather than a misleading
+    number; for DBSCAN they are computed over the clustered points only, with noise excluded.
+    Agglomerative linkage uses the Lance&ndash;Williams update, so Ward works in squared space and
+    merge heights are square-rooted. DIANA advances in two phases &mdash; seed, then one defection per
+    step. DBSCAN grows one cluster at a time, one wave of neighbours per step, and eps is set as a
+    percentage of the data's diagonal so it stays meaningful when the axes are standardised.
+    The code panel prints the live functions, so what you read is what just ran.
+    Built for INT396 Unsupervised Learning, Units 2 and 3.
+  </footer>
+</div>
+
+<script>
+"use strict";
+const VW = 900, VH = 600;
+const $ = s => document.querySelector(s);
+const plot = $("#plot"), curve = $("#curve"), dendro = $("#dendro"), kdist = $("#kdist"),
+      compare = $("#compare");
+
+function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+const clusterColor = i => i < 0 ? css("--unassigned") : css("--c" + (i % 8));
+
+/* ============================ shared helpers ============================ */
+const d2   = (a,b) => (a.x-b.x)**2 + (a.y-b.y)**2;
+const dist = (a,b) => Math.sqrt(d2(a,b));
+
+function mulberry(a){                       // deterministic RNG: a seed reproduces a run
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+let rng = mulberry(7);
+const gauss = () => {
+  let u = 0, v = 0;
+  while (!u) u = rng();
+  while (!v) v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+};
+function sampleWithoutReplacement(n, m){
+  const idx = [...Array(n).keys()];
+  for (let i = 0; i < m; i++){
+    const j = i + Math.floor(rng() * (n - i));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return idx.slice(0, m);
+}
+
+/* ======================= UNIT 2 · partition-based ======================= */
+
+// Choose starting centres. k-Means++ spreads them by squared-distance weighting,
+// which makes a poor local minimum far less likely than picking at random.
+function initCentres(w, k, mode){
+  if (mode === "rand") return sampleWithoutReplacement(w.length, k).map(i => ({...w[i]}));
+  const cs = [ {...w[Math.floor(rng() * w.length)]} ];
+  while (cs.length < k){
+    const dd  = w.map(p => Math.min(...cs.map(c => d2(p, c))));
+    const tot = dd.reduce((a,b) => a + b, 0);
+    if (tot <= 0){ cs.push({...w[Math.floor(rng() * w.length)]}); continue; }
+    let r = rng() * tot, i = 0;
+    while (r > dd[i] && i < dd.length - 1){ r -= dd[i]; i++; }
+    cs.push({...w[i]});
+  }
+  return cs;
+}
+
+// ASSIGN step, shared by k-Means and k-Medoids: every point joins its nearest centre.
+function assignToNearest(w, centres){
+  return w.map(p => {
+    let best = 0, bestD = Infinity;
+    for (let c = 0; c < centres.length; c++){
+      const d = d2(p, centres[c]);
+      if (d < bestD){ bestD = d; best = c; }
+    }
+    return best;
+  });
+}
+
+// UPDATE step for k-Means: each centre becomes the mean of its members.
+function updateCentroids(w, labels, centres){
+  const sum = centres.map(() => ({x:0, y:0})), n = centres.map(() => 0);
+  for (let i = 0; i < w.length; i++){
+    const l = labels[i];
+    if (l < 0 || l >= centres.length) continue;
+    sum[l].x += w[i].x; sum[l].y += w[i].y; n[l]++;
+  }
+  let moved = 0;
+  const out = centres.map((c, i) => {
+    if (!n[i]) return {...c};
+    const nc = { x: sum[i].x / n[i], y: sum[i].y / n[i] };
+    moved = Math.max(moved, dist(nc, c));
+    return nc;
+  });
+  return { centres: out, moved };
+}
+
+// UPDATE step for k-Medoids: each centre becomes the member with the smallest total
+// distance to the rest, so the centre is always a real record.
+function updateMedoids(w, labels, centres){
+  let shifted = 0;
+  const out = centres.map((c, ci) => {
+    const members = w.filter((_, i) => labels[i] === ci);
+    if (!members.length) return {...c};
+    let best = members[0], bestCost = Infinity;
+    for (const m of members){
+      let cost = 0;
+      for (const o of members) cost += dist(m, o);
+      if (cost < bestCost){ bestCost = cost; best = m; }
+    }
+    if (best.x !== c.x || best.y !== c.y) shifted++;
+    return {...best};
+  });
+  return { centres: out, shifted };
+}
+
+// MiniBatch k-Means: one random batch per step, per-centre learning rate 1/(1+count).
+function miniBatchStep(w, centres, batchSize){
+  const idx    = sampleWithoutReplacement(w.length, Math.min(batchSize, w.length));
+  const out    = centres.map(c => ({...c}));
+  const counts = centres.map(() => 0);
+  for (const i of idx){
+    const l = assignToNearest([w[i]], out)[0];
+    counts[l]++;
+    const eta = 1 / (1 + counts[l]);
+    out[l].x += eta * (w[i].x - out[l].x);
+    out[l].y += eta * (w[i].y - out[l].y);
+  }
+  return { centres: out, used: idx.length };
+}
+
+/* ============ UNIT 3 · hierarchical, bottom-up (agglomerative) ============ */
+
+// Every point is its own cluster; the distance matrix is laid out with room for the
+// internal nodes merging will create. Ward is stored SQUARED, hence the square root.
+function agglomerativeInit(w, linkage){
+  const n = w.length, M = 2 * n;
+  const D = Array.from({length: M}, () => new Float64Array(M));
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++){
+      const v = linkage === "ward" ? d2(w[i], w[j]) : dist(w[i], w[j]);
+      D[i][j] = D[j][i] = v;
+    }
+  const nodes = [...Array(n).keys()].map(i => ({ leaf:true, h:0, key:i, members:[i] }));
+  return { kind:"agglomerative", linkage, n, D, nodes,
+           size: new Array(M).fill(1), alive: [...Array(n).keys()],
+           next: n, joins: [], done: n < 2 };
+}
+
+// ONE merge: closest surviving pair, joined, then Lance-Williams updates the distance
+// from the new node to every other survivor.
+function agglomerativeStep(S){
+  if (S.alive.length < 2){ S.done = true; return null; }
+  const { D, size, nodes, alive, linkage } = S;
+  let a = 0, b = 1, best = Infinity;
+  for (let x = 0; x < alive.length; x++)
+    for (let y = x + 1; y < alive.length; y++){
+      const v = D[alive[x]][alive[y]];
+      if (v < best){ best = v; a = x; b = y; }
+    }
+  const i = alive[a], j = alive[b], ni = size[i], nj = size[j];
+  const height = linkage === "ward" ? Math.sqrt(Math.max(best, 0)) : best;
+  nodes[S.next] = { leaf:false, h:height, left:nodes[i], right:nodes[j],
+                    key: Math.min(nodes[i].key, nodes[j].key),
+                    members: nodes[i].members.concat(nodes[j].members) };
+  for (const m of alive){
+    if (m === i || m === j) continue;
+    const dim = D[i][m], djm = D[j][m], nm = size[m];
+    let v;
+    if      (linkage === "single")   v = Math.min(dim, djm);
+    else if (linkage === "complete") v = Math.max(dim, djm);
+    else if (linkage === "average")  v = (ni * dim + nj * djm) / (ni + nj);
+    else                             v = ((ni + nm) * dim + (nj + nm) * djm - nm * best)
+                                         / (ni + nj + nm);            // Ward
+    D[S.next][m] = D[m][S.next] = v;
+  }
+  size[S.next] = ni + nj;
+  S.alive = alive.filter(x => x !== i && x !== j).concat(S.next);
+  S.joins.push({ h: height });
+  S.next++;
+  S.done = S.alive.length < 2;
+  return { height, left: ni, right: nj,
+           A: nodes[i].members, B: nodes[j].members };
+}
+
+// What each linkage would have measured between the same two clusters, computed
+// straight from the definition rather than from the running update. Single takes the
+// closest cross-pair, complete the furthest, average the mean of all cross-pairs, and
+// Ward the distance whose square is twice the rise in within-cluster sum of squares.
+// The Ward figure here is an independent check on the Lance-Williams value carried by
+// the algorithm - the two agree.
+function linkageBreakdown(w, A, B){
+  let single = Infinity, complete = 0, sum = 0, closest = null, furthest = null;
+  for (const a of A)
+    for (const b of B){
+      const d = dist(w[a], w[b]);
+      sum += d;
+      if (d < single){ single = d; closest  = [a, b]; }
+      if (d > complete){ complete = d; furthest = [a, b]; }
+    }
+  const mean = S => {
+    let x = 0, y = 0;
+    for (const i of S){ x += w[i].x; y += w[i].y; }
+    return { x: x/S.length, y: y/S.length };
+  };
+  const ca = mean(A), cb = mean(B), na = A.length, nb = B.length;
+  return { single, complete, average: sum / (na * nb),
+           ward: Math.sqrt(2 * na * nb / (na + nb)) * dist(ca, cb),
+           closest, furthest, ca, cb,
+           merged: { x: (ca.x*na + cb.x*nb) / (na+nb), y: (ca.y*na + cb.y*nb) / (na+nb) },
+           pairs: na * nb };
+}
+
+// The search itself. Every pair of surviving clusters is scored under all four rules at
+// once, and the pair each rule would merge next is kept. This is what the algorithm is
+// doing between one merge and the next - and because the four rules score the same pairs
+// differently, they frequently want to join different pairs.
+function nextCandidates(w, clusters){
+  const cen = clusters.map(c => {
+    let x = 0, y = 0;
+    for (const i of c.members){ x += w[i].x; y += w[i].y; }
+    return { x: x/c.members.length, y: y/c.members.length };
+  });
+  const best = { single:{v:Infinity}, complete:{v:Infinity},
+                 average:{v:Infinity}, ward:{v:Infinity} };
+  for (let x = 0; x < clusters.length; x++)
+    for (let y = x + 1; y < clusters.length; y++){
+      const A = clusters[x].members, B = clusters[y].members;
+      let lo = Infinity, hi = 0, sum = 0, near = null, far = null;
+      for (const a of A)
+        for (const b of B){
+          const d = dist(w[a], w[b]);
+          sum += d;
+          if (d < lo){ lo = d; near = [a, b]; }
+          if (d > hi){ hi = d; far  = [a, b]; }
+        }
+      const av = sum / (A.length * B.length);
+      const wd = Math.sqrt(2 * A.length * B.length / (A.length + B.length))
+                 * dist(cen[x], cen[y]);
+      if (lo < best.single.v)   best.single   = { v:lo, x, y, seg:near };
+      if (hi < best.complete.v) best.complete = { v:hi, x, y, seg:far  };
+      if (av < best.average.v)  best.average  = { v:av, x, y, ca:cen[x], cb:cen[y] };
+      if (wd < best.ward.v)     best.ward     = { v:wd, x, y, ca:cen[x], cb:cen[y] };
+    }
+  return best;
+}
+
+/* ============== UNIT 3 · hierarchical, top-down (divisive) ============== */
+
+// DIANA. Everything begins in one cluster whose height is its diameter.
+function divisiveInit(w){
+  const n = w.length;
+  const D = Array.from({length:n}, () => new Float64Array(n));
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++){ const d = dist(w[i], w[j]); D[i][j] = D[j][i] = d; }
+  const all  = [...Array(n).keys()];
+  const diam = S => {
+    let m = 0;
+    for (let a = 0; a < S.length; a++)
+      for (let b = a + 1; b < S.length; b++) if (D[S[a]][S[b]] > m) m = D[S[a]][S[b]];
+    return m;
+  };
+  return { kind:"divisive", n, D, diam,
+           root: { leaf:true, h: diam(all), key:0, members: all },
+           leaves: null, joins: [], pending: null, done: n < 2,
+           init(){ this.leaves = [this.root]; return this; } }.init();
+}
+
+// PHASE 1 of a split. Take the leaf of largest diameter and start a splinter group with
+// its most dissimilar member - the one whose average distance to the rest is largest.
+// Nothing is committed yet, so the plot can show the two halves forming.
+function divisiveSeed(S){
+  let bi = -1, bh = -1;
+  S.leaves.forEach((nd, i) => { if (nd.members.length > 1 && nd.h > bh){ bh = nd.h; bi = i; } });
+  if (bi < 0){ S.done = true; return null; }
+  const members = S.leaves[bi].members;
+  const avgTo = (i, set) => {
+    let s = 0, c = 0;
+    for (const j of set){ if (j === i) continue; s += S.D[i][j]; c++; }
+    return c ? s / c : 0;
+  };
+  let seed = members[0], worst = -1;
+  for (const i of members){ const a = avgTo(i, members); if (a > worst){ worst = a; seed = i; } }
+  S.pending = { at: bi, node: S.leaves[bi], seed, avg: worst,
+                splinter: [seed], rest: members.filter(i => i !== seed), moved: null };
+  return { diameter: bh, seed, avg: worst, size: members.length };
+}
+
+// PHASE 2, one defection per call. The member with the largest gap between its average
+// distance to the remainder and to the splinter changes side. When nobody is closer to
+// the splinter than to the remainder, the split is committed and the tree grows.
+function divisiveMigrate(S){
+  const P = S.pending;
+  if (!P) return null;
+  const avgTo = (i, set) => {
+    let s = 0, c = 0;
+    for (const j of set){ if (j === i) continue; s += S.D[i][j]; c++; }
+    return c ? s / c : 0;
+  };
+  let pick = -1, gap = 0;
+  if (P.rest.length > 1)
+    for (const i of P.rest){
+      const d = avgTo(i, P.rest) - avgTo(i, P.splinter);
+      if (d > gap){ gap = d; pick = i; }
+    }
+  if (pick >= 0){
+    P.splinter.push(pick);
+    P.rest = P.rest.filter(x => x !== pick);
+    P.moved = pick;
+    return { kind:"move", point: pick, gap, splinter: P.splinter.length, rest: P.rest.length };
+  }
+  const nd = P.node;                                     // commit
+  nd.leaf  = false;
+  nd.left  = { leaf:true, h: S.diam(P.rest),     key: Math.min(...P.rest),     members: P.rest };
+  nd.right = { leaf:true, h: S.diam(P.splinter), key: Math.min(...P.splinter), members: P.splinter };
+  S.joins.push({ h: nd.h });
+  S.leaves.splice(P.at, 1, nd.left, nd.right);
+  S.pending = null;
+  return { kind:"commit", height: nd.h, kept: nd.left.members.length,
+           splintered: nd.right.members.length, leaves: S.leaves.length };
+}
+
+/* =================== UNIT 3 · density-based (DBSCAN) =================== */
+
+// Precompute each point's eps-neighbourhood and mark the core points: a point is core
+// when its neighbourhood, counting itself, holds at least MinPts members. Nothing about
+// the number of clusters is decided here - density alone determines it.
+function dbscanInit(w, eps, minPts){
+  const n = w.length;
+  const nb = w.map((p, i) => {
+    const list = [];
+    for (let j = 0; j < n; j++) if (j !== i && dist(p, w[j]) <= eps) list.push(j);
+    return list;
+  });
+  return { kind:"dbscan", n, eps, minPts, nb,
+           core: nb.map(l => l.length + 1 >= minPts),
+           labels: new Array(n).fill(-2),               // -2 unseen, -1 noise, >=0 cluster
+           seen: new Array(n).fill(false),
+           cluster: -1, frontier: [], cursor: 0, waves: 0, done: n === 0 };
+}
+
+// ONE step. If a cluster is growing, absorb the whole current frontier and work out the
+// next wave from the core points among them - a border point joins but does not spread.
+// Otherwise take the next unseen point: a core point starts a cluster, anything else is
+// noise for now, and may still be claimed later as a border of some cluster.
+function dbscanStep(S){
+  if (S.frontier.length){
+    let added = 0, cores = 0;
+    const next = new Set();
+    for (const i of S.frontier){
+      if (S.labels[i] < 0){ S.labels[i] = S.cluster; added++; }
+      S.seen[i] = true;
+      if (S.core[i]){ cores++; for (const j of S.nb[i]) if (S.labels[j] < 0) next.add(j); }
+    }
+    S.frontier = [...next];
+    S.waves++;
+    return { kind:"grow", cluster:S.cluster, added, cores, more:S.frontier.length };
+  }
+  while (S.cursor < S.n && S.seen[S.cursor]) S.cursor++;
+  if (S.cursor >= S.n){ S.done = true; return null; }
+  const i = S.cursor;
+  S.seen[i] = true;
+  if (!S.core[i]){
+    if (S.labels[i] === -2) S.labels[i] = -1;
+    return { kind:"noise", point:i, neighbours:S.nb[i].length + 1 };
+  }
+  S.cluster++;
+  S.labels[i] = S.cluster;
+  S.frontier = S.nb[i].filter(j => S.labels[j] < 0);
+  return { kind:"seed", cluster:S.cluster, point:i, neighbours:S.nb[i].length + 1 };
+}
+
+// Every point's distance to its MinPts-th nearest neighbour, largest first. The knee of
+// this curve is the usual way to pick eps.
+function kDistanceCurve(w, minPts){
+  return w.map((p, i) => {
+    const ds = w.map(q => dist(p, q)).sort((a, b) => a - b);
+    return ds[Math.min(minPts - 1, ds.length - 1)];
+  }).sort((a, b) => b - a);
+}
+
+/* --------- reading a partition out of either hierarchical method --------- */
+
+// While a tree is still being built the clusters ARE the current frontier: the surviving
+// nodes for agglomerative, the current leaves for divisive. A pending DIANA split shows
+// its two halves separately, so the defections are visible as they happen.
+function frontier(S){
+  const nodes = S.kind === "agglomerative" ? S.alive.map(i => S.nodes[i]) : S.leaves.slice();
+  const out = [];
+  for (const nd of nodes){
+    if (S.pending && nd === S.pending.node){
+      out.push({ key: nd.key, members: S.pending.rest, role:"rest" },
+               { key: nd.key + 0.5, members: S.pending.splinter, role:"splinter" });
+    } else out.push(nd);
+  }
+  return out.sort((a, b) => a.key - b.key);
+}
+function labelsFromFrontier(S, nPoints){
+  const labels = new Array(nPoints).fill(-1);
+  frontier(S).forEach((nd, ci) => nd.members.forEach(m => { labels[m] = ci; }));
+  return labels;
+}
+
+// Once a tree is complete, cut it into k groups by repeatedly splitting the tallest node
+// that still has children. A leaf is never chosen, so an early-stopped tree cuts correctly.
+function cutDendrogram(root, k, nPoints){
+  const labels = new Array(nPoints).fill(-1);
+  if (!root) return labels;
+  let parts = [root];
+  while (parts.length < k){
+    let bi = -1, bh = -Infinity;
+    parts.forEach((p, i) => { if (!p.leaf && p.h > bh){ bh = p.h; bi = i; } });
+    if (bi < 0) break;
+    const top = parts.splice(bi, 1)[0];
+    parts.push(top.left, top.right);
+  }
+  parts.forEach((p, ci) => p.members.forEach(m => { labels[m] = ci; }));
+  return labels;
+}
+
+/* ============================== metrics ============================== */
+
+// Within-cluster sum of squares: what k-Means minimises. Falls monotonically as k rises
+// and reaches zero at one point per cluster, which is why it cannot pick k.
+function inertia(w, labels, centres){
+  let s = 0;
+  for (let i = 0; i < w.length; i++){
+    const l = labels[i];
+    if (l >= 0 && centres[l]) s += d2(w[i], centres[l]);
+  }
+  return s;
+}
+
+// Mean silhouette: (b - a) / max(a, b) per point, a being the mean distance inside the
+// point's own cluster and b the mean distance to the nearest other cluster.
+function meanSilhouette(w, labels, k){
+  const n = w.length;
+  if (k < 2 || n < 3) return null;
+  const sizes = new Array(k).fill(0);
+  for (const l of labels) if (l >= 0) sizes[l]++;
+  if (sizes.filter(s => s > 0).length < 2) return null;
+  let total = 0, counted = 0;
+  for (let i = 0; i < n; i++){
+    if (labels[i] < 0) continue;
+    if (sizes[labels[i]] === 1){ counted++; continue; }
+    const sum = new Array(k).fill(0);
+    for (let j = 0; j < n; j++){
+      if (j === i || labels[j] < 0) continue;
+      sum[labels[j]] += dist(w[i], w[j]);
+    }
+    const a = sum[labels[i]] / (sizes[labels[i]] - 1);
+    let b = Infinity;
+    for (let c = 0; c < k; c++)
+      if (c !== labels[i] && sizes[c] > 0) b = Math.min(b, sum[c] / sizes[c]);
+    if (!isFinite(b)) continue;
+    total += (b - a) / Math.max(a, b); counted++;
+  }
+  return counted ? total / counted : null;
+}
+
+// Davies-Bouldin: mean over clusters of the worst ratio of combined scatter to
+// separation. Lower is better; undefined for k < 2 or an empty cluster.
+function daviesBouldin(w, labels, k){
+  if (k < 2) return null;
+  const cs = Array.from({length:k}, () => ({x:0, y:0})), n = new Array(k).fill(0);
+  for (let i = 0; i < w.length; i++){
+    const l = labels[i];
+    if (l < 0) continue;
+    cs[l].x += w[i].x; cs[l].y += w[i].y; n[l]++;
+  }
+  if (n.some(v => v === 0)) return null;
+  for (let c = 0; c < k; c++){ cs[c].x /= n[c]; cs[c].y /= n[c]; }
+  const scatter = new Array(k).fill(0);
+  for (let i = 0; i < w.length; i++){
+    const l = labels[i];
+    if (l >= 0) scatter[l] += dist(w[i], cs[l]);
+  }
+  for (let c = 0; c < k; c++) scatter[c] /= n[c];
+  let s = 0;
+  for (let i = 0; i < k; i++){
+    let worst = 0;
+    for (let j = 0; j < k; j++){
+      if (i === j) continue;
+      const sep = dist(cs[i], cs[j]);
+      if (sep > 0) worst = Math.max(worst, (scatter[i] + scatter[j]) / sep);
+    }
+    s += worst;
+  }
+  return s / k;
+}
+
+/* ============================ application state ============================ */
+let pts = [], labels = [], centres = [], TS = null, DB = null;
+let algo = "kmeans", phase = "assign", lastGen = "blobs";
+let iter = 0, running = false, timer = null, converged = false, stoppedAtLimit = false;
+let treeComplete = false, runToEnd = false, history = [], logN = 0;
+let kCurve = null, kCurveKey = "", lastMerge = null, compareMode = false, compareRuns = null;
+let candidates = null, candidatesTooBig = false;
+
+const ui = { k:$("#k"), init:$("#init"), link:$("#link"), batch:$("#batch"), seed:$("#seed"),
+             speed:$("#speed"), stdz:$("#stdz"), maxIter:$("#maxIter"), npoints:$("#npoints"),
+             leaves:$("#leaves"), eps:$("#eps"), minPts:$("#minPts") };
+const isTree    = () => algo === "agglo" || algo === "divisive";
+const isDensity = () => algo === "dbscan";
+
+let tf = null;
+function buildTransform(){
+  if (!ui.stdz.checked || pts.length < 2){ tf = null; return; }
+  const mx = pts.reduce((s,p) => s + p.x, 0) / pts.length;
+  const my = pts.reduce((s,p) => s + p.y, 0) / pts.length;
+  const sx = Math.sqrt(pts.reduce((s,p) => s + (p.x-mx)**2, 0) / pts.length) || 1;
+  const sy = Math.sqrt(pts.reduce((s,p) => s + (p.y-my)**2, 0) / pts.length) || 1;
+  tf = { mx, my, sx, sy };
+}
+const toW   = p => tf ? { x:(p.x-tf.mx)/tf.sx, y:(p.y-tf.my)/tf.sy } : { x:p.x, y:p.y };
+const fromW = p => tf ? { x:p.x*tf.sx+tf.mx,   y:p.y*tf.sy+tf.my   } : { x:p.x, y:p.y };
+const W     = () => pts.map(toW);
+const fmt   = v => v == null ? "—" : (tf ? v.toFixed(2) : Math.round(v).toLocaleString());
+const clusterCount = () => new Set(labels.filter(l => l >= 0)).size;
+
+// eps is a percentage of the data's diagonal, so it keeps its meaning when the axes are
+// standardised and when the plot is dense or sparse.
+function dataDiagonal(w){
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of w){ x0 = Math.min(x0,p.x); x1 = Math.max(x1,p.x); y0 = Math.min(y0,p.y); y1 = Math.max(y1,p.y); }
+  return Math.hypot(x1-x0, y1-y0) || 1;
+}
+const epsValue = () => dataDiagonal(W()) * (+ui.eps.value) / 100;
+
+/* ------------------------------ data ------------------------------ */
+const GEN_NOTE = {
+  blobs:"three roughly spherical groups &mdash; the case k-Means is built for.",
+  rings:"one ring inside another. Every k-Means cluster is convex, so it cannot separate these; DBSCAN can.",
+  moons:"two interleaved crescents; a centroid method cuts straight through them.",
+  aniso:"two groups stretched along x. Turn on standardise and watch the split change.",
+  uniform:"no structure at all &mdash; every method still returns k clusters, but DBSCAN may call it all noise.",
+  clear:""
+};
+function generate(kind){
+  if (kind !== "clear") lastGen = kind;
+  rng = mulberry(+ui.seed.value * 977 + 13);
+  pts = [];
+  const N = +ui.npoints.value;
+  const push = (x,y) => pts.push({ x: Math.max(16, Math.min(VW-16, x)),
+                                   y: Math.max(16, Math.min(VH-16, y)) });
+  if (kind === "blobs"){
+    const per = Math.round(N/3);
+    [[230,180],[640,200],[430,450]].forEach(c => { for (let i=0;i<per;i++) push(c[0]+gauss()*62, c[1]+gauss()*58); });
+  } else if (kind === "rings"){
+    const outer = Math.round(N*0.58), inner = N - outer;
+    for (let i=0;i<outer;i++){ const t=rng()*6.283, r=228+gauss()*11; push(450+r*Math.cos(t), 300+r*Math.sin(t)*0.66); }
+    for (let i=0;i<inner;i++){ const t=rng()*6.283, r=78+gauss()*11;  push(450+r*Math.cos(t), 300+r*Math.sin(t)*0.66); }
+  } else if (kind === "moons"){
+    const per = Math.round(N/2);
+    for (let i=0;i<per;i++){ const t=rng()*Math.PI; push(340+210*Math.cos(t)+gauss()*15, 350-150*Math.sin(t)+gauss()*15); }
+    for (let i=0;i<per;i++){ const t=rng()*Math.PI; push(560-210*Math.cos(t)+gauss()*15, 250+150*Math.sin(t)+gauss()*15); }
+  } else if (kind === "aniso"){
+    const per = Math.round(N/2);
+    [[300,300],[560,300]].forEach(c => { for (let i=0;i<per;i++) push(c[0]+gauss()*150, c[1]+gauss()*26); });
+  } else if (kind === "uniform"){
+    for (let i=0;i<N;i++) push(40+rng()*(VW-80), 40+rng()*(VH-80));
+  }
+  kCurve = null;
+  resetMethod(false);
+  log(kind === "clear" ? "Canvas cleared. Click the plot to place points."
+                       : `Loaded <b>${pts.length}</b> points &mdash; ${GEN_NOTE[kind]}`, true);
+  redraw();
+}
+
+/* --------------------------- partition stepping --------------------------- */
+function stepPartition(){
+  const w = W(), k = Math.min(+ui.k.value, pts.length);
+  if (!w.length){ log("No points on the canvas yet.", true); return false; }
+  if (!centres.length){
+    rng = mulberry(+ui.seed.value * 31 + 5);
+    const mode = algo === "kmedoids" ? "rand" : ui.init.value;
+    centres = initCentres(w, k, mode);
+    labels  = new Array(w.length).fill(-1);
+    phase = "assign"; iter = 0; history = []; converged = false; stoppedAtLimit = false;
+    log(`Placed <b>${centres.length}</b> starting centre${centres.length===1?"":"s"} using <em>${mode === "pp" ? "k-Means++" : "random points"}</em>.`, true);
+    return true;
+  }
+  if (algo === "minibatch"){
+    const r = miniBatchStep(w, centres, +ui.batch.value);
+    centres = r.centres;
+    labels  = assignToNearest(w, centres);
+    iter++; history.push(inertia(w, labels, centres));
+    log(`Batch of <b>${r.used}</b> points nudged the centres. Inertia <b>${fmt(history.at(-1))}</b>.`);
+    if (history.length > 3 && Math.abs(history.at(-1) - history.at(-4)) / (Math.abs(history.at(-4)) || 1) < 1e-4){
+      converged = true;
+      log("Inertia has stopped moving &mdash; treating this as converged.", true);
+    }
+    return !converged;
+  }
+  if (phase === "assign"){
+    const prev = labels.slice();
+    labels = assignToNearest(w, centres);
+    const moved = labels.reduce((a,l,i) => a + (l !== prev[i] ? 1 : 0), 0);
+    phase = "update"; iter++;
+    history.push(inertia(w, labels, centres));
+    log(`<b>Assign.</b> Each point joined its nearest ${algo === "kmedoids" ? "medoid" : "centroid"}. <b>${moved}</b> point${moved===1?"":"s"} changed cluster. Inertia <b>${fmt(history.at(-1))}</b>.`);
+    if (moved === 0 && iter > 1){
+      converged = true;
+      log("No point changed cluster, so the algorithm has converged.", true);
+      return false;
+    }
+    return true;
+  }
+  if (algo === "kmedoids"){
+    const r = updateMedoids(w, labels, centres);
+    centres = r.centres;
+    log(`<b>Update.</b> Each medoid moved to the member with the smallest total distance to the rest. <b>${r.shifted}</b> medoid${r.shifted===1?"":"s"} moved.`);
+  } else {
+    const r = updateCentroids(w, labels, centres);
+    centres = r.centres;
+    log(`<b>Update.</b> Each centroid moved to the mean of its members; the largest move was <b>${r.moved.toFixed(tf ? 3 : 1)}</b>.`);
+  }
+  phase = "assign";
+  return true;
+}
+
+/* -------------------------- hierarchical stepping -------------------------- */
+const RULES = ["single","complete","average","ward"];
+function refreshCandidates(){
+  candidates = null; candidatesTooBig = false;
+  if (algo !== "agglo" || !TS || TS.done) return;
+  if (!$("#showScan").checked) return;
+  if (pts.length > 260){ candidatesTooBig = true; return; }
+  const clusters = TS.alive.map(i => TS.nodes[i]);
+  if (clusters.length < 2) return;
+  candidates = { best: nextCandidates(W(), clusters), clusters };
+}
+function candidateSummary(){
+  if (!candidates) return "";
+  const B = candidates.best, cur = ui.link.value;
+  const pairOf = r => `${B[r].x}-${B[r].y}`;
+  const agree = RULES.filter(r => r !== cur && pairOf(r) === pairOf(cur));
+  const parts = RULES.map(r => {
+    const t = `${r} ${fmt(B[r].v)}`;
+    return r === cur ? `<b>${t}</b>` : `<em>${t}</em>`;
+  }).join(", ");
+  const differ = RULES.filter(r => pairOf(r) !== pairOf(cur));
+  return ` Looking ahead, each rule scores its best pair: ${parts}.` +
+    (differ.length
+      ? ` <em>${differ.join(", ")}</em> would join a different pair from <b>${cur}</b>.`
+      : ` All four rules want the same pair this time.`);
+}
+
+function stepTree(){
+  if (pts.length < 2){ log("A hierarchical method needs at least two points.", true); return false; }
+  if (!TS){
+    const t0 = performance.now();
+    TS = algo === "agglo" ? agglomerativeInit(W(), ui.link.value) : divisiveInit(W());
+    const ms = Math.round(performance.now() - t0);
+    treeComplete = false; iter = 0;
+    labels = labelsFromFrontier(TS, pts.length);
+    if (algo === "agglo") refreshCandidates();
+    log(algo === "agglo"
+      ? `Ready: <b>${TS.n}</b> singleton clusters and the full distance matrix, <em>${ui.link.value}</em> linkage (${ms} ms). Each step merges the closest pair.${candidateSummary()}`
+      : `Ready: one cluster holding all <b>${TS.n}</b> points, diameter <b>${fmt(TS.root.h)}</b> (${ms} ms). Each split runs in two phases &mdash; seed, then one defection per step.`, true);
+    return true;
+  }
+  if (TS.done && !TS.pending){
+    treeComplete = true;
+    log("The tree is finished. Drag the dashed line, or move the cluster slider, to re-cut it.", true);
+    return false;
+  }
+  if (algo === "agglo"){
+    const r = agglomerativeStep(TS);
+    if (!r){ treeComplete = true; return false; }
+    iter++;
+    labels = labelsFromFrontier(TS, pts.length);
+    const w = W();
+    lastMerge = (r.A.length * r.B.length <= 40000)
+      ? { ...linkageBreakdown(w, r.A, r.B), A:r.A, B:r.B, used:ui.link.value, height:r.height }
+      : null;
+    refreshCandidates();
+    if (lastMerge){
+      const L = lastMerge, cur = ui.link.value;
+      const cell = (name, v) => name === cur
+        ? `<b>${name} ${fmt(v)}</b>` : `<em>${name} ${fmt(v)}</em>`;
+      log(`<b>Merge ${iter}.</b> Joined ${r.left} with ${r.right} at height <b>${fmt(r.height)}</b> &mdash; ${TS.alive.length} cluster${TS.alive.length===1?"":"s"} left.
+           On that pair the four rules read: ${cell("single", L.single)}, ${cell("complete", L.complete)}, ${cell("average", L.average)}, ${cell("ward", L.ward)}.${candidateSummary()}`);
+    } else {
+      log(`<b>Merge ${iter}.</b> Joined a group of ${r.left} with a group of ${r.right} at height <b>${fmt(r.height)}</b> &mdash; <b>${TS.alive.length}</b> cluster${TS.alive.length===1?"":"s"} left.${candidateSummary()}`);
+    }
+    if (TS.done) treeComplete = true;
+    return !TS.done;
+  }
+  // divisive: seed, then defections, then commit
+  if (!TS.pending){
+    if (TS.leaves.length >= Math.min(+ui.leaves.value, TS.n)){
+      TS.done = true; treeComplete = true;
+      log(`Reached <b>${TS.leaves.length}</b> groups, the limit you set. The tree is finished.`, true);
+      return false;
+    }
+    const s = divisiveSeed(TS);
+    if (!s){ treeComplete = true; log("No cluster is worth splitting further.", true); return false; }
+    labels = labelsFromFrontier(TS, pts.length);
+    log(`<b>Seed.</b> Took the widest cluster (${s.size} points, diameter <b>${fmt(s.diameter)}</b>) and moved out its most dissimilar member &mdash; mean distance <b>${fmt(s.avg)}</b> to the rest. It is now a splinter group of one.`, true);
+    return true;
+  }
+  const r = divisiveMigrate(TS);
+  labels = labelsFromFrontier(TS, pts.length);
+  if (r.kind === "move"){
+    iter++;
+    log(`<b>Defection.</b> A point sat <b>${fmt(r.gap)}</b> closer, on average, to the splinter than to the remainder, so it changed side. Splinter ${r.splinter}, remainder ${r.rest}.`);
+    return true;
+  }
+  log(`<b>Split committed.</b> Nobody left is closer to the splinter. The cluster of diameter <b>${fmt(r.height)}</b> became ${r.kept} and ${r.splintered} &mdash; now <b>${r.leaves}</b> groups.`, true);
+  if (TS.leaves.length >= Math.min(+ui.leaves.value, TS.n)){ TS.done = true; treeComplete = true; }
+  return !TS.done;
+}
+
+/* ---------------------------- DBSCAN stepping ---------------------------- */
+function stepDensity(){
+  if (pts.length < 2){ log("DBSCAN needs at least two points.", true); return false; }
+  if (!DB){
+    const eps = epsValue(), mp = +ui.minPts.value;
+    const t0 = performance.now();
+    DB = dbscanInit(W(), eps, mp);
+    const ms = Math.round(performance.now() - t0);
+    iter = 0;
+    labels = new Array(pts.length).fill(-1);
+    const cores = DB.core.filter(Boolean).length;
+    log(`Ready: eps <b>${ui.eps.value}%</b> ≈ <b>${fmt(eps)}</b>, MinPts <b>${mp}</b>. <b>${cores}</b> of ${DB.n} points are core points (${ms} ms). Each step grows one wave.`, true);
+    return true;
+  }
+  if (DB.done){ log("Every point has been visited. DBSCAN is finished.", true); return false; }
+  const r = dbscanStep(DB);
+  if (!r){ log(`Finished: <b>${DB.cluster+1}</b> cluster${DB.cluster===0?"":"s"} and <b>${DB.labels.filter(l=>l===-1).length}</b> noise points.`, true); return false; }
+  iter++;
+  labels = DB.labels.map(l => l < 0 ? -1 : l);
+  if (r.kind === "seed")
+    log(`<b>New cluster ${r.cluster+1}.</b> Found an unvisited core point with ${r.neighbours} points inside eps, so a cluster starts here.`, true);
+  else if (r.kind === "noise")
+    log(`<b>Noise.</b> An unvisited point has only ${r.neighbours} point${r.neighbours===1?"":"s"} within eps, short of MinPts. It is set aside &mdash; a later cluster may still claim it as a border point.`);
+  else
+    log(`<b>Wave ${DB.waves}.</b> Cluster ${r.cluster+1} absorbed <b>${r.added}</b> point${r.added===1?"":"s"}; ${r.cores} of them are core, so the next wave has ${r.more} candidate${r.more===1?"":"s"}.`);
+  return !DB.done;
+}
+
+function stepOnce(){
+  buildTransform();
+  if (isTree())    return stepTree();
+  if (isDensity()) return stepDensity();
+  if (iter >= +ui.maxIter.value){
+    stoppedAtLimit = true;
+    log(`Reached the iteration limit of <b>${ui.maxIter.value}</b> without converging. Raise the limit to carry on.`, true);
+    return false;
+  }
+  return stepPartition();
+}
+
+function tick(){
+  const more = stepOnce();
+  refreshMetrics(); redraw(); syncButtons();
+  const st = $("#stage");
+  st.dataset.idle = "0";
+  if (isTree()){
+    const n = clusterCount();
+    st.textContent = !TS ? "ready"
+      : TS.pending ? `splitting · splinter ${TS.pending.splinter.length} vs ${TS.pending.rest.length}`
+      : treeComplete ? `tree complete · cut to ${n}`
+      : `${iter} ${algo === "agglo" ? "merge" : "step"}${iter===1?"":"s"} · ${n} cluster${n===1?"":"s"}`;
+  } else if (isDensity()){
+    st.textContent = !DB ? "ready"
+      : DB.done ? `done · ${DB.cluster+1} clusters, ${DB.labels.filter(l=>l===-1).length} noise`
+      : `${DB.cluster+1} cluster${DB.cluster===0?"":"s"} · frontier ${DB.frontier.length}`;
+  } else {
+    st.textContent = stoppedAtLimit ? `stopped at limit ${ui.maxIter.value}`
+      : converged ? "converged"
+      : centres.length ? `iteration ${iter} · ${phase === "assign" ? "update done" : "assigned"}`
+      : "centres placed";
+  }
+  if (isTree() && !runToEnd && TS && !TS.pending && clusterCount() <= +ui.k.value && iter > 0){
+    stop();
+    st.textContent = `reached ${clusterCount()} cluster${clusterCount()===1?"":"s"}`;
+    return false;
+  }
+  if (!more || converged){ stop(); }
+  return more && !converged;
+}
+
+function play(){
+  if (running){ stop(); return; }
+  runToEnd = isTree() && TS && clusterCount() <= +ui.k.value;
+  running = true; $("#run").textContent = "Pause";
+  timer = setInterval(() => { if (!tick()) stop(); }, +ui.speed.value);
+}
+function stop(){ running = false; clearInterval(timer); timer = null; $("#run").textContent = "Run"; runToEnd = false; }
+
+function finishTree(){
+  stop();
+  buildTransform();
+  if (isDensity()){
+    if (!DB) stepDensity();
+    let guard = 0;
+    while (DB && !DB.done && guard++ < 20000){ if (!dbscanStep(DB)) break; iter++; }
+    labels = DB.labels.map(l => l < 0 ? -1 : l);
+    log(`Ran DBSCAN to the end &mdash; <b>${DB.cluster+1}</b> cluster${DB.cluster===0?"":"s"} and <b>${DB.labels.filter(l=>l===-1).length}</b> noise points.`, true);
+  } else if (isTree()){
+    if (!TS) stepTree();
+    let guard = 0;
+    while (TS && !TS.done && guard++ < 20000){
+      if (algo === "agglo"){ if (!agglomerativeStep(TS)) break; iter++; }
+      else {
+        if (TS.leaves.length >= Math.min(+ui.leaves.value, TS.n)){ TS.done = true; break; }
+        if (!TS.pending && !divisiveSeed(TS)) break;
+        while (TS.pending) divisiveMigrate(TS);
+        iter++;
+      }
+    }
+    treeComplete = true;
+    labels = cutDendrogram(treeRoot(), Math.min(+ui.k.value, pts.length), pts.length);
+    log(`Built the rest of the tree, then cut it to <b>${clusterCount()}</b>.`, true);
+  }
+  refreshMetrics(); redraw(); syncButtons();
+  $("#stage").dataset.idle = "0";
+  $("#stage").textContent = isDensity() ? `done · ${DB.cluster+1} clusters` : `tree complete · cut to ${clusterCount()}`;
+}
+const treeRoot = () => !TS ? null : (TS.kind === "divisive" ? TS.root : TS.nodes[TS.next - 1]);
+
+function resetMethod(note = true){
+  stop();
+  centres = []; labels = new Array(pts.length).fill(-1); TS = null; DB = null;
+  lastMerge = null; candidates = null; candidatesTooBig = false;
+  iter = 0; phase = "assign"; history = [];
+  converged = false; stoppedAtLimit = false; treeComplete = false;
+  buildTransform();
+  $("#stage").textContent = "ready"; $("#stage").dataset.idle = "1";
+  $("#nPts").textContent = pts.length + " pts";
+  refreshMetrics(); redraw(); syncButtons();
+  if (note) log("Method reset. The points are untouched.", true);
+}
+function syncButtons(){
+  const cb = $("#compareBtn");
+  cb.hidden = algo !== "agglo";
+  cb.disabled = pts.length < 2;
+  cb.textContent = compareMode ? "Back to the dendrogram" : "Compare all four linkages";
+  const f = $("#finish");
+  f.hidden = !(isTree() || isDensity()) || compareMode;
+  f.textContent = isDensity() ? "Run to the end" : "Finish the tree";
+  f.disabled = pts.length < 2 || (isTree() && treeComplete) || (isDensity() && DB && DB.done);
+  $("#mNoiseBox").hidden = !isDensity();
+  if (isDensity() && DB) $("#mNoise").textContent = DB.labels.filter(l => l === -1).length;
+}
+
+function refreshMetrics(){
+  const w = W();
+  const present = [...new Set(labels.filter(l => l >= 0))];
+  $("#mK").textContent = present.length;
+  $("#mItLbl").textContent = isTree() ? (algo === "agglo" ? "Merges" : "Steps")
+                           : isDensity() ? "Steps" : "Iterations";
+  $("#mIt").innerHTML = (isTree() || isDensity()) ? String(iter) : `${iter} <small>/ ${ui.maxIter.value}</small>`;
+  if (isDensity() && DB) $("#mNoise").textContent = DB.labels.filter(l => l === -1).length;
+  if (!present.length){ $("#mIn").textContent = $("#mSil").textContent = $("#mDb").textContent = "—"; return; }
+  const k  = Math.max(...present) + 1;
+  const cs = (isTree() || isDensity() || !centres.length) ? centroidsFromLabels(w, labels, k) : centres;
+  $("#mIn").innerHTML = tf ? inertia(w, labels, cs).toFixed(2) + " <small>z</small>"
+                           : Math.round(inertia(w, labels, cs)).toLocaleString();
+  if (k > 40 || (isTree() && !treeComplete && w.length > 200)){
+    $("#mSil").textContent = "—"; $("#mDb").textContent = "—"; return;
+  }
+  const sil = meanSilhouette(w, labels, k), db = daviesBouldin(w, labels, k);
+  $("#mSil").textContent = sil === null ? "n/a" : sil.toFixed(3);
+  $("#mDb").textContent  = db  === null ? "n/a" : db.toFixed(3);
+}
+function centroidsFromLabels(w, labels, k){
+  const cs = Array.from({length:k}, () => ({x:0,y:0})), n = new Array(k).fill(0);
+  for (let i = 0; i < w.length; i++){ const l = labels[i]; if (l < 0) continue; cs[l].x += w[i].x; cs[l].y += w[i].y; n[l]++; }
+  return cs.map((c,i) => n[i] ? { x:c.x/n[i], y:c.y/n[i] } : null);
+}
+
+/* ------------------------------ drawing ------------------------------ */
+function fit(cv, cssH){
+  const r = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cssH || cv.clientHeight;
+  if (!w || !h) return null;
+  cv.width = Math.round(w * r); cv.height = Math.round(h * r);
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+  return { w, h, ctx };
+}
+function redraw(){ drawPlot(); drawCurve(); drawDendro(); drawKDist(); drawCompare(); }
+
+function drawPlot(){
+  const f = fit(plot, plot.clientWidth * VH / VW); if (!f) return;
+  const { w:cw, h:ch, ctx } = f, s = cw / VW;
+  ctx.fillStyle = css("--well"); ctx.fillRect(0,0,cw,ch);
+  ctx.strokeStyle = css("--grid"); ctx.lineWidth = 1;
+  for (let x = 75; x < VW; x += 75){ ctx.beginPath(); ctx.moveTo(Math.round(x*s)+.5, 0); ctx.lineTo(Math.round(x*s)+.5, ch); ctx.stroke(); }
+  for (let y = 75; y < VH; y += 75){ ctx.beginPath(); ctx.moveTo(0, Math.round(y*s)+.5); ctx.lineTo(cw, Math.round(y*s)+.5); ctx.stroke(); }
+
+  // DBSCAN: eps discs around the points currently spreading
+  if (isDensity() && DB && DB.frontier.length){
+    const r = epsValue() * (tf ? (tf.sx + tf.sy) / 2 : 1) * s;
+    ctx.save(); ctx.setLineDash([3,3]); ctx.strokeStyle = css("--accent"); ctx.globalAlpha = .5; ctx.lineWidth = 1;
+    DB.frontier.slice(0, 60).forEach(i => {
+      ctx.beginPath(); ctx.arc(pts[i].x*s, pts[i].y*s, r, 0, 6.2832); ctx.stroke();
+    });
+    ctx.restore();
+  }
+  // agglomerative: the pair each rule is eyeing next. The rule in force is drawn in the
+  // accent; the other three sit faint, so where they disagree is immediately visible.
+  if (algo === "agglo" && candidates){
+    const B = candidates.best, cur = ui.link.value;
+    RULES.forEach(rule => {
+      const c = B[rule];
+      if (!c || !isFinite(c.v)) return;
+      const active = rule === cur;
+      let a, b;
+      if (c.seg){ a = pts[c.seg[0]]; b = pts[c.seg[1]]; }
+      else { a = fromW(c.ca); b = fromW(c.cb); }
+      ctx.save();
+      ctx.setLineDash(active ? [] : [3, 4]);
+      ctx.globalAlpha = active ? .95 : .40;
+      ctx.strokeStyle = active ? css("--accent") : css("--ink");
+      ctx.lineWidth = active ? 2.2 : 1.2;
+      ctx.beginPath(); ctx.moveTo(a.x*s, a.y*s); ctx.lineTo(b.x*s, b.y*s); ctx.stroke();
+      ctx.restore();
+      const mx = (a.x + b.x)/2*s, my = (a.y + b.y)/2*s;
+      ctx.font = active ? "600 10px 'IBM Plex Mono', monospace"
+                        : "500 9.5px 'IBM Plex Mono', monospace";
+      ctx.fillStyle = active ? css("--accent") : css("--slate");
+      ctx.globalAlpha = active ? 1 : .75;
+      ctx.fillText(`${rule} ${fmt(c.v)}`, mx + 6, my - 5);
+      ctx.globalAlpha = 1;
+    });
+  }
+  // agglomerative: draw the segment the chosen linkage actually measured on this merge
+  if (algo === "agglo" && lastMerge){
+    const L = lastMerge, seg = (a, b, dash, alpha, wid) => {
+      ctx.save(); if (dash) ctx.setLineDash(dash);
+      ctx.globalAlpha = alpha; ctx.strokeStyle = css("--accent"); ctx.lineWidth = wid;
+      ctx.beginPath(); ctx.moveTo(a.x*s, a.y*s); ctx.lineTo(b.x*s, b.y*s); ctx.stroke();
+      ctx.restore();
+    };
+    if (L.used === "average"){                      // every cross-pair, then the mean
+      ctx.save(); ctx.globalAlpha = Math.min(.20, 26 / Math.max(1, L.pairs));
+      ctx.strokeStyle = css("--accent"); ctx.lineWidth = 1;
+      let drawn = 0;
+      for (const a of L.A){ for (const b of L.B){ if (drawn++ > 600) break;
+        ctx.beginPath(); ctx.moveTo(pts[a].x*s, pts[a].y*s); ctx.lineTo(pts[b].x*s, pts[b].y*s); ctx.stroke(); } }
+      ctx.restore();
+      seg(fromW(L.ca), fromW(L.cb), [6,4], .8, 2);
+    } else if (L.used === "ward"){                  // both centroids to the merged one
+      const ca = fromW(L.ca), cb = fromW(L.cb), cm = fromW(L.merged);
+      seg(ca, cm, [5,4], .85, 2); seg(cb, cm, [5,4], .85, 2);
+      [[ca,"A"],[cb,"B"],[cm,"merged"]].forEach(([c,t]) => {
+        ctx.fillStyle = css("--accent");
+        ctx.beginPath(); ctx.arc(c.x*s, c.y*s, 4, 0, 6.2832); ctx.fill();
+        ctx.font = "600 10px 'IBM Plex Mono', monospace";
+        ctx.fillText(t, c.x*s + 7, c.y*s - 5);
+      });
+    } else {                                        // single = closest pair, complete = furthest
+      const pr = L.used === "single" ? L.closest : L.furthest;
+      if (pr){
+        seg(pts[pr[0]], pts[pr[1]], null, .9, 2.4);
+        [pr[0], pr[1]].forEach(i => {
+          ctx.strokeStyle = css("--accent"); ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(pts[i].x*s, pts[i].y*s, 8, 0, 6.2832); ctx.stroke();
+        });
+        const mx = (pts[pr[0]].x + pts[pr[1]].x)/2*s, my = (pts[pr[0]].y + pts[pr[1]].y)/2*s;
+        ctx.fillStyle = css("--accent"); ctx.font = "600 10px 'IBM Plex Mono', monospace";
+        ctx.fillText(`${L.used} = ${fmt(L.used === "single" ? L.single : L.complete)}`, mx + 8, my - 6);
+      }
+    }
+  }
+  // hierarchical: outline the current clusters so a merge or split is visible
+  if (isTree() && TS){
+    frontier(TS).forEach((nd, ci) => {
+      if (nd.members.length < 2) return;
+      let cx = 0, cy = 0;
+      nd.members.forEach(m => { cx += pts[m].x; cy += pts[m].y; });
+      cx /= nd.members.length; cy /= nd.members.length;
+      let r = 0;
+      nd.members.forEach(m => { r = Math.max(r, Math.hypot(pts[m].x - cx, pts[m].y - cy)); });
+      const active = TS.pending && (nd.role === "rest" || nd.role === "splinter");
+      ctx.strokeStyle = clusterColor(ci);
+      ctx.globalAlpha = active ? .85 : .28;
+      ctx.lineWidth = active ? 2.2 : 1.5;
+      if (nd.role === "splinter"){ ctx.setLineDash([6,4]); }
+      ctx.beginPath(); ctx.arc(cx*s, cy*s, (r + 9) * s, 0, 6.2832); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    });
+  }
+  if (centres.length && !isTree() && !isDensity()){
+    ctx.lineWidth = 1; ctx.globalAlpha = .25;
+    pts.forEach((p,i) => {
+      const l = labels[i];
+      if (l < 0 || !centres[l]) return;
+      const c = fromW(centres[l]);
+      ctx.strokeStyle = clusterColor(l);
+      ctx.beginPath(); ctx.moveTo(p.x*s, p.y*s); ctx.lineTo(c.x*s, c.y*s); ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+  }
+  const rad = pts.length > 260 ? 3.2 : 4.3;
+  pts.forEach((p,i) => {
+    const l = labels[i] ?? -1;
+    const unseen = isDensity() && DB && DB.labels[i] === -2;
+    const noise  = isDensity() && DB && DB.labels[i] === -1;
+    ctx.beginPath(); ctx.arc(p.x*s, p.y*s, rad, 0, 6.2832);
+    if (noise){                                   // hollow: visited and rejected
+      ctx.fillStyle = css("--well"); ctx.fill();
+      ctx.lineWidth = 1.6; ctx.strokeStyle = css("--noise"); ctx.stroke();
+    } else {
+      ctx.fillStyle = unseen ? css("--unassigned") : clusterColor(l); ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = "rgba(20,24,31,.22)"; ctx.stroke();
+    }
+    if (isDensity() && DB && DB.core[i] && !unseen && !noise){
+      ctx.beginPath(); ctx.arc(p.x*s, p.y*s, rad + 2.6, 0, 6.2832);
+      ctx.lineWidth = 1; ctx.strokeStyle = clusterColor(l); ctx.globalAlpha = .55; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  });
+  // DIANA: mark the seed and the point that just changed side
+  if (isTree() && TS && TS.pending){
+    const mark = (i, label, dash) => {
+      if (i == null || i < 0) return;
+      const X = pts[i].x*s, Y = pts[i].y*s;
+      ctx.save(); if (dash) ctx.setLineDash([4,3]);
+      ctx.strokeStyle = css("--ink"); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(X, Y, 9, 0, 6.2832); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = css("--ink"); ctx.font = "600 10px 'IBM Plex Mono', monospace";
+      ctx.fillText(label, X + 12, Y + 3);
+    };
+    mark(TS.pending.seed, "seed", false);
+    if (TS.pending.moved != null && TS.pending.moved !== TS.pending.seed) mark(TS.pending.moved, "moved", true);
+  }
+  if (!isTree() && !isDensity()) centres.forEach((c,i) => {
+    if (!c) return;
+    const q = fromW(c), X = q.x*s, Y = q.y*s;
+    ctx.strokeStyle = css("--ink"); ctx.fillStyle = clusterColor(i); ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (algo === "kmedoids"){ ctx.moveTo(X,Y-9); ctx.lineTo(X+9,Y); ctx.lineTo(X,Y+9); ctx.lineTo(X-9,Y); ctx.closePath(); }
+    else ctx.rect(X-7.5, Y-7.5, 15, 15);
+    ctx.fill(); ctx.stroke();
+  });
+}
+
+function drawCurve(){
+  if (curve.hidden) return;
+  const f = fit(curve, 196); if (!f) return;
+  const { w, h, ctx } = f, pad = { l:52, r:12, t:14, b:26 };
+  ctx.fillStyle = css("--well"); ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle = css("--rule-strong"); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, h-pad.b); ctx.lineTo(w-pad.r, h-pad.b); ctx.stroke();
+  ctx.font = "500 10px 'IBM Plex Mono', monospace";
+  if (history.length < 2){
+    ctx.fillStyle = css("--faint"); ctx.font = "13px 'Source Serif 4', Georgia, serif";
+    ctx.fillText("Run or step the method to plot its inertia.", pad.l + 10, h/2);
+    return;
+  }
+  const max = Math.max(...history), min = Math.min(...history), span = (max - min) || 1;
+  const X = i => pad.l + (w-pad.l-pad.r) * (i/(history.length-1));
+  const Y = v => (h-pad.b) - (h-pad.t-pad.b) * ((v-min)/span) * .9 - 6;
+  ctx.fillStyle = css("--faint");
+  ctx.fillText(fmt(max), 6, Y(max)+3);
+  ctx.fillText(fmt(min), 6, Y(min)+3);
+  ctx.fillText("iteration →", w-pad.r-64, h-8);
+  ctx.beginPath();
+  history.forEach((v,i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
+  ctx.strokeStyle = css("--accent"); ctx.lineWidth = 2; ctx.stroke();
+  history.forEach((v,i) => {
+    ctx.beginPath(); ctx.arc(X(i), Y(v), i === history.length-1 ? 4 : 2.4, 0, 6.2832);
+    ctx.fillStyle = css("--accent"); ctx.fill();
+  });
+}
+
+function drawKDist(){
+  if (kdist.hidden) return;
+  const f = fit(kdist, 196); if (!f) return;
+  const { w, h, ctx } = f, pad = { l:56, r:14, t:14, b:28 };
+  ctx.fillStyle = css("--well"); ctx.fillRect(0,0,w,h);
+  const key = pts.length + "|" + ui.minPts.value + "|" + (tf ? "z" : "raw");
+  if (pts.length > 1 && key !== kCurveKey){ kCurve = kDistanceCurve(W(), +ui.minPts.value); kCurveKey = key; }
+  ctx.strokeStyle = css("--rule-strong"); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, h-pad.b); ctx.lineTo(w-pad.r, h-pad.b); ctx.stroke();
+  ctx.font = "500 10px 'IBM Plex Mono', monospace";
+  if (!kCurve || kCurve.length < 2){
+    ctx.fillStyle = css("--faint"); ctx.font = "13px 'Source Serif 4', Georgia, serif";
+    ctx.fillText("Add points to see the k-distance curve.", pad.l + 10, h/2);
+    return;
+  }
+  const max = Math.max(kCurve[0], epsValue()) * 1.05;
+  const X = i => pad.l + (w-pad.l-pad.r) * (i/(kCurve.length-1));
+  const Y = v => (h-pad.b) - (h-pad.t-pad.b) * (v/max);
+  ctx.fillStyle = css("--faint"); ctx.textAlign = "right";
+  for (let t = 0; t <= 3; t++){
+    const v = max*t/3, y = Y(v);
+    ctx.strokeStyle = css("--grid"); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w-pad.r, y); ctx.stroke();
+    ctx.fillStyle = css("--faint"); ctx.fillText(fmt(v), pad.l-6, y+3);
+  }
+  ctx.textAlign = "left";
+  ctx.beginPath();
+  kCurve.forEach((v,i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
+  ctx.strokeStyle = css("--c0"); ctx.lineWidth = 2; ctx.stroke();
+  const ye = Y(epsValue());
+  ctx.save(); ctx.setLineDash([5,4]); ctx.strokeStyle = css("--accent"); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, ye); ctx.lineTo(w-pad.r, ye); ctx.stroke(); ctx.restore();
+  const below = kCurve.filter(v => v <= epsValue()).length;
+  ctx.fillStyle = css("--accent");
+  ctx.fillText(`eps = ${fmt(epsValue())} · ${below} of ${kCurve.length} points are dense enough`, pad.l+6, Math.max(11, ye-6));
+  ctx.fillStyle = css("--faint");
+  ctx.fillText(`points, sorted →`, w-pad.r-92, h-9);
+}
+
+// Build the full tree under each linkage on the same points, cut each to the same k,
+// and report what the four produce. Only the linkage rule differs.
+function buildComparison(){
+  const w = W(), k = Math.min(+ui.k.value, pts.length);
+  return ["single","complete","average","ward"].map(link => {
+    const S = agglomerativeInit(w, link);
+    let guard = 0;
+    while (!S.done && guard++ < 20000) if (!agglomerativeStep(S)) break;
+    const root = S.nodes[S.next - 1];
+    const lab  = cutDendrogram(root, k, pts.length);
+    const sizes = {};
+    lab.forEach(l => { if (l >= 0) sizes[l] = (sizes[l] || 0) + 1; });
+    const counts = Object.values(sizes).sort((a,b) => b - a);
+    return { link, labels: lab, biggest: counts[0] || 0, smallest: counts.at(-1) || 0,
+             sil: pts.length <= 400 ? meanSilhouette(w, lab, k) : null };
+  });
+}
+function drawCompare(){
+  if (compare.hidden) return;
+  const f = fit(compare, 330); if (!f) return;
+  const { w, h, ctx } = f;
+  ctx.fillStyle = css("--well"); ctx.fillRect(0,0,w,h);
+  if (!compareRuns){
+    ctx.fillStyle = css("--faint"); ctx.font = "13px 'Source Serif 4', Georgia, serif";
+    ctx.fillText("Add at least two points, then press Compare.", 12, h/2);
+    return;
+  }
+  const cw = w / 2, chh = h / 2, pad = 10, head = 20;
+  compareRuns.forEach((run, q) => {
+    const ox = (q % 2) * cw, oy = Math.floor(q / 2) * chh;
+    ctx.strokeStyle = css("--rule"); ctx.lineWidth = 1;
+    ctx.strokeRect(ox + .5, oy + .5, cw - 1, chh - 1);
+    const active = run.link === ui.link.value;
+    ctx.font = active ? "600 11px Archivo, sans-serif" : "500 11px Archivo, sans-serif";
+    ctx.fillStyle = active ? css("--accent") : css("--slate");
+    ctx.fillText(run.link + (active ? "  ← in use" : ""), ox + pad, oy + 14);
+    ctx.font = "500 10px 'IBM Plex Mono', monospace"; ctx.fillStyle = css("--faint");
+    ctx.textAlign = "right";
+    ctx.fillText(`largest ${run.biggest} · smallest ${run.smallest}` +
+                 (run.sil === null ? "" : ` · sil ${run.sil.toFixed(2)}`), ox + cw - pad, oy + 14);
+    ctx.textAlign = "left";
+    const iw = cw - pad*2, ih = chh - head - pad;
+    const sc = Math.min(iw / VW, ih / VH);
+    const dx = ox + pad + (iw - VW*sc)/2, dy = oy + head + (ih - VH*sc)/2;
+    pts.forEach((p, i) => {
+      ctx.beginPath(); ctx.arc(dx + p.x*sc, dy + p.y*sc, 2.4, 0, 6.2832);
+      ctx.fillStyle = clusterColor(run.labels[i]); ctx.fill();
+    });
+  });
+}
+
+let cutY = null;
+function drawDendro(){
+  if (dendro.hidden) return;
+  const f = fit(dendro, 252); if (!f) return;
+  const { w, h, ctx } = f, pad = { l:58, r:14, t:18, b:30 };
+  ctx.fillStyle = css("--well"); ctx.fillRect(0,0,w,h);
+  if (!TS){
+    ctx.fillStyle = css("--faint"); ctx.font = "13px 'Source Serif 4', Georgia, serif";
+    ctx.fillText("Press Step to begin; the tree is drawn as it is built.", pad.l, h/2);
+    return;
+  }
+  const roots = TS.kind === "divisive" ? [TS.root] : TS.alive.map(i => TS.nodes[i]).sort((a,b) => a.key-b.key);
+  const maxH  = Math.max(...roots.map(r => r.h), 1e-9);
+  const Y = v => h - pad.b - (h-pad.t-pad.b) * (v/maxH);
+
+  ctx.strokeStyle = css("--rule-strong"); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l-8, pad.t-6); ctx.lineTo(pad.l-8, h-pad.b); ctx.lineTo(w-pad.r, h-pad.b); ctx.stroke();
+  ctx.font = "500 10px 'IBM Plex Mono', monospace"; ctx.textAlign = "right";
+  for (let t = 0; t <= 4; t++){
+    const v = maxH * t / 4, y = Y(v);
+    ctx.strokeStyle = css("--grid");
+    ctx.beginPath(); ctx.moveTo(pad.l-8, y); ctx.lineTo(w-pad.r, y); ctx.stroke();
+    ctx.fillStyle = css("--faint"); ctx.fillText(tf ? v.toFixed(2) : Math.round(v), pad.l-12, y+3);
+  }
+  ctx.textAlign = "left";
+
+  const leaves = [];
+  roots.forEach(r => (function order(nd){ if (nd.leaf) leaves.push(nd); else { order(nd.left); order(nd.right); } })(r));
+  const xOf = new Map();
+  leaves.forEach((nd,i) => xOf.set(nd, pad.l + (w-pad.l-pad.r) * (leaves.length === 1 ? .5 : i/(leaves.length-1))));
+  const colOfMembers = members => {
+    const set = new Set(members.map(m => labels[m]));
+    return set.size === 1 && [...set][0] >= 0 ? clusterColor([...set][0]) : css("--rule-strong");
+  };
+  ctx.lineWidth = 1.7; ctx.lineCap = "round";
+  leaves.forEach(nd => {
+    const x = xOf.get(nd);
+    ctx.strokeStyle = colOfMembers(nd.members); ctx.globalAlpha = nd.h > 0 ? .45 : .8;
+    ctx.beginPath(); ctx.moveTo(x, Y(nd.h)); ctx.lineTo(x, h - pad.b); ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+  roots.forEach(r => (function drawNode(nd){
+    if (nd.leaf) return xOf.get(nd);
+    const xl = drawNode(nd.left), xr = drawNode(nd.right);
+    const y = Y(nd.h);
+    ctx.strokeStyle = colOfMembers(nd.members);
+    ctx.beginPath();
+    ctx.moveTo(xl, Y(nd.left.h)); ctx.lineTo(xl, y); ctx.lineTo(xr, y); ctx.lineTo(xr, Y(nd.right.h));
+    ctx.stroke();
+    const x = (xl + xr) / 2; xOf.set(nd, x); return x;
+  })(r));
+
+  const n = clusterCount();
+  let cut, note;
+  if (treeComplete){
+    const hs = TS.joins.map(j => j.h).sort((a,b) => b-a);
+    const k  = Math.min(+ui.k.value, TS.n);
+    cut  = k <= 1 ? maxH * 1.04 : (k-1 < hs.length ? (hs[k-2] + hs[k-1]) / 2 : hs[hs.length-1] / 2);
+    note = `cut → ${n} cluster${n===1?"":"s"} · drag me`;
+  } else {
+    const last = TS.joins.length ? TS.joins[TS.joins.length-1].h : maxH;
+    cut  = TS.kind === "divisive" ? last * 0.995 : last * 1.005;
+    note = TS.pending ? `splitting a cluster of diameter ${fmt(TS.pending.node.h)}`
+                      : `frontier → ${n} cluster${n===1?"":"s"}`;
+  }
+  cutY = Y(cut);
+  ctx.save(); ctx.setLineDash([5,4]); ctx.strokeStyle = css("--accent"); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l-8, cutY); ctx.lineTo(w-pad.r, cutY); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = css("--accent"); ctx.font = "500 10px 'IBM Plex Mono', monospace";
+  ctx.fillText(note, pad.l, Math.max(11, cutY-6));
+  ctx.fillStyle = css("--faint");
+  ctx.save(); ctx.translate(13, h/2); ctx.rotate(-Math.PI/2); ctx.textAlign = "center";
+  ctx.fillText(algo === "agglo" ? "merge height" : "cluster diameter at split", 0, 0);
+  ctx.restore();
+  ctx.fillText(`${leaves.length} branch${leaves.length===1?"":"es"}`, w-pad.r-84, h-9);
+}
+
+/* ------------------------------ log ------------------------------ */
+function log(html, mark){
+  logN++;
+  const box = $("#log");
+  const el = document.createElement("div");
+  el.className = "logline" + (mark ? " mark" : "");
+  el.innerHTML = `<span class="n">${String(logN).padStart(2,"0")}</span><span>${html}</span>`;
+  box.appendChild(el);
+  while (box.children.length > 150) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ------------------------- implementation panel ------------------------- */
+const SRC = {
+  kmeans:    [["initCentres", initCentres, "k-Means++ or random start"],
+              ["assignToNearest", assignToNearest, "the assign half-step"],
+              ["updateCentroids", updateCentroids, "the update half-step"]],
+  kmedoids:  [["initCentres", initCentres, "always a random start here"],
+              ["assignToNearest", assignToNearest, "shared with k-Means"],
+              ["updateMedoids", updateMedoids, "the centre must be a real record"]],
+  minibatch: [["initCentres", initCentres, "k-Means++ or random start"],
+              ["sampleWithoutReplacement", sampleWithoutReplacement, "the batch draw"],
+              ["miniBatchStep", miniBatchStep, "one batch, per-centre learning rate"]],
+  agglo:     [["agglomerativeInit", agglomerativeInit, "n singletons, full distance matrix"],
+              ["agglomerativeStep", agglomerativeStep, "one merge, Lance-Williams update"],
+              ["nextCandidates", nextCandidates, "the search: what each rule wants next"],
+              ["linkageBreakdown", linkageBreakdown, "what each of the four rules measures"],
+              ["buildComparison", buildComparison, "all four trees on the same points"],
+              ["cutDendrogram", cutDendrogram, "re-cut once the tree is finished"]],
+  divisive:  [["divisiveInit", divisiveInit, "one cluster holding everything"],
+              ["divisiveSeed", divisiveSeed, "phase 1: start the splinter group"],
+              ["divisiveMigrate", divisiveMigrate, "phase 2: one defection per call"],
+              ["frontier", frontier, "shows a pending split as two halves"]],
+  dbscan:    [["dbscanInit", dbscanInit, "eps-neighbourhoods and core points"],
+              ["dbscanStep", dbscanStep, "one wave, or one new seed"],
+              ["kDistanceCurve", kDistanceCurve, "how eps is usually chosen"]],
+  metrics:   [["inertia", inertia, "what k-Means minimises"],
+              ["meanSilhouette", meanSilhouette, "cohesion against separation"],
+              ["daviesBouldin", daviesBouldin, "scatter against separation"]]
+};
+const ORDER = ["kmeans","kmedoids","minibatch","agglo","divisive","dbscan","metrics"];
+function showSource(key){
+  const box = $("#codeScroll");
+  box.textContent = "";
+  const seen = new Set();
+  const list = key === "all" ? ORDER.flatMap(k => SRC[k]) : SRC[key];
+  let first = true;
+  list.forEach(([name, fn, note]) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    const head = document.createElement("div");
+    head.className = "fnhead" + (first ? "" : " sep");
+    head.innerHTML = `<code>${name}()</code><span>${note}</span>`;
+    const pre = document.createElement("pre");
+    pre.className = "src";
+    pre.textContent = fn.toString();
+    box.appendChild(head); box.appendChild(pre);
+    first = false;
+  });
+  box.scrollTop = 0;
+}
+$("#codeTabs").addEventListener("click", e => {
+  const t = e.target.closest(".tab"); if (!t) return;
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x === t)));
+  showSource(t.dataset.src);
+});
+
+/* ------------------------------ wiring ------------------------------ */
+const TITLES = {
+  kmeans:["k-Means &middot; Lloyd's algorithm", "assign → update, repeated"],
+  kmedoids:["k-Medoids &middot; Voronoi iteration", "centres must be real records"],
+  minibatch:["MiniBatch k-Means", "one random batch per step"],
+  agglo:["Agglomerative &middot; bottom-up", "one merge per step"],
+  divisive:["Divisive &middot; DIANA, top-down", "seed, then one defection per step"],
+  dbscan:["DBSCAN &middot; density-based", "one wave of neighbours per step"]
+};
+const BLURB = {
+  kmeans:"Centres are means, so a centre need not be an actual record.",
+  kmedoids:"Each centre is a real point, which is what makes it resistant to an extreme value.",
+  minibatch:"Each step uses a small sample, so the cost of an iteration stops depending on the record count.",
+  agglo:"Every point starts as its own cluster. Step to merge the closest pair; Run stops at the cluster count you asked for.",
+  divisive:"Everything starts in one cluster. A split runs in two phases: the most dissimilar member seeds a splinter group, then members defect to it one at a time.",
+  dbscan:"No k at all. Density decides: core points seed clusters, neighbours are absorbed wave by wave, and anything too sparse is set aside as noise. Try it on the two rings."
+};
+const LEGEND = {
+  dbscan:`<span><i style="background:${'#0072B2'}"></i>clustered</span>
+          <span><i style="background:transparent;border:1.5px solid #8B929B"></i>noise</span>
+          <span><i style="background:#C4C9D0"></i>not yet visited</span>
+          <span>dashed disc = eps</span>`,
+  divisive:`<span>solid ring = remainder</span><span>dashed ring = splinter</span><span>labelled = seed / just moved</span>`,
+  agglo:`<span>garnet = the rule in force</span><span>faint = what the other three want</span><span>solid = the merge just made</span>`
+};
+$("#algos").addEventListener("click", e => {
+  const b = e.target.closest(".algo"); if (!b) return;
+  algo = b.dataset.algo;
+  document.querySelectorAll(".algo").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  const treeMode = isTree(), dens = isDensity();
+  $("#fLink").hidden   = algo !== "agglo";
+  $("#fLeaves").hidden = algo !== "divisive";
+  $("#fEps").hidden    = !dens;
+  $("#fMinPts").hidden = !dens;
+  $("#fScan").hidden   = algo !== "agglo";
+  $("#fInit").hidden   = treeMode || dens || algo === "kmedoids";
+  $("#fBatch").hidden  = algo !== "minibatch";
+  $("#fIter").hidden   = treeMode || dens;
+  $("#fK").hidden      = dens;
+  compareMode = false; compareRuns = null; compare.hidden = true; $("#ccap").hidden = true;
+  curve.hidden = treeMode || dens; dendro.hidden = !treeMode; kdist.hidden = !dens;
+  $("#dcap").hidden = !treeMode; $("#kcap").hidden = !dens;
+  $("#panelTitle").textContent = treeMode ? "Dendrogram" : dens ? "k-distance curve" : "Convergence";
+  $("#panelHint").textContent  = treeMode ? "drawn as the tree is built"
+                               : dens ? "the knee is where eps belongs"
+                               : "within-cluster sum of squares per iteration";
+  $("#plotTitle").innerHTML = TITLES[algo][0];
+  $("#plotHint").textContent = TITLES[algo][1];
+  const lg = $("#legend");
+  lg.hidden = !LEGEND[algo];
+  lg.innerHTML = LEGEND[algo] || "";
+  resetMethod(false);
+  log(`Switched to <b>${b.querySelector("span").textContent}</b>. ${BLURB[algo]}`, true);
+  const tab = document.querySelector(`.tab[data-src="${algo}"]`);
+  if (tab){ document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x === tab))); showSource(algo); }
+});
+
+$("#run").addEventListener("click", play);
+$("#step").addEventListener("click", () => { stop(); tick(); });
+$("#finish").addEventListener("click", finishTree);
+$("#compareBtn").addEventListener("click", () => {
+  stop();
+  compareMode = !compareMode;
+  if (compareMode){
+    buildTransform();
+    const t0 = performance.now();
+    compareRuns = buildComparison();
+    const ms = Math.round(performance.now() - t0);
+    const line = compareRuns.map(r => `${r.link} ${r.biggest}/${r.smallest}`).join(" · ");
+    log(`Built all four trees on the same ${pts.length} points and cut each to <b>${ui.k.value}</b> (${ms} ms). Largest/smallest cluster: ${line}.`, true);
+  } else {
+    log("Back to the single dendrogram.", true);
+  }
+  dendro.hidden = compareMode; compare.hidden = !compareMode;
+  $("#dcap").hidden = compareMode; $("#ccap").hidden = !compareMode;
+  $("#panelTitle").textContent = compareMode ? "Linkage comparison" : "Dendrogram";
+  $("#panelHint").textContent  = compareMode ? "same points, same k, four rules"
+                                             : "drawn as the tree is built";
+  syncButtons(); redraw();
+});
+$("#reset").addEventListener("click", () => resetMethod(true));
+ui.k.addEventListener("input", e => {
+  $("#kOut").textContent = e.target.value;
+  if (compareMode){ compareRuns = buildComparison(); redraw(); return; }
+  if (isTree() && treeComplete && TS){
+    labels = cutDendrogram(treeRoot(), Math.min(+e.target.value, TS.n), pts.length);
+    refreshMetrics(); redraw();
+  }
+});
+ui.maxIter.addEventListener("input", e => {
+  $("#maxIterOut").textContent = e.target.value;
+  if (stoppedAtLimit && iter < +e.target.value) stoppedAtLimit = false;
+  refreshMetrics();
+});
+ui.npoints.addEventListener("input", e => $("#npointsOut").textContent = e.target.value);
+ui.npoints.addEventListener("change", () => { if (lastGen) generate(lastGen); });
+ui.leaves.addEventListener("input", e => $("#leavesOut").textContent = e.target.value);
+ui.leaves.addEventListener("change", () => { if (algo === "divisive"){ resetMethod(false); log(`DIANA will now split down to <b>${ui.leaves.value}</b> groups.`, true); } });
+ui.eps.addEventListener("input", e => { $("#epsOut").textContent = e.target.value + "%"; drawKDist(); });
+ui.eps.addEventListener("change", () => { if (isDensity()){ resetMethod(false); log(`eps set to <b>${ui.eps.value}%</b> of the diagonal ≈ <b>${fmt(epsValue())}</b>.`, true); } });
+ui.minPts.addEventListener("input", e => { $("#minPtsOut").textContent = e.target.value; kCurve = null; kCurveKey = ""; drawKDist(); });
+ui.minPts.addEventListener("change", () => { if (isDensity()){ resetMethod(false); log(`MinPts set to <b>${ui.minPts.value}</b>.`, true); } });
+ui.batch.addEventListener("input", e => $("#batchOut").textContent = e.target.value);
+ui.seed.addEventListener("input", e => $("#seedOut").textContent = e.target.value);
+ui.speed.addEventListener("input", e => {
+  $("#speedOut").textContent = e.target.value + " ms";
+  if (running){ clearInterval(timer); timer = setInterval(() => { if (!tick()) stop(); }, +e.target.value); }
+});
+ui.link.addEventListener("change", () => {
+  if (compareMode){ redraw(); log(`Linkage set to <em>${ui.link.value}</em> &mdash; highlighted in the comparison.`, true); return; }
+  resetMethod(false);
+  log(`Linkage set to <em>${ui.link.value}</em>; the tree rebuilds from scratch.`, true);
+});
+$("#showScan").addEventListener("change", () => {
+  refreshCandidates(); redraw();
+  log($("#showScan").checked
+    ? (candidatesTooBig
+        ? "The look-ahead is switched off above 260 points &mdash; scoring every pair under all four rules each step would stall the animation."
+        : "Showing the pair each rule would merge next. The rule in force is drawn in garnet, the other three faint.")
+    : "Look-ahead hidden.", true);
+});
+ui.stdz.addEventListener("change", () => {
+  kCurve = null; kCurveKey = "";
+  resetMethod(false);
+  log(ui.stdz.checked
+    ? "Axes standardised to zero mean and unit variance before clustering. Points are still drawn where you placed them."
+    : "Standardisation off &mdash; clustering runs on the raw coordinates.", true);
+});
+document.querySelectorAll("[data-gen]").forEach(b => b.addEventListener("click", () => generate(b.dataset.gen)));
+
+let dragging = false, lastAdd = 0;
+function addAt(ev){
+  const r = plot.getBoundingClientRect();
+  const x = (ev.clientX - r.left) / r.width * VW, y = (ev.clientY - r.top) / r.height * VH;
+  if (x < 0 || y < 0 || x > VW || y > VH) return;
+  pts.push({x,y}); labels.push(-1); TS = null; DB = null; treeComplete = false;
+  kCurve = null; kCurveKey = "";
+  $("#nPts").textContent = pts.length + " pts";
+  drawPlot();
+}
+plot.addEventListener("pointerdown", e => { dragging = true; plot.setPointerCapture(e.pointerId); addAt(e); lastAdd = performance.now(); });
+plot.addEventListener("pointermove", e => { if (dragging && performance.now() - lastAdd > 45){ addAt(e); lastAdd = performance.now(); } });
+plot.addEventListener("pointerup", () => {
+  if (!dragging) return;
+  dragging = false;
+  log(`Canvas now holds <b>${pts.length}</b> points.`);
+  refreshMetrics(); redraw();
+});
+
+function moveCut(ev){
+  if (!TS || !treeComplete) return;
+  const r = dendro.getBoundingClientRect(), pad = { t:18, b:30 };
+  const frac = 1 - (ev.clientY - r.top - pad.t) / (r.height - pad.t - pad.b);
+  const root = treeRoot(); if (!root) return;
+  const target = Math.max(0, Math.min(1, frac)) * (root.h || 1);
+  const k = Math.max(1, Math.min(8, TS.joins.filter(j => j.h > target).length + 1));
+  if (k === +ui.k.value) return;
+  ui.k.value = k; $("#kOut").textContent = k;
+  labels = cutDendrogram(root, k, pts.length);
+  refreshMetrics(); redraw();
+  log(`Cut moved &mdash; the tree now yields <b>${k}</b> cluster${k===1?"":"s"}.`);
+}
+let cutting = false;
+dendro.addEventListener("pointerdown", e => { cutting = true; dendro.setPointerCapture(e.pointerId); moveCut(e); });
+dendro.addEventListener("pointermove", e => { if (cutting) moveCut(e); });
+dendro.addEventListener("pointerup", () => { cutting = false; });
+
+window.addEventListener("resize", redraw);
+
+/* --------------------- open in a working state --------------------- */
+$("#kOut").textContent = ui.k.value;
+$("#seedOut").textContent = ui.seed.value;
+$("#speedOut").textContent = ui.speed.value + " ms";
+$("#maxIterOut").textContent = ui.maxIter.value;
+$("#npointsOut").textContent = ui.npoints.value;
+$("#leavesOut").textContent = ui.leaves.value;
+$("#epsOut").textContent = ui.eps.value + "%";
+$("#minPtsOut").textContent = ui.minPts.value;
+showSource("kmeans");
+generate("blobs");
+(function warmStart(){
+  buildTransform();
+  for (let guard = 0; guard < 60; guard++){ if (!stepPartition() || converged) break; }
+  refreshMetrics(); redraw(); syncButtons();
+  $("#stage").dataset.idle = "0";
+  $("#stage").textContent = converged ? "converged" : `iteration ${iter}`;
+})();
+</script>
+</body>
+</html>
