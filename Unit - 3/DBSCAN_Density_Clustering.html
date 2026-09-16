@@ -1,0 +1,838 @@
+<title>DBSCAN &amp; Density Clustering</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: oklch(0.965 0.006 250);
+    --surface: oklch(0.995 0.003 250);
+    --surface-2: oklch(0.95 0.01 250);
+    --ink: oklch(0.26 0.03 250);
+    --ink-muted: oklch(0.48 0.02 250);
+    --border: oklch(0.885 0.012 250);
+
+    --band: oklch(0.29 0.055 250);
+    --band-deep: oklch(0.21 0.045 250);
+    --band-ink: oklch(0.97 0.006 250);
+    --band-ink-muted: oklch(0.8 0.03 250);
+
+    --l-border: 0.55; --l-tint: 0.95; --l-ink: 0.36;
+    --c-border: 0.13; --c-tint: 0.025; --c-ink: 0.12;
+
+    --h-eps: 235; --h-minpts: 155; --h-noise: 25; --h-rules: 200; --h-warn: 60; --h-danger: 22; --h-cmp: 300;
+
+    /* canvas tokens: plain hex so the 2D context reads them */
+    --viz-surface: #fcfcfb; --viz-ink: #0b0b0b; --viz-muted: #898781; --viz-grid: #e1e0d9; --viz-axis: #c3c2b7;
+    --noise: #898781; --unvisited: #c9c8c1;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+    --eps-fill: rgba(42,120,214,0.14); --eps-stroke: #2a78d6;
+    --danger: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: oklch(0.18 0.018 250); --surface: oklch(0.235 0.018 250); --surface-2: oklch(0.28 0.02 250);
+      --ink: oklch(0.93 0.008 250); --ink-muted: oklch(0.73 0.015 250); --border: oklch(0.37 0.02 250);
+      --band: oklch(0.32 0.06 250); --band-deep: oklch(0.24 0.05 250);
+      --band-ink: oklch(0.97 0.006 250); --band-ink-muted: oklch(0.79 0.025 250);
+      --l-border: 0.72; --l-tint: 0.29; --l-ink: 0.86; --c-border: 0.13; --c-tint: 0.05; --c-ink: 0.1;
+      --viz-surface: #1a1a19; --viz-ink: #ffffff; --viz-muted: #898781; --viz-grid: #2c2c2a; --viz-axis: #383835;
+      --noise: #898781; --unvisited: #4a4a47;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+      --eps-fill: rgba(57,135,229,0.18); --eps-stroke: #3987e5; --danger: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: oklch(0.18 0.018 250); --surface: oklch(0.235 0.018 250); --surface-2: oklch(0.28 0.02 250);
+    --ink: oklch(0.93 0.008 250); --ink-muted: oklch(0.73 0.015 250); --border: oklch(0.37 0.02 250);
+    --band: oklch(0.32 0.06 250); --band-deep: oklch(0.24 0.05 250);
+    --band-ink: oklch(0.97 0.006 250); --band-ink-muted: oklch(0.79 0.025 250);
+    --l-border: 0.72; --l-tint: 0.29; --l-ink: 0.86; --c-border: 0.13; --c-tint: 0.05; --c-ink: 0.1;
+    --viz-surface: #1a1a19; --viz-ink: #ffffff; --viz-muted: #898781; --viz-grid: #2c2c2a; --viz-axis: #383835;
+    --noise: #898781; --unvisited: #4a4a47;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --eps-fill: rgba(57,135,229,0.18); --eps-stroke: #3987e5; --danger: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Karla', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  h1, h2, h3, h4 { font-family: 'Newsreader', Georgia, serif; margin: 0; text-wrap: balance; font-weight: 600; }
+  p { margin: 0; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .serif { font-family: 'Newsreader', Georgia, serif; }
+  strong { color: var(--ink); }
+
+  .page { max-width: 1240px; margin: 0 auto; padding-block: 36px 60px; padding-inline: 20px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* ---------- header ---------- */
+  .hero { display: grid; grid-template-columns: 2.1fr 1fr; gap: 16px; }
+  .band { background: var(--band); border-radius: 14px; padding: 30px 34px; color: var(--band-ink); display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .band h1 { font-style: italic; font-size: 40px; letter-spacing: -0.3px; color: var(--band-ink); }
+  .band p { font-size: 15.5px; line-height: 1.55; color: var(--band-ink-muted); max-width: 70ch; }
+  .band .unit { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--band-ink-muted); }
+  .bigpic { background: oklch(var(--l-tint) 0.035 var(--h-warn)); border: 1.5px solid oklch(var(--l-border) 0.09 var(--h-warn)); border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; justify-content: center; color: oklch(var(--l-ink) var(--c-ink) var(--h-warn)); }
+  .eyebrow { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .bigpic .serif { font-weight: 500; font-style: italic; font-size: 18px; line-height: 1.5; }
+
+  /* ---------- section bands ---------- */
+  .sect { background: var(--band); border-radius: 14px; padding: 16px 24px; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .sect h2 { font-style: italic; font-size: 25px; color: var(--band-ink); }
+  .sect p { font-size: 13.5px; color: var(--band-ink-muted); max-width: 70ch; }
+
+  /* ---------- cards ---------- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .card.top { border-top: 4px solid var(--card-hue, var(--ink-muted)); border-radius: 0 0 12px 12px; }
+  .card h3 { font-size: 16px; color: var(--ink); }
+  .card h3 small { font-family: 'Karla', sans-serif; font-weight: 500; color: var(--ink-muted); font-size: 11.5px; margin-left: 4px; }
+  .card p, .card li { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); }
+  .card ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .callout { border-radius: 8px; padding: 10px 12px; font-size: 11.5px; line-height: 1.5; }
+  .callout.tint { background: var(--surface-2); color: var(--ink-muted); }
+  .def { background: var(--surface-2); border-radius: 8px; padding: 9px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink); line-height: 1.6; overflow-x: auto; }
+  .hue-eps    { --card-hue: oklch(var(--l-border) var(--c-border) var(--h-eps));    --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-eps));    --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-eps)); }
+  .hue-minpts { --card-hue: oklch(var(--l-border) var(--c-border) var(--h-minpts)); --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-minpts)); --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-minpts)); }
+  .hue-noise  { --card-hue: oklch(var(--l-border) var(--c-border) var(--h-noise));  --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-noise));  --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-noise)); }
+  .hue-rules  { --card-hue: oklch(var(--l-border) var(--c-border) var(--h-rules));  --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-rules));  --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-rules)); }
+  .hue-danger { --card-hue: oklch(var(--l-border) 0.19 var(--h-danger));            --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-danger)); --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-danger)); }
+  .hue-warn   { --card-hue: oklch(var(--l-border) 0.09 var(--h-warn));              --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-warn));   --hue-tint: oklch(var(--l-tint) 0.035 var(--h-warn)); }
+  .hue-cmp    { --card-hue: oklch(var(--l-border) var(--c-border) var(--h-cmp));    --hue-ink: oklch(var(--l-ink) var(--c-ink) var(--h-cmp));    --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-cmp)); }
+  .card.top h3 { color: var(--hue-ink); }
+  .callout.hued { background: var(--hue-tint); color: var(--hue-ink); }
+  .callout.hued strong { color: inherit; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .lab { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr); gap: 16px; align-items: start; }
+
+  /* ---------- controls ---------- */
+  .seg { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+  .seg button { appearance: none; border: none; background: transparent; color: var(--ink-muted); font: inherit; font-weight: 600; font-size: 12px; padding: 8px 12px; cursor: pointer; flex: 1 1 auto; border-right: 1px solid var(--border); }
+  .seg button:last-child { border-right: none; }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--band); color: var(--band-ink); }
+  .seg button.off[aria-pressed="true"] { background: oklch(var(--l-border) 0.19 var(--h-danger)); }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11.5px; font-weight: 600; color: var(--ink-muted); display: flex; justify-content: space-between; }
+  .field label b { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--band); height: 22px; margin: 0; }
+  select { font: inherit; font-size: 12.5px; padding: 6px 8px; width: 100%; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+  .ctlrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .btn { appearance: none; font: inherit; font-weight: 600; font-size: 12px; padding: 7px 12px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+  .btn:hover { border-color: var(--ink); }
+  .btn.primary { background: var(--band); border-color: var(--band); color: var(--band-ink); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid oklch(var(--l-border) var(--c-border) var(--h-eps)); outline-offset: 2px; }
+
+  /* ---------- canvases ---------- */
+  .vizwrap { position: relative; }
+  canvas.viz { width: 100%; aspect-ratio: 1; max-width: 100%; display: block; background: var(--viz-surface); border: 1px solid var(--border); border-radius: 10px; touch-action: none; }
+  canvas.viz.wide { aspect-ratio: 2 / 1; }
+  canvas.viz.hover { cursor: crosshair; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--ink); font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; color: var(--ink-muted); align-items: center; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { width: 14px; height: 14px; flex: none; }
+  .verdict { font-size: 12.5px; line-height: 1.55; color: var(--ink); border-radius: 8px; padding: 10px 12px; background: var(--hue-tint, var(--surface-2)); border-left: 4px solid var(--card-hue, var(--border)); }
+  .verdict.bad { --hue-tint: oklch(var(--l-tint) var(--c-tint) var(--h-danger)); --card-hue: oklch(var(--l-border) 0.19 var(--h-danger)); }
+  .verdict strong { color: inherit; }
+
+  /* ---------- story / roles ---------- */
+  .roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .role { background: var(--surface-2); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .role svg { width: 100%; height: 86px; }
+  .role h4 { font-size: 14px; }
+  .role p { font-size: 11.5px; }
+
+  /* ---------- steps / log ---------- */
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step { display: flex; gap: 9px; }
+  .step .n { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--card-hue, var(--band)); color: var(--surface); font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .step p strong { color: var(--ink); }
+  .log { border: 1px solid var(--border); border-radius: 8px; max-height: 210px; overflow-y: auto; background: var(--surface-2); font-size: 12px; }
+  .logline { display: grid; grid-template-columns: 30px 1fr; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--ink-muted); line-height: 1.45; }
+  .logline:last-child { border-bottom: none; }
+  .logline .k { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .logline.now { background: var(--surface); color: var(--ink); }
+  .logline.empty { color: var(--ink-muted); font-style: italic; }
+
+  /* ---------- table ---------- */
+  .tablewrap { overflow-x: auto; }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 680px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  table.cmp th { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); font-weight: 600; }
+  table.cmp td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+  table.cmp td { color: var(--ink-muted); }
+  table.cmp td.good { color: var(--hue-ink); }
+  table.cmp tr:last-child td { border-bottom: none; }
+
+  .footer { background: var(--band-deep); border-radius: 14px; padding: 16px 20px; text-align: center; }
+  .footer .serif { font-weight: 600; font-style: italic; font-size: 16px; color: var(--band-ink); }
+  .footer span { font-weight: 500; font-size: 14px; color: var(--band-ink-muted); }
+
+  @media (max-width: 900px) {
+    .hero, .grid-3, .grid-4, .lab { grid-template-columns: 1fr; }
+    .band h1 { font-size: 30px; }
+  }
+  @media (max-width: 640px) {
+    .grid-2, .roles { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="page">
+
+  <!-- ============ HEADER ============ -->
+  <div class="hero">
+    <div class="band">
+      <span class="unit">INT396 &middot; Unit 3 &middot; Density-based clustering</span>
+      <h1>DBSCAN: Clustering by Density</h1>
+      <p>k-Means asks <em>"which centre are you closest to?"</em> DBSCAN asks a different question: <em>"are you standing in a crowd?"</em> A cluster is wherever points are packed tightly together; the lonely points in between are called noise, not forced into a group.</p>
+    </div>
+    <div class="bigpic">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4M8.5 14.5a5.5 5.5 0 1 1 7 0c-.8.7-1.5 1.6-1.5 2.5h-4c0-.9-.7-1.8-1.5-2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="eyebrow">The Big Picture</span>
+      </div>
+      <p class="serif">DBSCAN = two numbers, <span class="mono">&epsilon;</span> and <span class="mono">MinPts</span>, which together define what "dense" means. Dense regions become clusters; everything else is noise.</p>
+    </div>
+  </div>
+
+  <!-- ============ STORY + INGREDIENTS ============ -->
+  <div class="grid-3">
+    <div class="card top hue-rules">
+      <h3>A Story: Spotting Crowds at a Mela</h3>
+      <p>Picture an aerial photo of a fair. Every person is a dot. Where is a <em>crowd</em>? You don't count crowds in advance, and you don't assume they are round. You simply look for places where people are packed together.</p>
+      <p>DBSCAN does exactly this with two rules of thumb:</p>
+      <ul>
+        <li><strong>&epsilon; (epsilon)</strong> &mdash; "arm's reach". How far you look around each person.</li>
+        <li><strong>MinPts</strong> &mdash; "how many people make a crowd". If at least MinPts people (including you) stand within arm's reach, you are <em>inside</em> a crowd.</li>
+      </ul>
+      <div class="callout tint">A vendor wandering alone between crowds is <strong>noise</strong>. Someone at the edge of a crowd &mdash; near it, but with few neighbours of their own &mdash; is a <strong>border</strong> person.</div>
+    </div>
+
+    <div class="card top hue-eps">
+      <h3>The Definitions <small>Ester, Kriegel, Sander &amp; Xu, 1996</small></h3>
+      <div class="def">N<sub>&epsilon;</sub>(p) = { q &isin; D : dist(p, q) &le; &epsilon; }</div>
+      <p><strong>&epsilon;-neighbourhood</strong> of p: every point within distance &epsilon; of p, <em>including p itself</em>.</p>
+      <div class="def">core(p) &hArr; |N<sub>&epsilon;</sub>(p)| &ge; MinPts</div>
+      <p><strong>Core point</strong>: its neighbourhood is "full enough". Core points are the interior of a cluster and are the only points allowed to <em>grow</em> a cluster.</p>
+      <div class="def">border(p) &hArr; &not;core(p) &and; &exist; core q : p &isin; N<sub>&epsilon;</sub>(q)<br>noise(p) &hArr; &not;core(p) &and; &not;border(p)</div>
+    </div>
+
+    <div class="card top hue-noise">
+      <h3>Three Kinds of Point</h3>
+      <div class="roles" style="grid-template-columns:1fr;">
+        <div class="role" style="flex-direction:row; align-items:center; gap:12px;">
+          <svg viewBox="0 0 90 60" style="width:90px; height:60px; flex:none;"><circle cx="45" cy="30" r="24" fill="var(--eps-fill)" stroke="var(--eps-stroke)" stroke-width="1.2" stroke-dasharray="3 2"/><g fill="var(--s1)"><circle cx="45" cy="30" r="4.5"/><circle cx="34" cy="20" r="3.5"/><circle cx="56" cy="22" r="3.5"/><circle cx="52" cy="42" r="3.5"/><circle cx="36" cy="40" r="3.5"/></g></svg>
+          <div><h4>Core</h4><p>&ge; MinPts points inside its &epsilon;-circle. Drawn <strong>filled</strong>.</p></div>
+        </div>
+        <div class="role" style="flex-direction:row; align-items:center; gap:12px;">
+          <svg viewBox="0 0 90 60" style="width:90px; height:60px; flex:none;"><circle cx="30" cy="30" r="24" fill="var(--eps-fill)" stroke="var(--eps-stroke)" stroke-width="1.2" stroke-dasharray="3 2"/><g fill="var(--s1)"><circle cx="30" cy="30" r="4.5"/><circle cx="18" cy="22" r="3.5"/><circle cx="24" cy="44" r="3.5"/><circle cx="40" cy="18" r="3.5"/></g><circle cx="62" cy="34" r="4.5" fill="var(--viz-surface)" stroke="var(--s1)" stroke-width="2.2"/></svg>
+          <div><h4>Border</h4><p>Not core itself, but sits inside a core point's circle. Drawn as a <strong>ring</strong>.</p></div>
+        </div>
+        <div class="role" style="flex-direction:row; align-items:center; gap:12px;">
+          <svg viewBox="0 0 90 60" style="width:90px; height:60px; flex:none;"><circle cx="60" cy="30" r="24" fill="none" stroke="var(--noise)" stroke-width="1.2" stroke-dasharray="3 2"/><path d="M56 26l8 8M64 26l-8 8" stroke="var(--noise)" stroke-width="2.4" stroke-linecap="round"/><circle cx="14" cy="18" r="3" fill="var(--noise)" opacity="0.5"/><circle cx="20" cy="46" r="3" fill="var(--noise)" opacity="0.5"/></svg>
+          <div><h4>Noise</h4><p>Neither core nor within reach of a core. Left <strong>unclustered</strong>, drawn as &times;.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION: EPSILON ============ -->
+  <div class="sect"><h2>1 &middot; The &epsilon;-neighbourhood</h2><p>&epsilon; is the radius of the circle you draw around each point. It decides who counts as a neighbour.</p></div>
+
+  <div class="lab">
+    <div class="card top hue-eps">
+      <h3>How it works</h3>
+      <p><strong>Hover any point</strong> on the canvas to draw its &epsilon;-circle and count the neighbours inside. The count includes the point itself, so a point alone has |N<sub>&epsilon;</sub>| = 1.</p>
+      <div class="field">
+        <label for="epsA">&epsilon; (fraction of the plot width) <b id="epsAOut">0.07</b></label>
+        <input type="range" id="epsA" min="0.02" max="0.25" step="0.005" value="0.07">
+      </div>
+      <div class="field">
+        <label for="minA">MinPts <b id="minAOut">4</b></label>
+        <input type="range" id="minA" min="2" max="10" step="1" value="4">
+      </div>
+      <p style="font-weight:600; color:var(--ink);">What if &epsilon; were not there?</p>
+      <div class="seg" id="segA">
+        <button aria-pressed="true" data-mode="set">&epsilon; as set</button>
+        <button class="off" aria-pressed="false" data-mode="zero">&epsilon; &rarr; 0</button>
+        <button class="off" aria-pressed="false" data-mode="inf">&epsilon; &rarr; &infin;</button>
+      </div>
+      <div class="verdict" id="verdictA"></div>
+      <div class="callout hued"><strong>Why it matters:</strong> &epsilon; sets the <em>scale</em> at which density is measured. Too small and clusters shatter into noise; too large and separate crowds merge into one. Without a finite &epsilon; the word "neighbour" has no meaning at all.</div>
+    </div>
+    <div class="card">
+      <div class="vizwrap"><canvas class="viz hover" id="cvA"></canvas></div>
+      <div class="stats" id="statA"></div>
+      <div class="legend" id="legendA"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION: MINPTS ============ -->
+  <div class="sect"><h2>2 &middot; MinPts</h2><p>MinPts is the density threshold. It says how many neighbours (including the point itself) turn a point into a <em>core</em> point.</p></div>
+
+  <div class="lab">
+    <div class="card top hue-minpts">
+      <h3>How it works</h3>
+      <p>The same points, the same &epsilon;. Slide MinPts and watch points change role: <strong>filled</strong> (core) &rarr; <strong>ring</strong> (border) &rarr; <strong>&times;</strong> (noise). Only core points can extend a cluster, so raising MinPts makes clusters shrink and outliers fall away.</p>
+      <div class="field">
+        <label for="epsB">&epsilon; <b id="epsBOut">0.07</b></label>
+        <input type="range" id="epsB" min="0.02" max="0.25" step="0.005" value="0.07">
+      </div>
+      <div class="field">
+        <label for="minB">MinPts <b id="minBOut">4</b></label>
+        <input type="range" id="minB" min="2" max="14" step="1" value="4">
+      </div>
+      <p style="font-weight:600; color:var(--ink);">What if MinPts were not there?</p>
+      <div class="seg" id="segB">
+        <button aria-pressed="true" data-mode="set">MinPts as set</button>
+        <button class="off" aria-pressed="false" data-mode="one">No threshold (MinPts = 1)</button>
+      </div>
+      <div class="verdict" id="verdictB"></div>
+      <div class="callout hued"><strong>Rule of thumb:</strong> MinPts &ge; D + 1 for D-dimensional data (so MinPts &ge; 3 in 2-D); a common default is MinPts = 2&middot;D, i.e. 4 here. Noisier data &rarr; larger MinPts.</div>
+    </div>
+    <div class="card">
+      <div class="vizwrap"><canvas class="viz" id="cvB"></canvas></div>
+      <div class="stats" id="statB"></div>
+      <div class="legend" id="legendB"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION: NOISE & BORDER ============ -->
+  <div class="sect"><h2>3 &middot; Noise and Border Points</h2><p>Two blobs joined by a thin bridge of points, with a few outliers scattered around. This is where the noise label and the border rule earn their keep.</p></div>
+
+  <div class="lab">
+    <div class="card top hue-noise">
+      <h3>How it works</h3>
+      <p>A <strong>border</strong> point joins a cluster because a core point can reach it, but it is <em>not</em> allowed to reach further. A <strong>noise</strong> point is reached by nobody and stays unlabelled. Remove either rule and the picture changes.</p>
+      <div class="field">
+        <label for="epsC">&epsilon; <b id="epsCOut">0.065</b></label>
+        <input type="range" id="epsC" min="0.02" max="0.2" step="0.005" value="0.065">
+      </div>
+      <div class="field">
+        <label for="minC">MinPts <b id="minCOut">5</b></label>
+        <input type="range" id="minC" min="2" max="12" step="1" value="5">
+      </div>
+      <p style="font-weight:600; color:var(--ink);">Change the rule</p>
+      <div class="seg" id="segC">
+        <button aria-pressed="true" data-mode="normal">Standard DBSCAN</button>
+        <button class="off" aria-pressed="false" data-mode="noNoise">No noise label</button>
+        <button class="off" aria-pressed="false" data-mode="borderCore">Border points can expand</button>
+        <button class="off" aria-pressed="false" data-mode="noBorder">No border points</button>
+      </div>
+      <div class="verdict" id="verdictC"></div>
+    </div>
+    <div class="card">
+      <div class="vizwrap"><canvas class="viz" id="cvC"></canvas></div>
+      <div class="stats" id="statC"></div>
+      <div class="legend" id="legendC"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION: REACHABILITY + ALGORITHM ============ -->
+  <div class="sect"><h2>4 &middot; From Neighbourhoods to Clusters</h2><p>Three definitions chain neighbourhoods into clusters, and the algorithm is just a breadth-first walk over them.</p></div>
+
+  <div class="grid-3">
+    <div class="card top hue-rules">
+      <h3>Directly density-reachable</h3>
+      <svg viewBox="0 0 220 110" style="width:100%; height:110px;">
+        <circle cx="70" cy="55" r="40" fill="var(--eps-fill)" stroke="var(--eps-stroke)" stroke-width="1.2" stroke-dasharray="3 2"/>
+        <g fill="var(--s1)"><circle cx="70" cy="55" r="5"/><circle cx="52" cy="40" r="3.5"/><circle cx="60" cy="75" r="3.5"/><circle cx="88" cy="40" r="3.5"/></g>
+        <circle cx="100" cy="68" r="5" fill="var(--viz-surface)" stroke="var(--s1)" stroke-width="2.2"/>
+        <line x1="76" y1="58" x2="94" y2="66" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#arr)"/>
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker></defs>
+        <text x="70" y="22" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">p (core)</text>
+        <text x="122" y="88" class="mono" font-size="11" fill="var(--ink)" text-anchor="start">q</text>
+      </svg>
+      <p><strong>q is directly density-reachable from p</strong> if q &isin; N<sub>&epsilon;</sub>(p) and p is a core point. It is one-way: a border q cannot reach p back.</p>
+    </div>
+    <div class="card top hue-rules">
+      <h3>Density-reachable</h3>
+      <svg viewBox="0 0 220 110" style="width:100%; height:110px;">
+        <g fill="var(--eps-fill)" stroke="var(--eps-stroke)" stroke-width="1" stroke-dasharray="3 2"><circle cx="40" cy="60" r="28"/><circle cx="85" cy="48" r="28"/><circle cx="130" cy="62" r="28"/></g>
+        <g fill="var(--s1)"><circle cx="40" cy="60" r="5"/><circle cx="85" cy="48" r="5"/><circle cx="130" cy="62" r="5"/></g>
+        <circle cx="168" cy="72" r="5" fill="var(--viz-surface)" stroke="var(--s1)" stroke-width="2.2"/>
+        <g stroke="var(--ink)" stroke-width="1.6" marker-end="url(#arr)"><line x1="46" y1="58" x2="78" y2="50"/><line x1="91" y1="50" x2="123" y2="60"/><line x1="136" y1="64" x2="161" y2="70"/></g>
+        <text x="40" y="100" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">p&#8321;</text>
+        <text x="85" y="20" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">p&#8322;</text>
+        <text x="130" y="100" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">p&#8323;</text>
+        <text x="185" y="96" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">q</text>
+      </svg>
+      <p><strong>q is density-reachable from p</strong> if there is a chain p = p&#8321; &rarr; p&#8322; &rarr; &hellip; &rarr; q where each step is directly reachable. Every point in the chain except the last must be core.</p>
+    </div>
+    <div class="card top hue-rules">
+      <h3>Density-connected</h3>
+      <svg viewBox="0 0 220 110" style="width:100%; height:110px;">
+        <g fill="var(--eps-fill)" stroke="var(--eps-stroke)" stroke-width="1" stroke-dasharray="3 2"><circle cx="110" cy="42" r="30"/></g>
+        <circle cx="110" cy="42" r="5" fill="var(--s1)"/>
+        <circle cx="50" cy="78" r="5" fill="var(--viz-surface)" stroke="var(--s1)" stroke-width="2.2"/>
+        <circle cx="170" cy="78" r="5" fill="var(--viz-surface)" stroke="var(--s1)" stroke-width="2.2"/>
+        <g stroke="var(--ink)" stroke-width="1.6" marker-end="url(#arr)"><line x1="104" y1="46" x2="58" y2="74"/><line x1="116" y1="46" x2="162" y2="74"/></g>
+        <text x="110" y="18" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">o (core)</text>
+        <text x="50" y="100" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">p</text>
+        <text x="170" y="100" class="mono" font-size="11" fill="var(--ink)" text-anchor="middle">q</text>
+      </svg>
+      <p><strong>p and q are density-connected</strong> if some core point o reaches both. Two border points on opposite sides of a cluster are not reachable from each other, but they are connected. <strong>A cluster = a maximal set of density-connected points.</strong></p>
+    </div>
+  </div>
+
+  <div class="lab">
+    <div class="card top hue-rules">
+      <h3>The algorithm, one point at a time</h3>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><p><strong>Pick an unvisited point p.</strong> Count |N<sub>&epsilon;</sub>(p)|.</p></div>
+        <div class="step"><div class="n">2</div><p><strong>If p is not core, mark it noise</strong> (for now) and go back to step 1.</p></div>
+        <div class="step"><div class="n">3</div><p><strong>If p is core, start a new cluster</strong> and put all of p's neighbours in a queue.</p></div>
+        <div class="step"><div class="n">4</div><p><strong>Pop a point from the queue.</strong> If it was noise, it becomes a border point of this cluster. If unvisited, label it; if it is core too, push <em>its</em> neighbours into the queue.</p></div>
+        <div class="step"><div class="n">5</div><p><strong>Repeat until the queue is empty</strong> &mdash; the cluster cannot grow any further. Return to step 1 until every point is visited.</p></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="playD">&#9654; Play</button>
+        <button class="btn" id="stepD">Step</button>
+        <button class="btn" id="resetD">Reset</button>
+      </div>
+      <div class="ctlrow">
+        <div class="field"><label for="epsD">&epsilon; <b id="epsDOut">0.09</b></label><input type="range" id="epsD" min="0.03" max="0.2" step="0.005" value="0.09"></div>
+        <div class="field"><label for="minD">MinPts <b id="minDOut">4</b></label><input type="range" id="minD" min="2" max="8" step="1" value="4"></div>
+      </div>
+      <div class="callout tint">Grey dots are not yet visited. The dashed circle is the &epsilon;-neighbourhood of the point being examined right now.</div>
+    </div>
+    <div class="card">
+      <div class="vizwrap"><canvas class="viz" id="cvD"></canvas></div>
+      <div class="stats" id="statD"></div>
+      <div class="log" id="logD"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION: CHOOSING PARAMETERS ============ -->
+  <div class="sect"><h2>5 &middot; Choosing &epsilon; and MinPts</h2><p>There is no "right" &epsilon; hidden in the data, but the data does tell you where the sensible range is.</p></div>
+
+  <div class="lab">
+    <div class="card top hue-warn">
+      <h3>The k-distance plot</h3>
+      <p>For every point, compute the distance to its (MinPts &minus; 1)-th nearest other point &mdash; that is, <strong>the smallest &epsilon; that would make this point core</strong>. Sort these values and plot them.</p>
+      <ul>
+        <li>The flat part of the curve is points inside dense regions: they become core at a small &epsilon;.</li>
+        <li>The steep climb at the right is the outliers: they need a huge &epsilon; before they have enough neighbours.</li>
+        <li><strong>Pick &epsilon; at the knee.</strong> Everything under the line becomes core; everything above becomes border or noise.</li>
+      </ul>
+      <div class="ctlrow">
+        <div class="field"><label for="epsE">&epsilon; <b id="epsEOut">0.07</b></label><input type="range" id="epsE" min="0.02" max="0.25" step="0.005" value="0.07"></div>
+        <div class="field"><label for="minE">MinPts <b id="minEOut">4</b></label><input type="range" id="minE" min="2" max="12" step="1" value="4"></div>
+      </div>
+      <div class="callout hued"><strong>MinPts first, then &epsilon;.</strong> Fix MinPts from the dimensionality and the amount of noise you expect; then read &epsilon; off the plot. Changing MinPts redraws the curve, because "the (MinPts&minus;1)-th neighbour" moves.</div>
+    </div>
+    <div class="card">
+      <div class="vizwrap"><canvas class="viz wide" id="cvE"></canvas></div>
+      <div class="stats" id="statE"></div>
+      <div class="grid-2" style="gap:10px;">
+        <div class="vizwrap"><canvas class="viz" id="cvE2"></canvas></div>
+        <div style="display:flex; flex-direction:column; gap:8px; justify-content:center;">
+          <p style="font-size:12px; color:var(--ink-muted); line-height:1.5;">The scatter on the left is clustered with the &epsilon; you chose on the plot. Points above the line on the k-distance plot are the ring and &times; points here.</p>
+          <div class="legend" id="legendE"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION: COMPARISON ============ -->
+  <div class="sect"><h2>6 &middot; k-Means vs. Hierarchical vs. DBSCAN</h2><p>Same data, three ways of asking "what is a group?" Switch the dataset and see who gets it right.</p></div>
+
+  <div class="card top hue-cmp">
+    <div class="ctlrow">
+      <div class="field"><label for="dsF">Dataset</label>
+        <select id="dsF">
+          <option value="moons">Two moons (curved)</option>
+          <option value="rings">Concentric rings</option>
+          <option value="blobs">Three round blobs</option>
+          <option value="blobsNoise">Blobs + scattered noise</option>
+          <option value="varying">Varying density (DBSCAN's weak spot)</option>
+          <option value="bridge">Two blobs with a bridge</option>
+        </select>
+      </div>
+      <div class="field"><label for="kF">k-Means &middot; k <b id="kFOut">2</b></label><input type="range" id="kF" min="1" max="6" step="1" value="2"></div>
+      <div class="field"><label for="linkF">Hierarchical &middot; linkage</label>
+        <select id="linkF"><option value="single">Single</option><option value="complete">Complete</option><option value="average">Average</option><option value="ward" selected>Ward</option></select>
+      </div>
+      <div class="field"><label for="khF">Hierarchical &middot; cut into <b id="khFOut">2</b></label><input type="range" id="khF" min="1" max="6" step="1" value="2"></div>
+      <div class="field"><label for="epsF">DBSCAN &middot; &epsilon; <b id="epsFOut">0.06</b></label><input type="range" id="epsF" min="0.02" max="0.2" step="0.005" value="0.06"></div>
+      <div class="field"><label for="minF">DBSCAN &middot; MinPts <b id="minFOut">4</b></label><input type="range" id="minF" min="2" max="12" step="1" value="4"></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <h3>k-Means <small>partition &middot; Unit 2</small></h3>
+      <div class="vizwrap"><canvas class="viz" id="cvF1"></canvas></div>
+      <div class="stats" id="statF1"></div>
+      <p id="noteF1"></p>
+    </div>
+    <div class="card">
+      <h3>Agglomerative <small>hierarchical &middot; Unit 3</small></h3>
+      <div class="vizwrap"><canvas class="viz" id="cvF2"></canvas></div>
+      <div class="stats" id="statF2"></div>
+      <p id="noteF2"></p>
+    </div>
+    <div class="card">
+      <h3>DBSCAN <small>density &middot; Unit 3</small></h3>
+      <div class="vizwrap"><canvas class="viz" id="cvF3"></canvas></div>
+      <div class="stats" id="statF3"></div>
+      <p id="noteF3"></p>
+    </div>
+  </div>
+
+  <div class="card top hue-cmp">
+    <h3>Side by side</h3>
+    <div class="tablewrap">
+      <table class="cmp">
+        <thead><tr><th></th><th>k-Means</th><th>Hierarchical (agglomerative)</th><th>DBSCAN</th></tr></thead>
+        <tbody>
+          <tr><td>Must you fix the number of clusters?</td><td>Yes, k up front.</td><td>No; cut the dendrogram afterwards.</td><td class="good">No; the data's density decides.</td></tr>
+          <tr><td>Cluster shapes it can find</td><td>Convex, roughly round, similar size.</td><td>Depends on linkage: single follows chains and curves; Ward prefers compact blobs.</td><td class="good">Arbitrary shapes: moons, rings, curves.</td></tr>
+          <tr><td>Outliers / noise</td><td>Every point is assigned; outliers drag centroids.</td><td>Every point is merged eventually; outliers show as late merges.</td><td class="good">Explicit noise label; outliers are left out.</td></tr>
+          <tr><td>Parameters</td><td>k, initialisation, iterations.</td><td>Linkage, distance metric, cut height or k.</td><td>&epsilon;, MinPts.</td></tr>
+          <tr><td>Deterministic?</td><td>No: depends on the random start (k-Means++ helps).</td><td class="good">Yes.</td><td>Almost: core points and noise are fixed; a border point reachable from two clusters goes to whichever is visited first.</td></tr>
+          <tr><td>Varying density</td><td>Indifferent to density.</td><td>Handled by the cut height.</td><td>Weak spot: one &epsilon; cannot fit both a dense and a sparse cluster.</td></tr>
+          <tr><td>Cost</td><td class="good">O(n &middot; k &middot; iterations): scales to large n.</td><td>O(n&sup2;) memory, O(n&sup2; log n) to O(n&sup3;) time: small n only.</td><td>O(n log n) with a spatial index; O(n&sup2;) without.</td></tr>
+          <tr><td>Output</td><td>Flat partition + centroids.</td><td>Full dendrogram (a hierarchy at every scale).</td><td>Flat partition + noise set + core/border roles.</td></tr>
+          <tr><td>Reach for it when&hellip;</td><td>Clusters are blob-like and n is large.</td><td>You want to see structure at several scales or n is small.</td><td>Shapes are irregular, outliers exist, and k is unknown.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ STRENGTHS / WEAKNESSES ============ -->
+  <div class="grid-2">
+    <div class="card top hue-minpts">
+      <h3>Where DBSCAN shines</h3>
+      <ul>
+        <li>No need to guess k; the number of clusters falls out of the density.</li>
+        <li>Finds clusters of any shape, because it follows density rather than distance to a centre.</li>
+        <li>Robust to outliers: they are labelled noise instead of polluting a cluster.</li>
+        <li>Needs only two, interpretable parameters, and the k-distance plot guides &epsilon;.</li>
+      </ul>
+    </div>
+    <div class="card top hue-danger">
+      <h3>What to look out for</h3>
+      <ul>
+        <li><strong>Varying density:</strong> a single &epsilon; that works for the dense cluster shatters the sparse one (try the "Varying density" dataset above).</li>
+        <li><strong>High dimensions:</strong> distances lose contrast, so "within &epsilon;" becomes meaningless; reduce dimensions first.</li>
+        <li><strong>Scale sensitivity:</strong> &epsilon; is an absolute distance, so standardise features before clustering.</li>
+        <li><strong>Border ties:</strong> a border point between two clusters is assigned by visit order &mdash; a small, known non-determinism.</li>
+        <li><strong>Bridges:</strong> a thin trail of points can chain two clusters together (raise MinPts to cut it).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="serif">Two numbers, one question.</span>
+    <span> &rarr; &epsilon; says how far to look, MinPts says how many make a crowd, and DBSCAN finds every crowd of any shape &mdash; leaving the wanderers alone.</span>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+
+  // ---------- deterministic random ----------
+  function mulberry(seed) { let a = seed >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function gauss(r) { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  const cl = v => Math.min(0.97, Math.max(0.03, v));
+
+  // ---------- datasets (unit square) ----------
+  function blobsAt(centres, n, sd, seed) { const r = mulberry(seed); const out = []; centres.forEach(c => { for (let i = 0; i < n; i++) out.push([cl(c[0] + gauss(r) * sd), cl(c[1] + gauss(r) * sd)]); }); return out; }
+  function uniform(n, seed) { const r = mulberry(seed); const out = []; for (let i = 0; i < n; i++) out.push([0.05 + r() * 0.9, 0.05 + r() * 0.9]); return out; }
+  const DATA = {
+    moons(seed = 11) { const r = mulberry(seed); const out = []; for (let i = 0; i < 110; i++) { const t = r() * Math.PI; out.push([cl(0.15 + (Math.cos(t) + 1) / 3 * 0.7 + gauss(r) * 0.022), cl(0.25 + (Math.sin(t) + 1) / 2 * 0.55 + gauss(r) * 0.022)]); } for (let i = 0; i < 110; i++) { const t = r() * Math.PI; out.push([cl(0.15 + (2 - Math.cos(t)) / 3 * 0.7 + gauss(r) * 0.022), cl(0.25 + (0.5 - Math.sin(t)) / 2 * 0.55 + gauss(r) * 0.022)]); } return out; },
+    rings(seed = 12) { const r = mulberry(seed); const out = []; for (let i = 0; i < 80; i++) { const t = r() * 2 * Math.PI, rad = 0.12 + gauss(r) * 0.014; out.push([cl(0.5 + rad * Math.cos(t)), cl(0.5 + rad * Math.sin(t))]); } for (let i = 0; i < 150; i++) { const t = r() * 2 * Math.PI, rad = 0.38 + gauss(r) * 0.016; out.push([cl(0.5 + rad * Math.cos(t)), cl(0.5 + rad * Math.sin(t))]); } return out; },
+    blobs(seed = 13) { return blobsAt([[0.25, 0.3], [0.72, 0.28], [0.5, 0.75]], 60, 0.06, seed); },
+    blobsNoise(seed = 14) { return blobsAt([[0.27, 0.32], [0.72, 0.3], [0.55, 0.76]], 45, 0.055, seed).concat(uniform(22, seed + 1)); },
+    varying(seed = 15) { return blobsAt([[0.28, 0.62]], 110, 0.035, seed).concat(blobsAt([[0.7, 0.4]], 80, 0.11, seed + 1)); },
+    bridge(seed = 16) { const r = mulberry(seed + 2); const out = blobsAt([[0.24, 0.5], [0.76, 0.5]], 70, 0.065, seed); for (let i = 0; i < 9; i++) out.push([0.32 + i * 0.045, 0.5 + gauss(r) * 0.008]); return out.concat(uniform(9, seed + 3)); },
+    small(seed = 17) { return blobsAt([[0.3, 0.35], [0.7, 0.65]], 24, 0.07, seed).concat(uniform(9, seed + 1)); },
+  };
+
+  // ---------- geometry ----------
+  const d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
+  function neighbours(pts, eps) { const n = pts.length, e2 = eps * eps, nb = Array.from({ length: n }, () => []); for (let i = 0; i < n; i++) { nb[i].push(i); for (let j = i + 1; j < n; j++) if (d2(pts[i], pts[j]) <= e2) { nb[i].push(j); nb[j].push(i); } } return nb; }
+
+  // ---------- DBSCAN (with variants + step recording) ----------
+  // opts.borderExpand: reached non-core points also push their neighbours
+  // opts.noBorder: reached non-core points stay noise
+  // opts.record: collect steps for the animation
+  function dbscan(pts, eps, minPts, opts = {}) {
+    const n = pts.length, nb = neighbours(pts, eps), core = nb.map(a => a.length >= minPts);
+    const labels = new Array(n).fill(-2); // -2 unvisited, -1 noise
+    const steps = [], snap = (t, i, c, extra) => { if (opts.record) steps.push(Object.assign({ t, i, c, cnt: nb[i].length, labels: labels.slice() }, extra)); };
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      if (labels[i] !== -2) continue;
+      if (!core[i]) { labels[i] = -1; snap('noise', i, -1); continue; }
+      const c = k++; labels[i] = c; snap('seed', i, c);
+      const q = nb[i].slice(); let qi = 0;
+      while (qi < q.length) {
+        const j = q[qi++];
+        if (labels[j] === -1) { if (opts.noBorder) continue; labels[j] = c; snap('reclaim', j, c); if (opts.borderExpand) q.push(...nb[j]); continue; }
+        if (labels[j] !== -2) continue;
+        if (core[j]) { labels[j] = c; snap('expand', j, c); q.push(...nb[j]); }
+        else if (opts.noBorder) { labels[j] = -1; snap('noise', j, -1); }
+        else { labels[j] = c; snap('border', j, c); if (opts.borderExpand) q.push(...nb[j]); }
+      }
+      snap('done', i, c);
+    }
+    const roles = labels.map((l, i) => core[i] ? 'core' : (l >= 0 ? 'border' : 'noise'));
+    return { labels, roles, core, nb, k, steps };
+  }
+  function assignNoiseToNearest(pts, res) { const labels = res.labels.slice(); if (res.k === 0) return labels; for (let i = 0; i < pts.length; i++) if (labels[i] < 0) { let b = -1, bd = Infinity; for (let j = 0; j < pts.length; j++) if (res.labels[j] >= 0) { const d = d2(pts[i], pts[j]); if (d < bd) { bd = d; b = res.labels[j]; } } labels[i] = b; } return labels; }
+
+  // ---------- k-Means (k-Means++) ----------
+  function kmeans(pts, k, seed = 5) {
+    const r = mulberry(seed), n = pts.length; let cents = [pts[Math.floor(r() * n)]];
+    while (cents.length < k) { const d = pts.map(p => Math.min(...cents.map(c => d2(p, c)))); const s = d.reduce((a, b) => a + b, 0); let x = r() * s, i = 0; for (; i < n - 1; i++) { x -= d[i]; if (x <= 0) break; } cents.push(pts[i]); }
+    const labels = new Array(n).fill(0);
+    for (let it = 0; it < 60; it++) {
+      let ch = false;
+      for (let i = 0; i < n; i++) { let b = 0, bd = Infinity; for (let c = 0; c < k; c++) { const dd = d2(pts[i], cents[c]); if (dd < bd) { bd = dd; b = c; } } if (labels[i] !== b) { labels[i] = b; ch = true; } }
+      const s = Array.from({ length: k }, () => [0, 0, 0]); for (let i = 0; i < n; i++) { const a = s[labels[i]]; a[0] += pts[i][0]; a[1] += pts[i][1]; a[2]++; }
+      cents = s.map((a, c) => a[2] ? [a[0] / a[2], a[1] / a[2]] : cents[c]); if (!ch) break;
+    }
+    return { labels, cents, k };
+  }
+
+  // ---------- Agglomerative (Lance–Williams) ----------
+  function agglo(pts, k, linkage) {
+    const n = pts.length, D = Array.from({ length: n }, () => new Float64Array(n));
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const v = linkage === 'ward' ? d2(pts[i], pts[j]) : Math.sqrt(d2(pts[i], pts[j])); D[i][j] = D[j][i] = v; }
+    const alive = new Array(n).fill(true), size = new Array(n).fill(1), mem = pts.map((_, i) => [i]); let m = n;
+    while (m > k) {
+      let bi = -1, bj = -1, bd = Infinity;
+      for (let i = 0; i < n; i++) if (alive[i]) for (let j = i + 1; j < n; j++) if (alive[j] && D[i][j] < bd) { bd = D[i][j]; bi = i; bj = j; }
+      const si = size[bi], sj = size[bj], dij = D[bi][bj];
+      for (let x = 0; x < n; x++) if (alive[x] && x !== bi && x !== bj) {
+        const a = D[bi][x], b = D[bj][x], sx = size[x]; let v;
+        if (linkage === 'single') v = Math.min(a, b); else if (linkage === 'complete') v = Math.max(a, b);
+        else if (linkage === 'average') v = (si * a + sj * b) / (si + sj);
+        else v = ((si + sx) * a + (sj + sx) * b - sx * dij) / (si + sj + sx);
+        D[bi][x] = D[x][bi] = v;
+      }
+      size[bi] += sj; mem[bi].push(...mem[bj]); alive[bj] = false; m--;
+    }
+    const labels = new Array(n); let c = 0; for (let i = 0; i < n; i++) if (alive[i]) { mem[i].forEach(p => labels[p] = c); c++; }
+    return { labels, k: c };
+  }
+
+  // ---------- drawing ----------
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const series = () => [1, 2, 3, 4, 5, 6, 7, 8].map(i => css('--s' + i));
+  function prep(cv) { const dpr = window.devicePixelRatio || 1; const w = cv.clientWidth || 300, h = cv.clientHeight || w; if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); } const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h); return { ctx, w, h }; }
+  // unit square -> canvas
+  function mapper(w, h) { const m = 14, s = Math.min(w, h) - 2 * m, ox = (w - s) / 2, oy = (h - s) / 2; return { s, x: v => ox + v * s, y: v => oy + (1 - v) * s, ix: px => (px - ox) / s, iy: py => 1 - (py - oy) / s }; }
+
+  function drawX(ctx, x, y, r, col) { ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); ctx.stroke(); }
+
+  // labels[i] >= 0 cluster, -1 noise, -2 unvisited; roles optional
+  function drawScatter(cv, pts, labels, roles, o = {}) {
+    const { ctx, w, h } = prep(cv), M = mapper(w, h), pal = series(), noiseC = css('--noise'), unvC = css('--unvisited'), surf = css('--viz-surface');
+    const colOf = i => labels[i] >= 0 ? pal[labels[i] % pal.length] : (labels[i] === -1 ? noiseC : unvC);
+    if (o.eps && o.focus != null) { // eps circle
+      const f = pts[o.focus]; ctx.beginPath(); ctx.arc(M.x(f[0]), M.y(f[1]), o.eps * M.s, 0, Math.PI * 2);
+      ctx.fillStyle = css('--eps-fill'); ctx.fill(); ctx.strokeStyle = css('--eps-stroke'); ctx.lineWidth = 1.3; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    const hi = o.highlight ? new Set(o.highlight) : null;
+    for (let i = 0; i < pts.length; i++) {
+      const x = M.x(pts[i][0]), y = M.y(pts[i][1]), role = roles ? roles[i] : 'core', col = colOf(i), r = 4.2;
+      if (o.dimOthers && hi && !hi.has(i)) ctx.globalAlpha = 0.28;
+      if (labels[i] === -1 || (roles && role === 'noise')) drawX(ctx, x, y, 3.6, noiseC);
+      else if (role === 'border' && labels[i] >= 0) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = surf; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = surf; ctx.lineWidth = 1; ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    if (hi) hi.forEach(i => { const x = M.x(pts[i][0]), y = M.y(pts[i][1]); ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.strokeStyle = css('--eps-stroke'); ctx.lineWidth = 1.4; ctx.stroke(); });
+    if (o.cents) o.cents.forEach((c, k) => { const x = M.x(c[0]), y = M.y(c[1]); ctx.strokeStyle = surf; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - 7, y); ctx.lineTo(x + 7, y); ctx.moveTo(x, y - 7); ctx.lineTo(x, y + 7); ctx.stroke(); ctx.strokeStyle = pal[k % pal.length]; ctx.lineWidth = 2.2; ctx.stroke(); });
+    if (o.focus != null) { const f = pts[o.focus]; ctx.beginPath(); ctx.arc(M.x(f[0]), M.y(f[1]), 7.5, 0, Math.PI * 2); ctx.strokeStyle = css('--viz-ink'); ctx.lineWidth = 1.6; ctx.stroke(); }
+    if (o.caption) { ctx.font = '600 11px "IBM Plex Mono", monospace'; ctx.fillStyle = css('--viz-ink'); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(o.caption, 12, 10); }
+    return M;
+  }
+
+  const glyph = (kind, col) => kind === 'core' ? `<svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="${col}"/></svg>`
+    : kind === 'border' ? `<svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="4.5" fill="none" stroke="${col}" stroke-width="2.2"/></svg>`
+    : `<svg viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="${col}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  function legend(el, k) { const pal = series(); let s = ''; for (let c = 0; c < Math.min(k, 8); c++) s += `<span>${glyph('core', pal[c])} cluster ${c + 1}</span>`; s += `<span>${glyph('border', pal[0])} border</span><span>${glyph('noise', css('--noise'))} noise</span>`; el.innerHTML = s; }
+  function counts(res) { const core = res.roles.filter(r => r === 'core').length, border = res.roles.filter(r => r === 'border').length, noise = res.roles.filter(r => r === 'noise').length; return { core, border, noise }; }
+  const stat = (el, pairs) => el.innerHTML = pairs.map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
+  const bindRange = (id, out, fmt, fn) => { const el = $('#' + id), o = $('#' + out); const h = () => { o.textContent = fmt(+el.value); fn(+el.value); }; el.addEventListener('input', h); return h; };
+  function seg(id, fn) { const el = $('#' + id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); fn(b.dataset.mode); })); }
+  const redraws = [];
+
+  // ================= LAB A: epsilon =================
+  (function () {
+    const pts = DATA.blobsNoise(), cv = $('#cvA'); let eps = 0.07, minPts = 4, mode = 'set', focus = null, M = null;
+    function effEps() { return mode === 'zero' ? 1e-4 : mode === 'inf' ? 2 : eps; }
+    function draw() {
+      const e = effEps(), res = dbscan(pts, e, minPts);
+      if (focus == null) focus = res.roles.indexOf('border') >= 0 ? res.roles.indexOf('border') : 0;
+      const nbF = res.nb[focus];
+      M = drawScatter(cv, pts, res.labels, res.roles, { eps: mode === 'inf' ? 2 : e, focus, highlight: nbF, dimOthers: false });
+      const c = counts(res), role = res.roles[focus];
+      stat($('#statA'), [['clusters', res.k], ['core', c.core], ['border', c.border], ['noise', c.noise], ['|Nε(hovered)|', nbF.length + (nbF.length >= minPts ? ' ≥ ' : ' < ') + minPts + ' → ' + role]]);
+      legend($('#legendA'), res.k);
+      const v = $('#verdictA'); v.className = 'verdict' + (mode === 'set' ? '' : ' bad');
+      v.innerHTML = mode === 'set' ? `<strong>With &epsilon; = ${eps.toFixed(3)}:</strong> the hovered point has ${nbF.length} neighbour${nbF.length === 1 ? '' : 's'} (itself included), so it is a <strong>${role}</strong> point. ${res.k} cluster${res.k === 1 ? '' : 's'} and ${c.noise} noise points overall.`
+        : mode === 'zero' ? `<strong>&epsilon; &rarr; 0:</strong> no point can see any other, so every neighbourhood has size 1 &lt; MinPts. <strong>Every point is noise</strong> and there are zero clusters. Density needs a radius to be measured over.`
+        : `<strong>&epsilon; &rarr; &infin;:</strong> every point sees every other, so all ${pts.length} points are core and directly reachable from each other. <strong>One giant cluster</strong>, outliers included. The scale that made "dense" meaningful is gone.`;
+    }
+    cv.addEventListener('pointermove', ev => { if (!M) return; const r = cv.getBoundingClientRect(), ux = M.ix(ev.clientX - r.left), uy = M.iy(ev.clientY - r.top); let b = -1, bd = 0.0016; for (let i = 0; i < pts.length; i++) { const d = (pts[i][0] - ux) ** 2 + (pts[i][1] - uy) ** 2; if (d < bd) { bd = d; b = i; } } if (b >= 0 && b !== focus) { focus = b; draw(); } });
+    bindRange('epsA', 'epsAOut', v => v.toFixed(3), v => { eps = v; draw(); });
+    bindRange('minA', 'minAOut', v => v, v => { minPts = v; draw(); });
+    seg('segA', m => { mode = m; draw(); });
+    redraws.push(draw); draw();
+  })();
+
+  // ================= LAB B: MinPts =================
+  (function () {
+    const pts = DATA.blobsNoise(), cv = $('#cvB'); let eps = 0.07, minPts = 4, mode = 'set';
+    function draw() {
+      const m = mode === 'one' ? 1 : minPts, res = dbscan(pts, eps, m), c = counts(res);
+      drawScatter(cv, pts, res.labels, res.roles);
+      stat($('#statB'), [['MinPts in use', m], ['clusters', res.k], ['core', c.core], ['border', c.border], ['noise', c.noise]]);
+      legend($('#legendB'), res.k);
+      const v = $('#verdictB'); v.className = 'verdict' + (mode === 'set' ? '' : ' bad');
+      v.innerHTML = mode === 'set' ? `<strong>MinPts = ${minPts}:</strong> ${c.core} core points form ${res.k} cluster${res.k === 1 ? '' : 's'}; ${c.border} border points hang on to them; ${c.noise} points are noise. ${minPts >= 8 ? 'A high threshold: only the densest interiors survive and clusters may split.' : minPts <= 2 ? 'A very low threshold: almost any pair of nearby points counts as a crowd.' : 'A sensible middle: interiors are core, edges are border, outliers are noise.'}`
+        : `<strong>Without a threshold (MinPts = 1):</strong> every point is its own crowd, so <strong>every point is core</strong> and nothing can ever be noise. Each isolated outlier becomes a cluster of one, and any two points within &epsilon; chain together: ${res.k} "clusters", 0 noise. DBSCAN has collapsed into single-linkage clustering cut at height &epsilon;.`;
+    }
+    bindRange('epsB', 'epsBOut', v => v.toFixed(3), v => { eps = v; draw(); });
+    bindRange('minB', 'minBOut', v => v, v => { minPts = v; draw(); });
+    seg('segB', m => { mode = m; draw(); });
+    redraws.push(draw); draw();
+  })();
+
+  // ================= LAB C: noise & border =================
+  (function () {
+    const pts = DATA.bridge(), cv = $('#cvC'); let eps = 0.065, minPts = 5, mode = 'normal';
+    function draw() {
+      let res, labels, roles, note;
+      if (mode === 'borderCore') res = dbscan(pts, eps, minPts, { borderExpand: true });
+      else if (mode === 'noBorder') res = dbscan(pts, eps, minPts, { noBorder: true });
+      else res = dbscan(pts, eps, minPts);
+      labels = res.labels; roles = res.roles;
+      if (mode === 'noNoise') { labels = assignNoiseToNearest(pts, res); roles = roles.map((r, i) => r === 'noise' && labels[i] >= 0 ? 'border' : r); }
+      if (mode === 'noBorder') roles = roles.map((r, i) => labels[i] < 0 ? 'noise' : r);
+      drawScatter(cv, pts, labels, roles);
+      const c = { core: roles.filter(r => r === 'core').length, border: roles.filter(r => r === 'border').length, noise: roles.filter(r => r === 'noise').length };
+      stat($('#statC'), [['clusters', res.k], ['core', c.core], ['border', c.border], ['noise', c.noise]]);
+      legend($('#legendC'), res.k);
+      const v = $('#verdictC'); v.className = 'verdict' + (mode === 'normal' ? '' : ' bad');
+      v.innerHTML = mode === 'normal' ? `<strong>Standard DBSCAN:</strong> ${res.k} cluster${res.k === 1 ? '' : 's'}, ${c.noise} noise. ${res.k >= 2 ? 'The bridge is too thin to reach MinPts, so its points become border or noise and the two blobs stay apart.' : 'At this ε / MinPts the bridge is dense enough to be core all the way across, so the two blobs merge. Raise MinPts or lower ε to cut it.'} The scattered outliers are left out.`
+        : mode === 'noNoise' ? `<strong>No noise label:</strong> every unclustered point is handed to the nearest cluster, the way k-Means would. The outliers in the corners now <strong>stretch the clusters</strong> to the edges of the plot and any distance-based summary (centroid, spread) is pulled toward them. The noise label is what keeps outliers from distorting clusters.`
+        : mode === 'borderCore' ? `<strong>Border points can expand:</strong> a point with too few neighbours is still allowed to pass the cluster on. Sparse tails and the bridge now <strong>chain</strong>: ${res.k} cluster${res.k === 1 ? '' : 's'} instead of two. Restricting growth to core points is what stops thin trails of points from gluing crowds together.`
+        : `<strong>No border points:</strong> only core points may belong to a cluster, so every edge point is thrown away as noise (${c.noise} points now). Clusters look eroded and real members are lost. Border points let a cluster keep its rim without letting the rim grow the cluster.`;
+    }
+    bindRange('epsC', 'epsCOut', v => v.toFixed(3), v => { eps = v; draw(); });
+    bindRange('minC', 'minCOut', v => v, v => { minPts = v; draw(); });
+    seg('segC', m => { mode = m; draw(); });
+    redraws.push(draw); draw();
+  })();
+
+  // ================= LAB D: walkthrough =================
+  (function () {
+    const pts = DATA.small(), cv = $('#cvD'); let eps = 0.09, minPts = 4, res = null, t = -1, timer = null;
+    const playBtn = $('#playD'), log = $('#logD');
+    function build() { stop(); res = dbscan(pts, eps, minPts, { record: true }); t = -1; render(); }
+    function labelsAt() { if (t < 0) return new Array(pts.length).fill(-2); return res.steps[t].labels; }
+    function rolesFrom(labels) { return labels.map((l, i) => l === -2 ? 'unvisited' : (res.core[i] ? 'core' : (l >= 0 ? 'border' : 'noise'))); }
+    function msg(s) { const p = s.i + 1, n = s.cnt, cmp = n >= minPts ? '≥' : '<', c = s.c + 1;
+      if (s.t === 'noise') return `Point ${p}: |Nε| = ${n} ${cmp} MinPts ${minPts}, not core, and no cluster has reached it → <strong>noise</strong> (for now).`;
+      if (s.t === 'seed') return `Point ${p}: |Nε| = ${n} ${cmp} MinPts ${minPts} → <strong>core</strong>. Start <strong>cluster ${c}</strong>; queue its ${n - 1} neighbours.`;
+      if (s.t === 'expand') return `Point ${p}: reached from cluster ${c}; |Nε| = ${n} ${cmp} ${minPts} → <strong>core</strong>, so its neighbours join the queue.`;
+      if (s.t === 'border') return `Point ${p}: reached from cluster ${c}, but |Nε| = ${n} ${cmp} ${minPts} → <strong>border</strong>. It joins, but does not expand.`;
+      if (s.t === 'reclaim') return `Point ${p}: was marked noise, but a core point of cluster ${c} reaches it → re-labelled <strong>border</strong>.`;
+      return `Queue empty: <strong>cluster ${c} is complete</strong>. Look for the next unvisited point.`; }
+    function render() {
+      const labels = labelsAt(), roles = rolesFrom(labels), s = t >= 0 ? res.steps[t] : null;
+      const o = s && s.t !== 'done' ? { eps, focus: s.i, highlight: res.nb[s.i] } : {};
+      drawScatter(cv, pts, labels, roles.map(r => r === 'unvisited' ? 'core' : r), o);
+      const done = labels.filter(l => l !== -2).length, k = Math.max(0, ...labels) + 1;
+      stat($('#statD'), [['step', `${t + 1} / ${res.steps.length}`], ['visited', `${done} / ${pts.length}`], ['clusters so far', k], ['noise so far', labels.filter(l => l === -1).length]]);
+      let html = '';
+      if (t < 0) html = '<div class="logline empty"><span class="k">&mdash;</span><span>Press Play or Step. Each line is one point being examined.</span></div>';
+      else { const from = Math.max(0, t - 40); for (let i = from; i <= t; i++) html += `<div class="logline${i === t ? ' now' : ''}"><span class="k">${i + 1}</span><span>${msg(res.steps[i])}</span></div>`; }
+      log.innerHTML = html; log.scrollTop = log.scrollHeight;
+      $('#stepD').disabled = t >= res.steps.length - 1;
+      if (t >= res.steps.length - 1) stop();
+    }
+    function step() { if (t < res.steps.length - 1) { t++; render(); } }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } playBtn.innerHTML = '&#9654; Play'; }
+    playBtn.addEventListener('click', () => { if (timer) { stop(); return; } if (t >= res.steps.length - 1) t = -1; timer = setInterval(step, 600); playBtn.innerHTML = '&#10074;&#10074; Pause'; step(); });
+    $('#stepD').addEventListener('click', () => { stop(); step(); });
+    $('#resetD').addEventListener('click', () => { stop(); t = -1; render(); });
+    bindRange('epsD', 'epsDOut', v => v.toFixed(3), v => { eps = v; build(); });
+    bindRange('minD', 'minDOut', v => v, v => { minPts = v; build(); });
+    redraws.push(render); build();
+  })();
+
+  // ================= LAB E: k-distance =================
+  (function () {
+    const pts = DATA.blobsNoise(), cv = $('#cvE'), cv2 = $('#cvE2'); let eps = 0.07, minPts = 4;
+    function kdist() { const n = pts.length, out = []; for (let i = 0; i < n; i++) { const d = []; for (let j = 0; j < n; j++) if (j !== i) d.push(Math.sqrt(d2(pts[i], pts[j]))); d.sort((a, b) => a - b); out.push(d[Math.min(minPts - 2, d.length - 1)]); } return out.sort((a, b) => a - b); }
+    function draw() {
+      const kd = kdist(), { ctx, w, h } = prep(cv), L = 44, R = 14, T = 14, B = 30, pw = w - L - R, ph = h - T - B, ymax = Math.max(0.3, Math.min(0.6, Math.ceil(kd[kd.length - 1] * 20) / 20));
+      const X = i => L + i / (kd.length - 1) * pw, Y = v => T + ph - Math.min(v, ymax) / ymax * ph;
+      ctx.strokeStyle = css('--viz-grid'); ctx.lineWidth = 1; ctx.font = '11px "IBM Plex Mono", monospace'; ctx.fillStyle = css('--viz-muted'); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (let v = 0; v <= ymax + 1e-9; v += 0.1) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(w - R, Y(v)); ctx.stroke(); ctx.fillText(v.toFixed(1), L - 6, Y(v)); }
+      ctx.strokeStyle = css('--viz-axis'); ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(w - R, T + ph); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('points, sorted by distance to their ' + (minPts - 1) + (minPts - 1 === 1 ? 'st' : minPts - 1 === 2 ? 'nd' : minPts - 1 === 3 ? 'rd' : 'th') + ' nearest neighbour', L + pw / 2, T + ph + 8);
+      // area + line
+      const pal = series(); ctx.beginPath(); ctx.moveTo(X(0), Y(0)); kd.forEach((v, i) => ctx.lineTo(X(i), Y(v))); ctx.lineTo(X(kd.length - 1), Y(0)); ctx.closePath(); ctx.fillStyle = css('--eps-fill'); ctx.fill();
+      ctx.beginPath(); kd.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))); ctx.strokeStyle = pal[0]; ctx.lineWidth = 2; ctx.stroke();
+      // eps line
+      const ye = Y(eps); ctx.setLineDash([5, 4]); ctx.strokeStyle = css('--danger'); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(L, ye); ctx.lineTo(w - R, ye); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css('--viz-ink'); ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.font = '600 11px "IBM Plex Mono", monospace'; ctx.fillText('ε = ' + eps.toFixed(3), w - R - 4, ye - 3);
+      const below = kd.filter(v => v <= eps).length;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = css('--viz-muted'); ctx.font = '11px "IBM Plex Mono", monospace'; ctx.fillText(below + ' core ↓', L + 6, ye + 4); ctx.textBaseline = 'bottom'; ctx.fillText((kd.length - below) + ' border/noise ↑', L + 6, ye - 4);
+      const res = dbscan(pts, eps, minPts), c = counts(res);
+      drawScatter(cv2, pts, res.labels, res.roles);
+      stat($('#statE'), [['would-be core at this ε', below + ' / ' + kd.length], ['clusters', res.k], ['border', c.border], ['noise', c.noise]]);
+      legend($('#legendE'), res.k);
+    }
+    bindRange('epsE', 'epsEOut', v => v.toFixed(3), v => { eps = v; draw(); });
+    bindRange('minE', 'minEOut', v => v, v => { minPts = v; draw(); });
+    redraws.push(draw); draw();
+  })();
+
+  // ================= LAB F: comparison =================
+  (function () {
+    const presets = { moons: { k: 2, eps: 0.06, min: 4, link: 'ward' }, rings: { k: 2, eps: 0.06, min: 4, link: 'ward' }, blobs: { k: 3, eps: 0.07, min: 4, link: 'ward' }, blobsNoise: { k: 3, eps: 0.07, min: 4, link: 'ward' }, varying: { k: 2, eps: 0.05, min: 4, link: 'ward' }, bridge: { k: 2, eps: 0.06, min: 5, link: 'ward' } };
+    const notes = {
+      moons: ['Two centres split the moons down the middle: each moon is convex-ish only locally, and k-Means can only draw straight boundaries between centroids.', 'Ward and complete linkage behave like k-Means here. Switch to <strong>single</strong> linkage and the chain follows each moon.', 'Follows the curve of each moon exactly, because density is continuous along it and drops in the gap between them.'],
+      rings: ['Centroids of both rings sit at the same centre, so k-Means slices the picture into wedges.', 'Ward and average slice into wedges too; single linkage recovers the rings if the gap between them is wide enough.', 'The inner and outer ring are two dense bands separated by an empty gap: two clusters, no k required.'],
+      blobs: ['Home turf: round, similar-sized clusters and the right k. k-Means is fast and correct.', 'Ward recovers the three blobs cleanly; single linkage may chain neighbouring blobs if they touch.', 'Also correct, and the blob edges become border points. Nothing to gain over k-Means here except not choosing k.'],
+      blobsNoise: ['Every outlier is forced into a cluster and drags a centroid toward the corner.', 'Outliers are merged last; at k = 3 they still get absorbed into whichever cluster is nearest.', 'The outliers are simply noise. The three blobs are unchanged by them.'],
+      varying: ['Two blobs of different spread are still two convex groups; k-Means does fine.', 'Ward handles unequal spread reasonably; the cut height adapts.', 'DBSCAN\'s weak spot: an ε small enough to keep the dense blob tight shatters the sparse blob into noise; an ε large enough for the sparse blob swallows everything. Try sliding ε.'],
+      bridge: ['The bridge is split at its midpoint between the two centroids; k-Means is unaffected by it.', 'Single linkage follows the bridge and merges both blobs; Ward cuts through it.', 'Whether the blobs merge depends on MinPts: raise it above the bridge\'s local density and the bridge becomes border/noise.'],
+    };
+    let ds = 'moons', k = 2, kh = 2, link = 'ward', eps = 0.06, minPts = 4;
+    const kEl = $('#kF'), khEl = $('#khF'), linkEl = $('#linkF'), epsEl = $('#epsF'), minEl = $('#minF');
+    function draw() {
+      const pts = DATA[ds]();
+      const km = kmeans(pts, k); drawScatter($('#cvF1'), pts, km.labels, null, { cents: km.cents }); stat($('#statF1'), [['k', k], ['clusters', km.k], ['noise', 0]]); $('#noteF1').innerHTML = notes[ds][0];
+      const ag = agglo(pts, kh, link); drawScatter($('#cvF2'), pts, ag.labels, null); stat($('#statF2'), [['linkage', link], ['cut into', kh], ['noise', 0]]); $('#noteF2').innerHTML = notes[ds][1];
+      const db = dbscan(pts, eps, minPts), c = counts(db); drawScatter($('#cvF3'), pts, db.labels, db.roles); stat($('#statF3'), [['ε', eps.toFixed(3)], ['MinPts', minPts], ['clusters', db.k], ['noise', c.noise]]); $('#noteF3').innerHTML = notes[ds][2];
+    }
+    const upd = { k: bindRange('kF', 'kFOut', v => v, v => { k = v; draw(); }), kh: bindRange('khF', 'khFOut', v => v, v => { kh = v; draw(); }), eps: bindRange('epsF', 'epsFOut', v => v.toFixed(3), v => { eps = v; draw(); }), min: bindRange('minF', 'minFOut', v => v, v => { minPts = v; draw(); }) };
+    linkEl.addEventListener('change', () => { link = linkEl.value; draw(); });
+    $('#dsF').addEventListener('change', () => { ds = $('#dsF').value; const p = presets[ds]; kEl.value = p.k; khEl.value = p.k; epsEl.value = p.eps; minEl.value = p.min; linkEl.value = p.link; k = p.k; kh = p.k; eps = p.eps; minPts = p.min; link = p.link; $('#kFOut').textContent = k; $('#khFOut').textContent = kh; $('#epsFOut').textContent = eps.toFixed(3); $('#minFOut').textContent = minPts; draw(); });
+    redraws.push(draw); draw();
+  })();
+
+  // ---------- redraw on resize / theme change ----------
+  let raf = null; const all = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = null; redraws.forEach(f => f()); }); };
+  window.addEventListener('resize', all);
+  if (window.ResizeObserver) { const ro = new ResizeObserver(all); document.querySelectorAll('canvas.viz').forEach(c => ro.observe(c)); }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', all);
+  new MutationObserver(all).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(all);
+})();
+</script>
