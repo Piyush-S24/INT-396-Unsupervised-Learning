@@ -165,6 +165,21 @@
   table.cmp td.good { color: var(--hue-ink); }
   table.cmp tr:last-child td { border-bottom: none; }
 
+  /* ---------- verification checklist ---------- */
+  .checks { display: flex; flex-direction: column; gap: 6px; }
+  .check { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: start; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); font-size: 12px; line-height: 1.45; color: var(--ink-muted); }
+  .check .ico { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; }
+  .check.ok .ico { background: oklch(var(--l-border) var(--c-border) var(--h-minpts)); }
+  .check.warn .ico { background: oklch(var(--l-border) 0.12 var(--h-warn)); }
+  .check.bad .ico { background: oklch(var(--l-border) 0.19 var(--h-danger)); }
+  .check.na .ico { background: var(--border); color: var(--ink-muted); }
+  .check b { color: var(--ink); }
+  .check .val { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .check.ok .val { color: oklch(var(--l-ink) var(--c-ink) var(--h-minpts)); }
+  .check.bad .val { color: oklch(var(--l-ink) var(--c-ink) var(--h-danger)); }
+  .hmlegend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; color: var(--ink-muted); align-items: center; }
+  .hmlegend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+
   .footer { background: var(--band-deep); border-radius: 14px; padding: 16px 20px; text-align: center; }
   .footer .serif { font-weight: 600; font-style: italic; font-size: 16px; color: var(--band-ink); }
   .footer span { font-weight: 500; font-size: 14px; color: var(--band-ink-muted); }
@@ -406,7 +421,7 @@
   </div>
 
   <!-- ============ SECTION: CHOOSING PARAMETERS ============ -->
-  <div class="sect"><h2>5 &middot; Choosing &epsilon; and MinPts</h2><p>There is no "right" &epsilon; hidden in the data, but the data does tell you where the sensible range is.</p></div>
+  <div class="sect"><h2>5 &middot; Choosing &epsilon; and MinPts</h2><p>There is no "right" &epsilon; hidden in the data, but the data does tell you where the sensible range is &mdash; and section 6 shows how to check the pick.</p></div>
 
   <div class="lab">
     <div class="card top hue-warn">
@@ -436,8 +451,80 @@
     </div>
   </div>
 
+  <!-- ============ SECTION: VERIFYING PARAMETERS ============ -->
+  <div class="sect"><h2>6 &middot; Are &epsilon; and MinPts right? Verifying the choice</h2><p>The knee gives a candidate. Before trusting it, check what the clustering <em>looks like</em>, how it <em>scores</em>, and whether it <em>survives a nudge</em>. A good pair passes all three.</p></div>
+
+  <div class="grid-3">
+    <div class="card top hue-warn">
+      <h3>Check 1 &middot; Read the output</h3>
+      <p>Wrong parameters leave fingerprints in the counts themselves. Compare against what the data should contain.</p>
+      <ul>
+        <li><strong>Noise share.</strong> A few percent is normal for real data. <em>&gt; 20&ndash;25 %</em> &rarr; &epsilon; too small or MinPts too high. <em>Exactly 0 % with one cluster</em> &rarr; &epsilon; too large; nothing was excluded.</li>
+        <li><strong>Cluster count and sizes.</strong> Many tiny clusters (smaller than about 2&middot;MinPts) are <em>fragments</em> of a shattered cluster. One cluster holding almost every point is a <em>merge</em>.</li>
+        <li><strong>Core : border.</strong> A healthy cluster is mostly core with a thin border rim. More border than core means points only just reach MinPts &mdash; the result is balanced on a knife-edge.</li>
+      </ul>
+    </div>
+    <div class="card top hue-cmp">
+      <h3>Check 2 &middot; Score it</h3>
+      <p>Unit 2's validity indices still apply, with two cautions.</p>
+      <ul>
+        <li><strong>Silhouette / Davies&ndash;Bouldin on the clustered points only.</strong> Drop the noise first; noise is not a cluster. Use the score to compare <em>one (&epsilon;, MinPts) against another</em>, not DBSCAN against k-Means: both indices reward round, compact clusters and will under-rate a correct moon or ring.</li>
+        <li><strong>DBCV</strong> (Moulavi et al., 2014) is the density-aware alternative: it scores how much denser the inside of each cluster is than the gap to its neighbour, so arbitrary shapes are judged fairly. Range &minus;1 to +1, higher is better.</li>
+        <li><strong>External check when labels exist.</strong> On labelled or synthetic data, the <strong>Adjusted Rand Index</strong> (ARI) compares the clustering with the truth: 1 = identical, 0 = no better than chance.</li>
+      </ul>
+    </div>
+    <div class="card top hue-rules">
+      <h3>Check 3 &middot; Nudge it (stability)</h3>
+      <p>The most reliable test needs no labels at all. Re-run DBSCAN on a grid of &epsilon; and MinPts around your choice.</p>
+      <ul>
+        <li>If the number of clusters stays the same across a <strong>wide plateau</strong> of &epsilon;, the structure is real and your &epsilon; sits safely inside it.</li>
+        <li>If one tick of the slider changes the answer, you are on a <strong>cliff</strong> &mdash; the clustering is an artefact of the exact value, not of the data. Move to the middle of the nearest plateau.</li>
+        <li>Do the same for MinPts: a knee &epsilon; that barely moves as MinPts goes 3 &rarr; 6 is a sign the density contrast is genuine.</li>
+      </ul>
+      <div class="callout hued"><strong>Order of work:</strong> MinPts from dimensionality &rarr; &epsilon; from the knee &rarr; verify with the three checks &rarr; if any fails, adjust and repeat.</div>
+    </div>
+  </div>
+
+  <div class="lab">
+    <div class="card top hue-warn">
+      <h3>Verification lab</h3>
+      <div class="ctlrow">
+        <div class="field"><label for="dsG">Dataset</label>
+          <select id="dsG">
+            <option value="blobsNoise" selected>Blobs + scattered noise (3 true clusters)</option>
+            <option value="moons">Two moons (2)</option>
+            <option value="rings">Concentric rings (2)</option>
+            <option value="blobs">Three round blobs (3)</option>
+            <option value="varying">Varying density (2)</option>
+            <option value="bridge">Two blobs with a bridge (2)</option>
+          </select>
+        </div>
+        <div class="field"><label for="epsG">&epsilon; <b id="epsGOut">0.070</b></label><input type="range" id="epsG" min="0.02" max="0.2" step="0.005" value="0.07"></div>
+        <div class="field"><label for="minG">MinPts <b id="minGOut">4</b></label><input type="range" id="minG" min="2" max="12" step="1" value="4"></div>
+      </div>
+      <div class="checks" id="checksG"></div>
+      <div class="verdict" id="verdictG"></div>
+      <div class="callout tint">Thresholds used here are rules of thumb for teaching: noise share flagged above 25 %, fragments below 2&middot;MinPts points, a plateau counted as &ldquo;safe&rdquo; when the cluster count is unchanged for at least &plusmn;0.015 of &epsilon;. Real projects tune these to the domain.</div>
+    </div>
+    <div class="card">
+      <p style="font-size:12px; font-weight:600; color:var(--ink);">Stability map: number of clusters for every (&epsilon;, MinPts) &mdash; click a cell to try it</p>
+      <div class="vizwrap"><canvas class="viz wide" id="cvG1"></canvas></div>
+      <div class="hmlegend" id="hmLegendG"></div>
+      <p style="font-size:12px; font-weight:600; color:var(--ink); margin-top:6px;">&epsilon; sweep at the current MinPts: clusters and noise share</p>
+      <div class="vizwrap"><canvas class="viz wide" id="cvG2"></canvas></div>
+      <div class="grid-2" style="gap:10px;">
+        <div class="vizwrap"><canvas class="viz" id="cvG3"></canvas></div>
+        <div style="display:flex; flex-direction:column; gap:8px; justify-content:center;">
+          <div class="stats" id="statG"></div>
+          <div class="legend" id="legendG"></div>
+          <p style="font-size:12px; color:var(--ink-muted); line-height:1.5;">Each cell of the map is one full DBSCAN run. Wide bands of one colour are plateaus; where the colour changes every column, a tiny change in &epsilon; flips the answer. Grey cells found no cluster at all.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ SECTION: COMPARISON ============ -->
-  <div class="sect"><h2>6 &middot; k-Means vs. Hierarchical vs. DBSCAN</h2><p>Same data, three ways of asking "what is a group?" Switch the dataset and see who gets it right.</p></div>
+  <div class="sect"><h2>7 &middot; k-Means vs. Hierarchical vs. DBSCAN</h2><p>Same data, three ways of asking "what is a group?" Switch the dataset and see who gets it right.</p></div>
 
   <div class="card top hue-cmp">
     <div class="ctlrow">
@@ -510,7 +597,7 @@
         <li>No need to guess k; the number of clusters falls out of the density.</li>
         <li>Finds clusters of any shape, because it follows density rather than distance to a centre.</li>
         <li>Robust to outliers: they are labelled noise instead of polluting a cluster.</li>
-        <li>Needs only two, interpretable parameters, and the k-distance plot guides &epsilon;.</li>
+        <li>Needs only two, interpretable parameters: the k-distance plot guides &epsilon;, and the stability map verifies the pair.</li>
       </ul>
     </div>
     <div class="card top hue-danger">
@@ -800,6 +887,164 @@
     bindRange('epsE', 'epsEOut', v => v.toFixed(3), v => { eps = v; draw(); });
     bindRange('minE', 'minEOut', v => v, v => { minPts = v; draw(); });
     redraws.push(draw); draw();
+  })();
+
+  // ================= LAB G: verifying eps / MinPts =================
+  // Generator ground truth (same construction order as DATA.*): -1 = injected noise / bridge points
+  const TRUTH = {
+    moons: () => [].concat(Array(110).fill(0), Array(110).fill(1)),
+    rings: () => [].concat(Array(80).fill(0), Array(150).fill(1)),
+    blobs: () => [].concat(Array(60).fill(0), Array(60).fill(1), Array(60).fill(2)),
+    blobsNoise: () => [].concat(Array(45).fill(0), Array(45).fill(1), Array(45).fill(2), Array(22).fill(-1)),
+    varying: () => [].concat(Array(110).fill(0), Array(80).fill(1)),
+    bridge: () => [].concat(Array(70).fill(0), Array(70).fill(1), Array(18).fill(-1)),
+  };
+  // Adjusted Rand Index; noise (-1) is treated as a label of its own, as scikit-learn does
+  function ari(a, b) {
+    const n = a.length, ka = new Map(), kb = new Map(), cont = new Map();
+    for (let i = 0; i < n; i++) { ka.set(a[i], (ka.get(a[i]) || 0) + 1); kb.set(b[i], (kb.get(b[i]) || 0) + 1); const key = a[i] + '|' + b[i]; cont.set(key, (cont.get(key) || 0) + 1); }
+    const c2 = x => x * (x - 1) / 2;
+    let sij = 0, sa = 0, sb = 0; cont.forEach(v => sij += c2(v)); ka.forEach(v => sa += c2(v)); kb.forEach(v => sb += c2(v));
+    const exp = sa * sb / c2(n), max = (sa + sb) / 2;
+    return max === exp ? 1 : (sij - exp) / (max - exp);
+  }
+  // Mean silhouette over clustered points only (noise excluded); null if fewer than 2 clusters
+  function silhouette(pts, labels) {
+    const idx = []; for (let i = 0; i < pts.length; i++) if (labels[i] >= 0) idx.push(i);
+    const ks = new Set(idx.map(i => labels[i])); if (ks.size < 2) return null;
+    let total = 0;
+    for (const i of idx) {
+      const sums = new Map(), cnts = new Map();
+      for (const j of idx) { if (j === i) continue; const l = labels[j], d = Math.sqrt(d2(pts[i], pts[j])); sums.set(l, (sums.get(l) || 0) + d); cnts.set(l, (cnts.get(l) || 0) + 1); }
+      const own = labels[i]; if (!cnts.get(own)) continue; // singleton -> s = 0
+      const a = sums.get(own) / cnts.get(own); let b = Infinity; cnts.forEach((c, l) => { if (l !== own) b = Math.min(b, sums.get(l) / c); });
+      total += (b - a) / Math.max(a, b);
+    }
+    return total / idx.length;
+  }
+  function clusterSizes(res) { const s = new Array(res.k).fill(0); res.labels.forEach(l => { if (l >= 0) s[l]++; }); return s; }
+
+  (function () {
+    const cv1 = $('#cvG1'), cv2 = $('#cvG2'), cv3 = $('#cvG3');
+    const EPS = []; for (let e = 0.02; e <= 0.2001; e += 0.01) EPS.push(+e.toFixed(3));
+    const MINS = []; for (let m = 2; m <= 12; m++) MINS.push(m);
+    const SWEEP = []; for (let e = 0.02; e <= 0.2001; e += 0.005) SWEEP.push(+e.toFixed(3));
+    let ds = 'blobsNoise', eps = 0.07, minPts = 4, pts = DATA[ds](), truth = TRUTH[ds](), grid = null, sweep = null, sweepMin = null, geom1 = null;
+    const nearest = arr => v => arr.reduce((b, x) => Math.abs(x - v) < Math.abs(b - v) ? x : b, arr[0]);
+    function buildGrid() { grid = MINS.map(m => EPS.map(e => { const r = dbscan(pts, e, m); return { k: r.k, noise: r.roles.filter(x => x === 'noise').length / pts.length }; })); }
+    function buildSweep() { sweepMin = minPts; sweep = SWEEP.map(e => { const r = dbscan(pts, e, minPts); return { k: r.k, noise: r.roles.filter(x => x === 'noise').length / pts.length }; }); }
+    function kColour(k) { if (k === 0) return css('--unvisited'); if (k > 8) return css('--danger'); return series()[k - 1]; }
+
+    function drawGrid() {
+      const { ctx, w, h } = prep(cv1), L = 62, R = 12, T = 12, B = 34, pw = w - L - R, ph = h - T - B, cw = pw / EPS.length, ch = ph / MINS.length;
+      ctx.font = '11px "IBM Plex Mono", monospace';
+      MINS.forEach((m, r) => EPS.forEach((e, c) => {
+        const cell = grid[r][c], x = L + c * cw, y = T + (MINS.length - 1 - r) * ch;
+        ctx.fillStyle = kColour(cell.k); ctx.globalAlpha = cell.k === 0 ? 0.55 : 0.85; ctx.fillRect(x, y, cw - 1, ch - 1); ctx.globalAlpha = 1;
+        if (cw > 26 && ch > 14) { ctx.fillStyle = cell.k === 0 ? css('--viz-ink') : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 10px "IBM Plex Mono", monospace'; ctx.fillText(cell.k + (cw > 40 ? ' · ' + Math.round(cell.noise * 100) + '%' : ''), x + cw / 2, y + ch / 2); }
+      }));
+      // axes
+      ctx.fillStyle = css('--viz-muted'); ctx.font = '11px "IBM Plex Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      EPS.forEach((e, c) => { if (c % 2 === 0) ctx.fillText(e.toFixed(2), L + c * cw + cw / 2, T + ph + 6); });
+      ctx.fillText('ε', L + pw / 2, T + ph + 19);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      MINS.forEach((m, r) => ctx.fillText(String(m), L - 6, T + (MINS.length - 1 - r) * ch + ch / 2));
+      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MinPts', 0, 0); ctx.restore();
+      // current cell
+      const c = EPS.indexOf(nearest(EPS)(eps)), r = MINS.indexOf(minPts);
+      if (c >= 0 && r >= 0) { ctx.strokeStyle = css('--viz-ink'); ctx.lineWidth = 2.5; ctx.strokeRect(L + c * cw + 1, T + (MINS.length - 1 - r) * ch + 1, cw - 3, ch - 3); }
+      geom1 = { L, T, cw, ch };
+      const ks = [...new Set(grid.flat().map(x => Math.min(x.k, 9)))].sort((a, b) => a - b);
+      $('#hmLegendG').innerHTML = ks.map(k => `<span><i style="background:${kColour(k)}"></i>${k === 0 ? 'no cluster' : k === 9 ? '9+ clusters (shattered)' : k + ' cluster' + (k === 1 ? '' : 's')}</span>`).join('') + (cw > 40 ? '<span>cell text: clusters · noise %</span>' : '<span>cell text: number of clusters</span>');
+    }
+    function drawSweep() {
+      const { ctx, w, h } = prep(cv2), L = 40, R = 40, T = 14, B = 30, pw = w - L - R, ph = h - T - B;
+      const kmax = Math.max(4, ...sweep.map(s => s.k)), X = i => L + i / (SWEEP.length - 1) * pw, Yk = k => T + ph - k / kmax * ph, Yn = v => T + ph - v * ph;
+      ctx.strokeStyle = css('--viz-grid'); ctx.lineWidth = 1; ctx.font = '11px "IBM Plex Mono", monospace'; ctx.fillStyle = css('--viz-muted');
+      for (let k = 0; k <= kmax; k++) { ctx.beginPath(); ctx.moveTo(L, Yk(k)); ctx.lineTo(w - R, Yk(k)); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(String(k), L - 6, Yk(k)); }
+      ctx.textAlign = 'left'; [0, 0.5, 1].forEach(v => ctx.fillText(Math.round(v * 100) + '%', w - R + 6, Yn(v)));
+      ctx.strokeStyle = css('--viz-axis'); ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(w - R, T + ph); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top'; SWEEP.forEach((e, i) => { if (i % 6 === 0) ctx.fillText(e.toFixed(2), X(i), T + ph + 6); });
+      ctx.fillText('ε  (MinPts = ' + sweepMin + ')   —  left axis: clusters   right axis: noise share', L + pw / 2, T + ph + 18);
+      // plateau shading: runs of equal k
+      let i = 0; while (i < sweep.length) { let j = i; while (j + 1 < sweep.length && sweep[j + 1].k === sweep[i].k) j++; if (j - i >= 5 && sweep[i].k > 0) { ctx.fillStyle = css('--eps-fill'); ctx.fillRect(X(i), T, X(j) - X(i), ph); } i = j + 1; }
+      // noise line
+      ctx.strokeStyle = css('--noise'); ctx.lineWidth = 1.6; ctx.setLineDash([3, 3]); ctx.beginPath(); sweep.forEach((s, i) => i ? ctx.lineTo(X(i), Yn(s.noise)) : ctx.moveTo(X(i), Yn(s.noise))); ctx.stroke(); ctx.setLineDash([]);
+      // clusters step line
+      ctx.strokeStyle = series()[0]; ctx.lineWidth = 2.2; ctx.beginPath(); sweep.forEach((s, i) => { if (!i) ctx.moveTo(X(0), Yk(s.k)); else { ctx.lineTo(X(i), Yk(sweep[i - 1].k)); ctx.lineTo(X(i), Yk(s.k)); } }); ctx.stroke();
+      // current eps
+      const ci = SWEEP.indexOf(nearest(SWEEP)(eps)); ctx.strokeStyle = css('--danger'); ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(X(ci), T); ctx.lineTo(X(ci), T + ph); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css('--viz-ink'); ctx.font = '600 11px "IBM Plex Mono", monospace'; ctx.textAlign = ci > SWEEP.length / 2 ? 'right' : 'left'; ctx.textBaseline = 'top'; ctx.fillText('ε = ' + eps.toFixed(3), X(ci) + (ci > SWEEP.length / 2 ? -5 : 5), T + 2);
+    }
+    function plateauWidth() {
+      const ci = SWEEP.indexOf(nearest(SWEEP)(eps)), k = sweep[ci].k; let a = ci, b = ci;
+      while (a > 0 && sweep[a - 1].k === k) a--; while (b < sweep.length - 1 && sweep[b + 1].k === k) b++;
+      // nearest run of >= 6 steps (>= 0.03 of eps) with at least one cluster: where to move if on a cliff
+      let best = null, i = 0;
+      while (i < sweep.length) { let j = i; while (j + 1 < sweep.length && sweep[j + 1].k === sweep[i].k) j++; if (sweep[i].k > 0 && j - i >= 5) { const dist = ci < i ? i - ci : ci > j ? ci - j : 0; if (!best || dist < best.dist) best = { dist, lo: SWEEP[i], hi: SWEEP[j], k: sweep[i].k }; } i = j + 1; }
+      return { lo: SWEEP[a], hi: SWEEP[b], left: ci - a, right: b - ci, k, best };
+    }
+    function check(cls, title, val, text) { return `<div class="check ${cls}"><span class="ico">${cls === 'ok' ? '✓' : cls === 'warn' ? '!' : cls === 'bad' ? '✕' : '–'}</span><span><b>${title}</b> — ${text}</span><span class="val">${val}</span></div>`; }
+
+    function draw() {
+      if (minPts !== sweepMin) buildSweep();
+      const res = dbscan(pts, eps, minPts), c = counts(res), n = pts.length, sizes = clusterSizes(res), noiseShare = c.noise / n, coreShare = c.core / n;
+      drawScatter(cv3, pts, res.labels, res.roles);
+      stat($('#statG'), [['clusters', res.k], ['core', c.core], ['border', c.border], ['noise', c.noise + ' (' + Math.round(noiseShare * 100) + '%)']]);
+      legend($('#legendG'), res.k);
+      drawGrid(); drawSweep();
+      // ---- checks ----
+      const trueK = new Set(truth.filter(t => t >= 0)).size, trueNoise = truth.filter(t => t < 0).length / n;
+      const out = []; let bad = 0, warn = 0;
+      // 1 noise share
+      if (res.k === 1 && c.noise === 0) { out.push(check('bad', 'Noise share', '0%', 'nothing was excluded and everything merged — ε is almost certainly too large.')); bad++; }
+      else if (noiseShare > 0.25) { out.push(check('bad', 'Noise share', Math.round(noiseShare * 100) + '%', 'a quarter or more of the data is noise — ε too small or MinPts too high.')); bad++; }
+      else if (noiseShare > 0.15) { out.push(check('warn', 'Noise share', Math.round(noiseShare * 100) + '%', 'high; plausible only if the data really is that dirty.')); warn++; }
+      else out.push(check('ok', 'Noise share', Math.round(noiseShare * 100) + '%', 'a small minority of points is noise.'));
+      // 2 fragments / merges
+      const frag = sizes.filter(s => s < 2 * minPts).length, biggest = sizes.length ? Math.max(...sizes) / n : 0;
+      if (res.k === 0) { out.push(check('bad', 'Clusters', '0', 'no point is core: ε far too small or MinPts far too high.')); bad++; }
+      else if (frag > 0) { out.push(check(frag >= 2 ? 'bad' : 'warn', 'Fragments', frag + ' tiny', `${frag} cluster${frag === 1 ? '' : 's'} with fewer than 2·MinPts = ${2 * minPts} points — a real cluster is shattering. Raise ε or lower MinPts.`)); frag >= 2 ? bad++ : warn++; }
+      else if (res.k === 1 && biggest > 0.9 && trueK > 1) { out.push(check('bad', 'Merge', '1 cluster', 'one cluster holds ' + Math.round(biggest * 100) + '% of the points — separate groups have been chained together. Lower ε or raise MinPts.')); bad++; }
+      else out.push(check('ok', 'Cluster sizes', sizes.join(' / '), 'no fragments and no single giant cluster.'));
+      // 3 core:border
+      if (c.core === 0) { out.push(check('bad', 'Core : border', '0 : ' + c.border, 'no core points at all.')); bad++; }
+      else if (c.border > c.core) { out.push(check('warn', 'Core : border', c.core + ' : ' + c.border, 'more rim than interior — points only just reach MinPts, so the result is fragile.')); warn++; }
+      else out.push(check('ok', 'Core : border', c.core + ' : ' + c.border, 'clusters are solid inside with a thin rim.'));
+      // 4 knee / core share
+      if (coreShare < 0.4) { out.push(check('warn', 'Core share (k-distance)', Math.round(coreShare * 100) + '%', 'fewer than 40% of points are core — ε sits below the knee.')); warn++; }
+      else if (coreShare > 0.97 && trueNoise > 0) { out.push(check('warn', 'Core share (k-distance)', Math.round(coreShare * 100) + '%', 'almost every point is core although the data contains outliers — ε sits above the knee.')); warn++; }
+      else out.push(check('ok', 'Core share (k-distance)', Math.round(coreShare * 100) + '%', 'consistent with ε at the knee of the k-distance plot.'));
+      // 5 stability
+      const p = plateauWidth(), halfw = Math.min(p.left, p.right) * 0.005;
+      const hint = p.best ? ` Nearest solid plateau: ${p.best.k} cluster${p.best.k === 1 ? '' : 's'} for ε = ${p.best.lo.toFixed(3)}–${p.best.hi.toFixed(3)}; aim for its middle.` : ' No plateau of ±0.015 exists at this MinPts — try another MinPts row on the map.';
+      if (res.k > 0 && halfw < 0.01) { out.push(check('bad', 'Stability (ε)', '±' + halfw.toFixed(3), `the cluster count changes within ±0.01 of this ε — you are on a cliff.${hint}`)); bad++; }
+      else if (res.k > 0 && halfw < 0.015) { out.push(check('warn', 'Stability (ε)', '±' + halfw.toFixed(3), `narrow margin: ${p.k} cluster${p.k === 1 ? '' : 's'} only for ε = ${p.lo.toFixed(3)}–${p.hi.toFixed(3)}.${p.best && p.best.dist > 0 ? hint : ''}`)); warn++; }
+      else if (res.k > 0) out.push(check('ok', 'Stability (ε)', '±' + halfw.toFixed(3), `the count stays ${p.k} from ε = ${p.lo.toFixed(3)} to ${p.hi.toFixed(3)} — a solid plateau.`));
+      else out.push(check('na', 'Stability (ε)', '–', 'nothing to test until at least one cluster forms.'));
+      // MinPts stability: same k at minPts±1 on the grid?
+      const gi = EPS.indexOf(nearest(EPS)(eps)), mi = MINS.indexOf(minPts);
+      const neigh = [mi - 1, mi + 1].filter(r => r >= 0 && r < MINS.length).map(r => grid[r][gi].k), sameM = neigh.every(k => k === res.k);
+      if (res.k > 0) { if (sameM) out.push(check('ok', 'Stability (MinPts)', 'MinPts ±1', 'the same number of clusters at MinPts − 1 and MinPts + 1.')); else { out.push(check('warn', 'Stability (MinPts)', neigh.join(' / ') + ' clusters', 'the answer changes one step away in MinPts.')); warn++; } }
+      // 6 silhouette (internal)
+      const sil = silhouette(pts, res.labels);
+      out.push(check(sil == null ? 'na' : sil >= 0.5 ? 'ok' : sil >= 0.25 ? 'warn' : 'bad', 'Silhouette (noise excluded)', sil == null ? 'n/a' : sil.toFixed(2), sil == null ? 'needs at least two clusters.' : (sil >= 0.5 ? 'clusters are compact and well separated.' : sil >= 0.25 ? 'moderate — fine for curved shapes (moons, rings), a warning for blobs.' : 'low — overlapping or ragged clusters, or the shapes are non-convex.') + ' Compare this number across (ε, MinPts) settings, not across algorithms.'));
+      // 7 ARI (external)
+      const a = ari(truth, res.labels);
+      out.push(check(a >= 0.8 ? 'ok' : a >= 0.5 ? 'warn' : 'bad', 'ARI vs generator labels', a.toFixed(2), `agreement with the ${trueK} true group${trueK === 1 ? '' : 's'}${trueNoise ? ' + ' + Math.round(trueNoise * 100) + '% injected noise' : ''}: 1 = identical, 0 = chance. Only available because this data is synthetic.`));
+      $('#checksG').innerHTML = out.join('');
+      const v = $('#verdictG'); v.className = 'verdict' + (bad ? ' bad' : '');
+      v.innerHTML = bad ? `<strong>Not yet.</strong> ${bad} check${bad === 1 ? '' : 's'} failed${warn ? ' and ' + warn + ' warned' : ''}. Move &epsilon; ${res.k <= 1 && c.noise === 0 ? 'down' : noiseShare > 0.25 || frag ? 'up' : 'into the plateau'} and re-check.`
+        : warn ? `<strong>Usable, with caveats.</strong> No check failed, ${warn} warned. Try a neighbouring cell on the map and see whether the warnings clear.`
+        : `<strong>&epsilon; = ${eps.toFixed(3)}, MinPts = ${minPts} passes every check.</strong> ${res.k} cluster${res.k === 1 ? '' : 's'}, ${Math.round(noiseShare * 100)}% noise, stable to a nudge in either parameter, and ARI ${a.toFixed(2)} against the truth.`;
+    }
+    function rebuild() { pts = DATA[ds](); truth = TRUTH[ds](); buildGrid(); buildSweep(); draw(); }
+    cv1.addEventListener('click', ev => { if (!geom1) return; const r = cv1.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, c = Math.floor((x - geom1.L) / geom1.cw), rr = MINS.length - 1 - Math.floor((y - geom1.T) / geom1.ch); if (c < 0 || c >= EPS.length || rr < 0 || rr >= MINS.length) return; eps = EPS[c]; minPts = MINS[rr]; $('#epsG').value = eps; $('#minG').value = minPts; $('#epsGOut').textContent = eps.toFixed(3); $('#minGOut').textContent = minPts; draw(); });
+    cv1.classList.add('hover');
+    bindRange('epsG', 'epsGOut', v => v.toFixed(3), v => { eps = v; draw(); });
+    bindRange('minG', 'minGOut', v => v, v => { minPts = v; draw(); });
+    $('#dsG').addEventListener('change', () => { ds = $('#dsG').value; rebuild(); });
+    redraws.push(draw); rebuild();
   })();
 
   // ================= LAB F: comparison =================
