@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INT396 &middot; Unsupervised Learning Unit IV &mdash; Dimensionality Reduction and Representation Learning &mdash; Visual Walkthrough</title>
+<style>
+:root{--navy:#182B49;--navy2:#253E64;--cyan:#0096C7;--ice:#7EC5E2;--purple:#5C2D91;
+      --orange:#ED771F;--green:#107C41;--red:#B42318;--grey:#586476;--rule:#D8DFE8;
+      --bg:#F6F9FC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);
+     font:15px/1.65 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{background:var(--navy);color:#fff;padding:28px 0 24px;border-bottom:4px solid var(--cyan)}
+header .eyebrow{color:var(--ice);font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+header h1{margin:7px 0 6px;font-size:32px;font-weight:600;line-height:1.2}
+header p{margin:0;color:#C9D8E6;font-size:15.5px;max-width:860px}
+nav{background:var(--navy2);position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(24,43,73,.2)}
+nav ul{display:flex;flex-wrap:wrap;gap:2px;list-style:none;margin:0;padding:0}
+nav a{display:block;padding:11px 14px;color:#D8E6F2;text-decoration:none;font-size:13.5px;font-weight:600}
+nav a:hover{background:rgba(255,255,255,.13);color:#fff}
+section{padding:34px 0 12px;border-bottom:1px solid var(--rule)}
+h2{font-size:24px;margin:0 0 6px;font-weight:600}
+h2 .num{display:inline-block;background:var(--cyan);color:#fff;font-size:13px;
+        padding:3px 9px;border-radius:4px;margin-right:10px;vertical-align:3px}
+h3{font-size:17.5px;margin:24px 0 8px;font-weight:600;color:var(--navy)}
+.lede{color:var(--grey);font-size:15.5px;margin:0 0 16px;max-width:920px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+/* ---- formula sheet ---- */
+.fsheet{border:1px solid var(--rule);border-top:3px solid var(--navy);border-radius:4px;
+        background:var(--card);margin:18px 0;padding:15px 20px 8px}
+.fshd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:8px}
+.fst{width:100%;border-collapse:collapse;margin:0;font-size:14px;box-shadow:none}
+.fst td{border:0;border-top:1px solid #E1EAF3;padding:9px 8px;vertical-align:middle;
+        background:none}
+.fst tr:first-child td{border-top:0}
+.fst tbody tr:nth-child(even){background:none}
+td.fsn{width:23%;font-weight:600;color:var(--navy);font-size:13.5px}
+td.fsf{width:42%}
+td.fsf .math{font-size:16.5px;line-height:1.9;white-space:normal}
+td.fsw{color:var(--grey);font-size:13px}
+/* ---- the method ---- */
+.meth{border:1px solid var(--rule);border-left:3px solid var(--navy);border-radius:4px;
+      background:var(--card);margin:18px 0;padding:15px 20px 16px}
+.methd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);margin-bottom:9px}
+.meth ol{margin:0;padding-left:22px}
+.meth li{font-size:14.8px;line-height:1.68;padding:4px 0;color:var(--navy)}
+.meth li::marker{color:var(--grey);font-weight:700}
+/* ---- practice ---- */
+.prac{border:1px solid var(--rule);border-radius:4px;background:var(--card);
+      margin:18px 0;padding:15px 20px 16px}
+.prhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.pall{margin-left:auto;font-size:12px;padding:5px 11px}
+.prac ol{margin:0;padding-left:22px}
+.prac>ol>li{padding:11px 0;border-top:1px solid #EEF2F6}
+.prac>ol>li:first-child{border-top:0}
+.prac li::marker{color:var(--grey);font-weight:700}
+/* Numericals pages run quiet: panels are white with a thin rule, and colour is
+   reserved for meaning (a revealed answer, a caution) rather than decoration. */
+body.quiet .formula{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--navy);border-radius:4px}
+body.quiet .formula .flabel{color:var(--navy)}
+body.quiet .ex{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .exgiven{background:#F7FAFC;border-color:var(--rule)}
+body.quiet .why{background:var(--card)}
+body.quiet .whygrid{background:var(--rule)}
+body.quiet .wq.w3{background:var(--card)}
+body.quiet .take{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .warn{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--orange);border-radius:4px}
+.pq{font-size:14.8px;line-height:1.68;color:var(--navy);margin-bottom:7px}
+.pbtn{font-size:12px;padding:4px 10px}
+.pa{display:none;margin-top:9px;background:#E4F6EB;border-left:3px solid var(--green);
+    border-radius:5px;padding:9px 13px;font-size:14.5px;line-height:1.7;color:var(--navy)}
+.pa.on{display:block}
+.pa b{color:var(--green)}
+.ex{border:1.5px solid #BFD9CB;border-left:5px solid var(--green);border-radius:9px;
+    background:#FBFEFC;margin:18px 0;padding:14px 18px 16px}
+.exhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--green);margin-bottom:9px}
+.exgiven{font-size:14.5px;background:#fff;border:1px solid #DCE9E1;border-radius:6px;
+         padding:9px 13px;margin-bottom:12px}
+.exsteps{list-style:none;counter-reset:exs;margin:0;padding:0}
+.exsteps li{counter-increment:exs;display:grid;grid-template-columns:26px 1fr;gap:11px;
+            padding:7px 0;border-top:1px solid #E7F0EA;align-items:baseline}
+.exsteps li:first-child{border-top:0}
+.exsteps li::before{content:counter(exs);display:block;width:21px;height:21px;
+                    border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;
+                    font-weight:700;text-align:center;line-height:21px}
+.exb{min-width:0}
+.exl{font-size:13.5px;color:var(--grey);display:block;margin-bottom:3px}
+.exw{font-size:15.5px;color:var(--navy);font-family:"Cambria Math",Cambria,Georgia,serif;
+     display:block;line-height:1.8}
+.exans{margin-top:12px;background:#E4F6EB;border-radius:6px;padding:10px 14px;
+       font-size:15px;color:var(--navy);font-weight:600}
+.exans b{color:var(--green)}
+@media(max-width:700px){.exsteps li{grid-template-columns:22px 1fr;gap:8px}}
+.why{border:1.5px solid #CBD9E6;border-radius:9px;margin:18px 0;overflow:hidden;
+     background:linear-gradient(180deg,#F4F9FD 0,#fff 54px)}
+.whyhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);padding:13px 18px 0}
+.whygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E3EAF1;
+         margin-top:12px;border-top:1px solid #E3EAF1}
+.wq{background:var(--card);padding:14px 17px 16px}
+.wq h5{margin:0 0 7px;font-size:12px;font-weight:700;letter-spacing:.03em}
+.wq p{margin:0;font-size:14px;line-height:1.62}
+.wq.w1 h5{color:var(--cyan)}
+.wq.w2 h5{color:var(--purple)}
+.wq.w3 h5{color:var(--orange)}
+.wq.w3{background:#FFFBF7}
+@media(max-width:900px){.whygrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:15px 17px}
+.card h4{margin:0 0 7px;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan)}
+.card p{margin:0;font-size:14.5px}
+.take{background:#E4F6EB;border-left:5px solid var(--green);border-radius:6px;padding:12px 16px;margin:14px 0}
+.take b.hd{color:var(--green);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.take b{color:var(--navy)}
+.warn{background:#FDEEEC;border-left:5px solid var(--orange);border-radius:6px;padding:12px 16px;margin:14px 0}
+.warn b.hd{color:var(--orange);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.warn b{color:var(--navy)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600;font-size:13px}
+tbody tr:nth-child(even){background:#F2F7FB}
+td.hi{background:#FFF3E0;font-weight:700}
+code{background:#EEF3F8;padding:1px 5px;border-radius:4px;font-size:13.5px}
+footer{background:var(--navy);color:#9FB4CA;padding:22px 0;font-size:13.5px}
+
+/* ---------------- formula block ---------------- */
+.formula{background:#F3EEFB;border-left:5px solid var(--purple);border-radius:6px;
+         padding:14px 18px;margin:14px 0;overflow-x:auto}
+.formula .flabel{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;
+                 text-transform:uppercase;color:var(--purple);margin-bottom:9px}
+.formula small{display:block;font:13.5px/1.55 "Segoe UI",sans-serif;color:var(--grey);margin-top:10px}
+
+/* ---------------- real maths ---------------- */
+.math{font-family:"Cambria Math",Cambria,"Times New Roman",Georgia,serif;
+      font-size:20px;line-height:2.1;color:var(--navy);white-space:nowrap}
+.math i,.math .var{font-style:italic;font-family:inherit}
+.math .op{font-style:normal;padding:0 .22em}
+.math b.vecb{font-weight:700;font-style:normal}
+.math sub{font-size:.62em;vertical-align:-.3em}
+.math sup{font-size:.62em;vertical-align:.45em}
+.cases{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .2em}
+.cases .cb{font-size:2.5em;font-weight:300;line-height:.86;margin-right:.14em}
+.cases table{border-collapse:collapse;margin:0;width:auto;box-shadow:none;font-size:.86em}
+.cases tbody tr,.cases tbody tr:nth-child(even){border:0;background:none}
+.cases td{border:0;padding:.14em .2em;background:none;white-space:nowrap;
+          line-height:1.5;vertical-align:middle}
+.cases td.cc{font-size:.8em;font-style:normal;color:var(--grey);padding-left:1.5em;
+             font-family:"Segoe UI",system-ui,sans-serif}
+.frac{display:inline-block;vertical-align:-.52em;text-align:center;margin:0 .26em}
+.frac .num{display:block;padding:0 .4em .12em;border-bottom:1.7px solid currentColor;line-height:1.22}
+.frac .den{display:block;padding:.12em .4em 0;line-height:1.22}
+.sqrt{display:inline-block;position:relative;margin:0 .15em}
+.sqrt .rad{font-size:1.12em;vertical-align:-.06em}
+.sqrt .rand{border-top:1.6px solid currentColor;padding:.1em .22em 0 .12em;margin-left:-.12em}
+.bigop{display:inline-block;text-align:center;vertical-align:-.5em;margin:0 .2em;line-height:1}
+.bigop .glyph{display:block;font-size:1.5em;line-height:.88}
+.bigop.int .glyph{font-size:1.75em}
+.bigop .lim{display:block;font-size:.5em;line-height:1.25;font-style:italic}
+.paren{font-size:1.18em;padding:0 .06em}
+.paren.big{font-size:1.5em;vertical-align:-.16em}
+.bar{padding:0 .09em}
+.hat{position:relative;display:inline-block;font-style:italic}
+.hat::after{content:"\0302";position:absolute;left:0;right:0;top:-.46em;
+            text-align:center;font-size:.72em;font-style:normal;line-height:1;
+            font-family:"Cambria Math",Cambria,serif}
+.matrix{display:inline-block;vertical-align:middle;margin:0 .18em}
+.matrix .mb{display:inline-block;font-size:2.1em;vertical-align:middle;font-weight:300}
+.matrix table{display:inline-table;width:auto;border:0;margin:0 .1em;vertical-align:middle}
+.matrix td{border:0;padding:.08em .38em;text-align:center;font-size:.86em;background:none}
+
+/* ---------------- visualisation ---------------- */
+.viz{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:16px 0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:600 13.5px "Segoe UI",sans-serif;padding:8px 14px;border-radius:6px;
+       border:1px solid var(--cyan);background:var(--cyan);color:#fff;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:#fff;color:var(--cyan)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select{font:14px "Segoe UI";padding:7px 9px;border-radius:6px;border:1px solid var(--rule);background:#fff}
+svg{width:100%;height:auto;display:block;background:#fff;border-radius:6px;max-width:1040px;margin:0 auto}
+.status{font-size:15.5px;line-height:1.6;background:#EAF4FA;border-left:4px solid var(--cyan);
+        border-radius:6px;padding:12px 16px;margin-top:12px;min-height:48px;color:var(--navy)}
+.status b{color:var(--cyan)}
+.stepcount{font-size:12.5px;font-weight:700;color:var(--grey);letter-spacing:.03em;
+           margin-left:auto;padding-right:4px;white-space:nowrap}
+.stepcount em{font-style:normal;color:var(--cyan);font-size:14.5px}
+.viz.done .stepcount em{color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--grey);margin-top:9px;justify-content:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body class="">
+<header><div class="wrap">
+  <div class="eyebrow">INT396 &middot; Unsupervised Learning &middot; Unit IV</div>
+  <h1>Dimensionality Reduction and Representation Learning &mdash; Visual Walkthrough</h1>
+  <p>Why high-dimensional data breaks every distance-based method, and the four families of fix. Drag the dimension slider until distance stops meaning anything, then turn the PCA axis and watch the variance peak.</p>
+</div></header>
+<nav><div class="wrap"><ul><li><a href="#why">1 &middot; Why reduce</a></li><li><a href="#pca">2 &middot; PCA</a></li><li><a href="#manifold">3 &middot; Manifold learning</a></li><li><a href="#tsne">4 &middot; t-SNE &amp; UMAP</a></li><li><a href="#auto">5 &middot; Autoencoders</a></li></ul></div></nav>
+<section id="why"><div class="wrap"><h2><span class="num">1</span>Why reduce dimensions at all</h2><p class="lede">It is not mainly about saving memory. In high dimensions the geometry itself stops working, and every method in this course depends on that geometry.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Almost every unsupervised method &mdash; k-Means, DBSCAN, hierarchical clustering, kNN, LOF &mdash; has exactly one input: <b>how far apart are these two points?</b> In high dimensions that question stops having a useful answer, because every pair ends up roughly the same distance apart. Reducing dimensions first is what keeps the machinery working.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>“Just keep all the features &mdash; more information is better”</b> is the intuition everybody starts with, and it is wrong here. A feature that carries no signal still adds its noise to <i>every</i> distance you compute. Twenty useless features do not sit quietly in the background; they actively drown the five useful ones. More columns is not more information, it is more noise per comparison.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Your clustering returns groups that are essentially arbitrary, and nothing warns you. k-Means still produces <i>k</i> clusters, DBSCAN still produces a labelling, and the silhouette score still prints a number — they just stop meaning anything. This is the failure mode that looks exactly like success.</p></div></div></div><h3>Distances stop telling you anything</h3><p class="lede">Below, 200 random points are placed in <i>d</i> dimensions and every pairwise distance is measured. Drag <i>d</i> upward and watch the distances collapse toward each other.</p><div class="viz" id="wrap-curse"><svg id="svg-curse" viewBox="0 0 560 320"></svg><div class="controls" style="margin:10px 0 0;justify-content:center"><span style="font-weight:600">dimensions d =</span><input id="dSlider" type="range" min="1" max="60" value="2" style="width:250px;vertical-align:middle"><span id="dVal" style="font-weight:700;color:var(--cyan)">2</span></div><div class="status" id="st-curse"></div></div><div class="formula"><span class="flabel">The core problem</span><div class="math"><span class="frac"><span class="num"><span class="op">std</span><span class="paren">(</span><i>D</i><span class="paren">)</span></span><span class="den"><span class="op">mean</span><span class="paren">(</span><i>D</i><span class="paren">)</span></span></span> &#8594; 0&nbsp;&nbsp;<span class="op">as</span>&nbsp;<i>d</i> &#8594; &#8734;</div><small><b>Distance concentration.</b> As dimension grows, all pairwise distances converge on the same value. Once that happens the <i>nearest</i> neighbour is barely nearer than the farthest one, so any algorithm whose only input is distance &mdash; k-Means, DBSCAN, kNN, hierarchical clustering &mdash; has nothing left to work with.</small></div><div class="grid"><div class="card"><h4>Geometry fails</h4><p>Distances concentrate, so similarity stops discriminating.</p></div><div class="card"><h4>Data gets sparse</h4><p>To keep the same density you need exponentially more points as <i>d</i> grows &mdash; which you never have.</p></div><div class="card"><h4>Noise accumulates</h4><p>Every uninformative feature adds variance to every distance while adding no signal.</p></div><div class="card"><h4>You cannot look at it</h4><p>Nobody can inspect 300 dimensions. Reducing to 2 or 3 is often the only way to <i>see</i> whether structure exists at all.</p></div></div><div class="take"><b class="hd">Two different goals, often confused</b><br><b>Compression</b> wants to keep as much information as possible in fewer dimensions, and wants the mapping to be reversible &mdash; PCA and autoencoders do this. <b>Visualisation</b> wants a 2-D picture in which neighbourhoods look right, and does not care about reversibility or about distances between far-apart points &mdash; t-SNE and UMAP do this. Using a visualisation method as a preprocessing step, or reading a t-SNE plot as if it preserved distances, is the most common mistake in this area.</div><div class="ex"><div class="exhd">Worked example &mdash; how fast the space empties as dimensions grow</div><div class="exgiven">Suppose you want 10 sample points along each axis, so that every region of the space is reasonably covered. How many points does that need?</div><ol class="exsteps"><li><div class="exb"><span class="exl">In 1 dimension</span><span class="exw">10<sup>1</sup> = <b>10</b> points</span></div></li><li><div class="exb"><span class="exl">In 2 dimensions</span><span class="exw">10<sup>2</sup> = <b>100</b> points</span></div></li><li><div class="exb"><span class="exl">In 5 dimensions</span><span class="exw">10<sup>5</sup> = <b>100 000</b> points</span></div></li><li><div class="exb"><span class="exl">In 10 dimensions</span><span class="exw">10<sup>10</sup> = <b>10 billion</b> points &mdash; more than you will ever have</span></div></li><li><div class="exb"><span class="exl">Turn it round: you have 1000 samples. How densely do they cover each axis?</span><span class="exw">points per axis = 1000<sup>1/<i>d</i></sup></span></div></li><li><div class="exb"><span class="exl">Evaluate that</span><span class="exw"><i>d</i> = 3 &#8594; 10.0 per axis; &nbsp;<i>d</i> = 10 &#8594; <b>2.0</b>; &nbsp;<i>d</i> = 20 &#8594; <b>1.4</b></span></div></li></ol><div class="exans">At <i>d</i> = 20, a thousand samples give you barely <b>one point per axis</b> &mdash; the space is essentially empty, every point is isolated, and “nearest neighbour” has stopped meaning anything. Drag the slider above and watch the distance histogram collapse into a spike as this happens.</div></div></div></section>
+<section id="pca"><div class="wrap"><h2><span class="num">2</span>Principal Component Analysis &mdash; geometric intuition</h2><p class="lede">Find the direction in which the data is most spread out. Make that the new first axis. Repeat, perpendicular to what you already have.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>PCA is the default first thing to try, and it earns that place by being <b>fast, deterministic and reversible</b>. It runs the same way every time, it tells you exactly how much information each component keeps, and you can map back to the original space &mdash; so you can use it as a genuine preprocessing step rather than just a picture.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>“Why not just drop the features that look useless?”</b> &mdash; because information is usually spread <i>across</i> features rather than concentrated in a few, so dropping columns throws away signal that a combination would have kept. PCA builds new axes out of combinations instead of discarding originals. <b>“Why not go straight to t-SNE, it makes nicer pictures?”</b> &mdash; because t-SNE gives you no inverse, no variance accounting, and a different answer every run. It is a way of looking, not a way of reducing.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Skip the <b>standardisation</b> step and PCA silently reports whichever feature happens to have the largest units. Measure one column in rupees and another in lakhs, and the first principal component will simply be “rupees” — mathematically correct, completely uninformative, and it will not look like an error.</p></div></div></div><div class="formula"><span class="flabel">Covariance and eigenvectors</span><div class="math"><i>C</i> = <span class="frac"><span class="num">1</span><span class="den"><i>n</i> &#8722; 1</span></span><span class="bigop"><span class="lim"><i>n</i></span><span class="glyph">&#8721;</span><span class="lim"><i>i</i>=1</span></span>&nbsp;<span class="paren">(</span><i>x</i><sub><i>i</i></sub> &#8722; <i>x&#772;</i><span class="paren">)</span><span class="paren">(</span><i>x</i><sub><i>i</i></sub> &#8722; <i>x&#772;</i><span class="paren">)</span><sup>T</sup>,&nbsp;&nbsp;&nbsp;&nbsp;<i>C</i><i>u</i><sub><i>k</i></sub> = &#955;<sub><i>k</i></sub><i>u</i><sub><i>k</i></sub></div><small>Centre the data, form the covariance matrix, take its eigenvectors. The eigenvector <i>u</i><sub><i>k</i></sub> is the <i>k</i>-th principal direction and its eigenvalue &#955;<sub><i>k</i></sub> <b>is</b> the variance along it.</small></div><div class="formula"><span class="flabel">Where the eigenvectors come from</span><div class="math"><span class="op">variance along</span> <i>u</i> = <i>u</i><sup>T</sup><i>C</i><i>u</i>,&nbsp;&nbsp;&nbsp;<span class="op">maximise subject to</span> <span class="bar">&#8214;</span><i>u</i><span class="bar">&#8214;</span> = 1</div><small>This is why eigenvectors appear at all. Maximising the projected variance over unit directions <i>is</i> the eigenvalue problem &mdash; “direction of greatest spread” and “top eigenvector” are the same statement.</small></div><h3>Turn the axis and watch the spread</h3><p class="lede">Five centred points. The orange line is a candidate direction; the orange dots are the points' shadows on it. The variance of those shadows is what PCA maximises.</p><div class="viz" id="wrap-pcageo"><svg id="svg-pcageo" viewBox="0 0 560 330"></svg><div class="controls" style="margin:10px 0 0;justify-content:center"><span style="font-weight:600">angle &theta; =</span><input id="paSlider" type="range" min="0" max="180" value="15" style="width:250px;vertical-align:middle"><span id="paVal" style="font-weight:700;color:var(--cyan)">15&deg;</span></div><div class="status" id="st-pcageo"></div></div><h3>The full computation, step by step</h3><p class="lede">The slider shows <i>what</i> PCA is looking for. This panel shows <i>how</i> it finds it &mdash; centre, covariance, eigenvectors, project, and finally rebuild to see exactly what was lost.</p><div class="viz" id="wrap-pcastep"><div class="controls"><button class="ghost" data-act="back" data-viz="pcastep">&#9664; Back</button><button data-act="step" data-viz="pcastep">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="pcastep">Auto-play</button><button class="ghost" data-act="reset" data-viz="pcastep">Reset</button><span class="stepcount" id="sc-pcastep">step <em>0</em> of 0</span></div><svg id="svg-pcastep" viewBox="0 0 560 340"></svg><div class="status" id="st-pcastep"></div></div><h3>How many components should you keep?</h3><div class="viz" id="wrap-scree"><svg id="svg-scree" viewBox="0 0 560 300"></svg><div class="status" id="st-scree"></div></div><div class="warn"><b class="hd">Standardise first, unless you mean not to</b><br>PCA maximises variance, and variance carries units. Height in millimetres will dominate the same height in metres purely because the numbers are bigger. Unless your features are already on comparable scales, standardise each to mean 0 and variance 1 &mdash; otherwise PCA tells you which feature has the largest units, not which carries the most information.</div><div class="ex"><div class="exhd">Worked example &mdash; PCA on five points, every step by hand</div><div class="exgiven">Points (1,1) (2,3) (3,2) (4,5) (5,4). Both features are already on comparable scales, so no standardisation is needed here.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Centre the data on its mean</span><span class="exw"><i>&#772;x</i> = (3, 3) &#8594; (&#8722;2,&#8722;2) (&#8722;1, 0) (0,&#8722;1) (1, 2) (2, 1)</span></div></li><li><div class="exb"><span class="exl">Build the covariance matrix, dividing by <i>n</i> &#8722; 1 = 4</span><span class="exw">var(<i>x</i>) = <span class="frac"><span class="num">4+1+0+1+4</span><span class="den">4</span></span> = <b>2.5</b>, &nbsp;var(<i>y</i>) = <b>2.5</b>, &nbsp;cov(<i>x</i>,<i>y</i>) = <span class="frac"><span class="num">4+0+0+2+2</span><span class="den">4</span></span> = <b>2.0</b></span></div></li><li><div class="exb"><span class="exl">Write the characteristic equation</span><span class="exw">det<span class="paren">(</span><i>C</i> &#8722; &#955;<i>I</i><span class="paren">)</span> = (2.5 &#8722; &#955;)<sup>2</sup> &#8722; 2<sup>2</sup> = 0</span></div></li><li><div class="exb"><span class="exl">Solve it</span><span class="exw">2.5 &#8722; &#955; = &#177;2 &nbsp;&#8594;&nbsp; &#955;<sub>1</sub> = <b>4.5</b>, &nbsp;&#955;<sub>2</sub> = <b>0.5</b></span></div></li><li><div class="exb"><span class="exl">Find the leading eigenvector</span><span class="exw">(2.5 &#8722; 4.5)<i>u</i><sub>1</sub> + 2<i>u</i><sub>2</sub> = 0 &#8594; <i>u</i><sub>1</sub> = <i>u</i><sub>2</sub> &#8594; normalised <i>u</i> = (0.7071, 0.7071), the <b>45&deg;</b> direction</span></div></li><li><div class="exb"><span class="exl">Explained variance</span><span class="exw"><span class="frac"><span class="num">&#955;<sub>1</sub></span><span class="den">&#955;<sub>1</sub> + &#955;<sub>2</sub></span></span> = <span class="frac"><span class="num">4.5</span><span class="den">5.0</span></span> = <b>90%</b></span></div></li><li><div class="exb"><span class="exl">Project one point to check</span><span class="exw">(&#8722;2, &#8722;2) &#183; (0.7071, 0.7071) = <b>&#8722;2.83</b> &mdash; its single coordinate on PC1</span></div></li></ol><div class="exans"><b>One dimension carries 90% of the spread.</b> Set the slider above to 45&deg; and the measured variance of the shadows reads 4.5 &mdash; exactly &#955;<sub>1</sub>, because the top eigenvalue <i>is</i> the variance along the top eigenvector.</div></div></div></section>
+<section id="manifold"><div class="wrap"><h2><span class="num">3</span>Manifold learning</h2><p class="lede">High-dimensional data is usually not spread through the whole space. It lies on a lower-dimensional surface <i>curved</i> inside it &mdash; and PCA, which can only cut with flat planes, cannot unroll a curve.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>PCA can only cut with flat planes. Real data often lies on a surface that is <b>curved</b> &mdash; think of a sheet of paper rolled into a tube. PCA will squash the tube flat and land opposite sides of the roll on top of each other. Manifold methods measure distance <i>along</i> the surface instead, so they can unroll it.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>“Just add more principal components”</b> does not help, because the problem is not how many straight directions you keep &mdash; it is that the structure is not straight at all. No number of flat cuts unrolls a curve. <b>“So always use manifold methods”</b> is the opposite error: they are far slower, most give you no way to map a new point in, and they have hyperparameters that change the answer. Use PCA first and reach for these when it visibly fails.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You conclude there is no structure when there is. The two ends of the roll land in the same place, the clusters appear merged, and you report that the data has no groups in it — when in fact it has clean groups that your <i>method</i> folded together.</p></div></div></div><h3>Why a linear method is not enough</h3><div class="viz" id="wrap-roll"><div class="controls"><button class="ghost" data-act="back" data-viz="roll">&#9664; Back</button><button data-act="step" data-viz="roll">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="roll">Auto-play</button><button class="ghost" data-act="reset" data-viz="roll">Reset</button><span class="stepcount" id="sc-roll">step <em>0</em> of 0</span></div><svg id="svg-roll" viewBox="0 0 560 232"></svg><div class="status" id="st-roll"></div></div><div class="formula"><span class="flabel">Distance along the surface, not through it</span><div class="math"><i>d</i><sub><span class="op">geodesic</span></sub><span class="paren">(</span><i>a</i>, <i>b</i><span class="paren">)</span> &#8800; <i>d</i><sub><span class="op">euclidean</span></sub><span class="paren">(</span><i>a</i>, <i>b</i><span class="paren">)</span></div><small>Two points on opposite sides of a fold are close in straight-line distance and far apart <b>along the surface</b>. Manifold methods measure the second one &mdash; usually by hopping between near neighbours &mdash; which is exactly the distinction PCA cannot make.</small></div><table><thead><tr><th>Method</th><th>Idea</th><th>Preserves</th></tr></thead><tbody><tr><td><b>PCA</b></td><td>project onto directions of maximum variance</td><td>global structure, linear only</td></tr><tr><td><b>MDS</b></td><td>find a low-D layout whose distances match the originals</td><td>all pairwise distances</td></tr><tr><td><b>Isomap</b></td><td>MDS, but on distances measured <i>along</i> the neighbour graph</td><td>global structure on a curved manifold</td></tr><tr><td><b>LLE</b></td><td>keep each point a similar combination of its neighbours</td><td>local structure</td></tr><tr><td><b>t-SNE / UMAP</b></td><td>match neighbourhood probabilities in low dimensions</td><td>local neighbourhoods; little global meaning</td></tr></tbody></table><div class="take"><b class="hd">The manifold hypothesis</b><br>A 100&times;100 greyscale image lives in 10 000 dimensions, but the set of images that look like handwritten digits occupies a tiny, curved region of that space &mdash; parameterised by roughly slant, thickness, size and a few style factors. Dimensionality reduction works at all because real data concentrates on such low-dimensional manifolds, and representation learning is the business of finding the coordinates on them.</div><div class="ex"><div class="exhd">Worked example &mdash; straight-line distance versus distance along the surface</div><div class="exgiven">Take three points on a rolled-up spiral. Measured through space, A and C look close; measured along the curve they are far apart.</div><ol class="exsteps"><li><div class="exb"><span class="exl">The set-up</span><span class="exw">A sits on the inner arm of the roll, C sits on the outer arm directly “above” it, and B sits halfway along the curve between them</span></div></li><li><div class="exb"><span class="exl">Euclidean distance A to C</span><span class="exw">the two arms are separated by one thickness of the roll &#8594; small, say <b>0.6</b> units</span></div></li><li><div class="exb"><span class="exl">Geodesic distance A to C &mdash; measured by hopping neighbour to neighbour</span><span class="exw">A &#8594; &hellip; &#8594; B &#8594; &hellip; &#8594; C follows the whole spiral &#8594; <b>9.4</b> units</span></div></li><li><div class="exb"><span class="exl">What PCA does with this</span><span class="exw">it projects onto a straight line, so A and C land <b>on top of each other</b> &mdash; the roll is squashed flat and the two arms merge</span></div></li><li><div class="exb"><span class="exl">What Isomap does instead</span><span class="exw">builds a neighbour graph, computes shortest paths <i>through</i> it, then lays the points out to match those graph distances &#8594; A and C stay 9.4 apart</span></div></li><li><div class="exb"><span class="exl">The consequence for clustering</span><span class="exw">under PCA, points from opposite arms appear to be one cluster; under the manifold view they are correctly separated</span></div></li></ol><div class="exans">The ratio here is <b>9.4 to 0.6, roughly 16&times;</b>. No number of principal components fixes that, because the problem is not how many straight directions you keep &mdash; it is that <b>the structure is not straight</b>.</div></div></div></section>
+<section id="tsne"><div class="wrap"><h2><span class="num">4</span>t-SNE and UMAP</h2><p class="lede">Both answer one question: <i>can I draw this in two dimensions so that points which were neighbours still look like neighbours?</i> Neither claims anything beyond that.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Sometimes the only question is <b>“is there any structure in here at all?”</b> &mdash; and the fastest way to answer it is to look. t-SNE and UMAP exist to produce a 2-D picture in which points that were neighbours still look like neighbours, so your eye can do the detecting. That is a legitimate and genuinely useful job.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>“Why not use the t-SNE output as input to k-Means?”</b> is the mistake to avoid. These methods deliberately <i>distort</i> distances and cluster sizes to make the picture readable &mdash; so clustering their output means clustering coordinates that were optimised for appearance, not for geometry. t-SNE also cannot place a new point without refitting everything. Reduce with <b>PCA</b>; look with <b>t-SNE</b>.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You report things the plot cannot support. “Cluster A is twice the size of cluster B” and “A and B are far apart, so they are very different” are both <b>unfounded</b> &mdash; t-SNE inflates sparse regions, compresses dense ones, and places clusters almost arbitrarily. Run it on pure random noise and you will still get convincing-looking blobs.</p></div></div></div><div class="formula"><span class="flabel">Neighbour probabilities in high dimensions</span><div class="math"><i>p</i><sub><i>j</i>|<i>i</i></sub> = <span class="frac"><span class="num"><span class="op">exp</span><span class="paren">(</span>&#8722;<span class="bar">&#8214;</span><i>x</i><sub><i>i</i></sub>&#8722;<i>x</i><sub><i>j</i></sub><span class="bar">&#8214;</span><sup>2</sup> / 2&#963;<sub><i>i</i></sub><sup>2</sup><span class="paren">)</span></span><span class="den"><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>k</i>&#8800;<i>i</i></span></span>&nbsp;<span class="op">exp</span><span class="paren">(</span>&#8722;<span class="bar">&#8214;</span><i>x</i><sub><i>i</i></sub>&#8722;<i>x</i><sub><i>k</i></sub><span class="bar">&#8214;</span><sup>2</sup> / 2&#963;<sub><i>i</i></sub><sup>2</sup><span class="paren">)</span></span></span></div><small><b>t-SNE, step 1.</b> Turn distances in the original space into probabilities that <i>j</i> is a neighbour of <i>i</i>. Each point gets its own &#963;<sub><i>i</i></sub>, chosen so that it has roughly <b>perplexity</b> many effective neighbours &mdash; which is why dense and sparse regions are treated comparably.</small></div><div class="formula"><span class="flabel">Matching them in two dimensions</span><div class="math"><i>q</i><sub><i>i</i><i>j</i></sub> = <span class="frac"><span class="num">(1 + <span class="bar">&#8214;</span><i>y</i><sub><i>i</i></sub>&#8722;<i>y</i><sub><i>j</i></sub><span class="bar">&#8214;</span><sup>2</sup>)<sup>&#8722;1</sup></span><span class="den"><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>k</i>&#8800;<i>l</i></span></span>&nbsp;(1 + <span class="bar">&#8214;</span><i>y</i><sub><i>k</i></sub>&#8722;<i>y</i><sub><i>l</i></sub><span class="bar">&#8214;</span><sup>2</sup>)<sup>&#8722;1</sup></span></span>,&nbsp;&nbsp;<span class="op">minimise</span> <span class="op">KL</span><span class="paren">(</span><i>P</i> &#8214; <i>Q</i><span class="paren">)</span></div><small><b>Step 2.</b> Place the points in 2-D and define the same kind of probabilities there &mdash; but with a heavy-tailed <i>t</i>-distribution, which gives moderately distant points room to spread out instead of being crushed together. Then move the 2-D points until the two probability sets agree.</small></div><h3>How to read &mdash; and misread &mdash; a t-SNE plot</h3><div class="viz" id="wrap-tsneread"><svg id="svg-tsneread" viewBox="0 0 560 310"></svg><div class="status" id="st-tsneread"></div></div><div class="grid"><div><div class="grid"><div class="card"><h4>t-SNE</h4><p>Excellent local structure. Slow on large data. Every run gives a different picture unless you fix the seed. Needs perplexity tuned, typically 5&ndash;50.</p></div></div></div><div><div class="grid"><div class="card"><h4>UMAP</h4><p>Much faster, scales to millions, and retains somewhat more global structure. Can transform new points without refitting, which t-SNE cannot. Tuned by <code>n_neighbors</code> and <code>min_dist</code>.</p></div></div></div></div><div class="warn"><b class="hd">Three things a t-SNE plot does not tell you</b><br><b>Cluster sizes are meaningless</b> &mdash; t-SNE expands sparse regions and compresses dense ones. <b>Distances between clusters are meaningless</b> &mdash; two clusters drawn far apart may be adjacent in the original space. <b>Apparent clusters may be artefacts</b> &mdash; run it on pure noise and you will still get blobs. Always confirm the structure with a method that does preserve what you are claiming.</div><div class="ex"><div class="exhd">Worked example &mdash; computing one t-SNE neighbour probability</div><div class="exgiven">A 1-D toy case with four points on a line: A at 0.0, B at 0.5, C at 1.5, D at 4.0. Compute <i>p</i><sub><i>j</i>|A</sub> with &#963;<sub>A</sub> = 1.</div><ol class="exsteps"><li><div class="exb"><span class="exl">The formula &mdash; a Gaussian around A, then normalise</span><span class="exw"><i>p</i><sub><i>j</i>|A</sub> &#8733; exp<span class="paren">(</span>&#8722;<span class="frac"><span class="num"><span class="bar">&#8214;</span><i>x</i><sub>A</sub>&#8722;<i>x</i><sub><i>j</i></sub><span class="bar">&#8214;</span><sup>2</sup></span><span class="den">2&#963;<sup>2</sup></span></span><span class="paren">)</span></span></div></li><li><div class="exb"><span class="exl">Unnormalised weight for B, at distance 0.5</span><span class="exw">exp(&#8722;<span class="frac"><span class="num">0.25</span><span class="den">2</span></span>) = exp(&#8722;0.125) = <b>0.8825</b></span></div></li><li><div class="exb"><span class="exl">For C, at distance 1.5</span><span class="exw">exp(&#8722;<span class="frac"><span class="num">2.25</span><span class="den">2</span></span>) = exp(&#8722;1.125) = <b>0.3247</b></span></div></li><li><div class="exb"><span class="exl">For D, at distance 4.0</span><span class="exw">exp(&#8722;<span class="frac"><span class="num">16.0</span><span class="den">2</span></span>) = exp(&#8722;8) = <b>0.0003</b></span></div></li><li><div class="exb"><span class="exl">Normalise so they sum to 1 (total 1.2075)</span><span class="exw">B <b>0.731</b>, &nbsp;C <b>0.269</b>, &nbsp;D <b>0.0003</b></span></div></li><li><div class="exb"><span class="exl">Read what happened</span><span class="exw">D is only 2.7&times; further than C, but its probability is <b>900&times; smaller</b> &mdash; the Gaussian decays so fast that distant points effectively vanish</span></div></li></ol><div class="exans">This is exactly why t-SNE preserves <b>neighbourhoods and nothing else</b>: anything beyond the local Gaussian contributes essentially zero, so the optimisation has no incentive to place far-apart clusters correctly relative to one another.</div></div></div></section>
+<section id="auto"><div class="wrap"><h2><span class="num">5</span>Autoencoder intuition</h2><p class="lede">Train a network to reproduce its own input, but force it through a narrow layer in the middle. To succeed it must learn what is worth keeping.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>PCA is limited to <b>straight</b> combinations of features. An autoencoder learns a curved one, because the non-linear activations let the bottleneck follow a bent surface that PCA would have to flatten. It is the same compression idea, with the straightness restriction removed &mdash; and the compression is learned from your data rather than fixed in advance.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>“So always use an autoencoder, it is strictly more powerful”</b> is false in practice. PCA needs no training, runs in seconds, gives the same answer every time, and tells you exactly how much variance each component keeps. An autoencoder needs a lot of data, a lot of tuning, gives a different answer per run, and offers no variance accounting at all. On genuinely linear data it buys you nothing for all that cost.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Make the bottleneck too wide and the network simply learns to <b>copy its input across</b>. The reconstruction loss drops to nearly zero, every chart looks excellent, and the model has learned nothing whatsoever — it is an identity function wearing a neural network. A near-perfect reconstruction is a reason to be suspicious, not pleased.</p></div></div></div><div class="formula"><span class="flabel">Encoder, bottleneck, decoder</span><div class="math"><i>x</i>&nbsp;&#8594;&nbsp;<i>f</i><sub><i>&theta;</i></sub>&nbsp;&#8594;&nbsp;<i>z</i>&nbsp;&#8594;&nbsp;<i>g</i><sub><i>&phi;</i></sub>&nbsp;&#8594;&nbsp;<i>x&#770;</i>,&nbsp;&nbsp;&nbsp;&nbsp;<span class="op">loss</span> = <span class="bar">&#8214;</span><i>x</i> &#8722; <i>x&#770;</i><span class="bar">&#8214;</span><sup>2</sup></div><small>The encoder <i>f</i> squeezes the input into a code <i>z</i> with far fewer dimensions; the decoder <i>g</i> tries to rebuild the input from it. The loss is simply how badly it failed. No labels are involved anywhere &mdash; the input is its own target.</small></div><h3>The bottleneck is the whole point</h3><div class="viz" id="wrap-ae"><div class="controls"><button class="ghost" data-act="back" data-viz="ae">&#9664; Back</button><button data-act="step" data-viz="ae">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="ae">Auto-play</button><button class="ghost" data-act="reset" data-viz="ae">Reset</button><span class="stepcount" id="sc-ae">step <em>0</em> of 0</span></div><svg id="svg-ae" viewBox="0 0 560 344"></svg><div class="status" id="st-ae"></div></div><div class="take"><b class="hd">Autoencoders and PCA are relatives</b><br>An autoencoder with <b>linear</b> activations and squared-error loss learns exactly the subspace PCA finds &mdash; it is PCA, reached by gradient descent. Everything the autoencoder adds comes from the <b>non-linear</b> activations, which let the bottleneck follow a curved manifold instead of a flat subspace. That is the same distinction as the previous section, now expressed as a network.</div><table><thead><tr><th>Variant</th><th>What it adds</th><th>Used for</th></tr></thead><tbody><tr><td><b>Undercomplete</b></td><td>a narrow bottleneck</td><td>the basic compression case</td></tr><tr><td><b>Denoising</b></td><td>corrupt the input, ask for the clean original</td><td>robust features; prevents copying the input through</td></tr><tr><td><b>Sparse</b></td><td>penalise how many code units activate</td><td>interpretable, parts-based features</td></tr><tr><td><b>Variational (VAE)</b></td><td>the code is a distribution, not a point</td><td>generating new samples, not just reconstructing</td></tr><tr><td><b>Convolutional</b></td><td>convolutional encoder and decoder</td><td>images</td></tr></tbody></table><div class="warn"><b class="hd">How an autoencoder detects anomalies</b><br>Train it only on normal data. It becomes good at reconstructing normal data and bad at everything else, so a <b>high reconstruction error</b> flags an anomaly &mdash; no labelled anomalies required. The trap is capacity: a bottleneck that is too wide lets the network learn the identity function, after which it reconstructs anomalies perfectly too and detects nothing.</div><div class="ex"><div class="exhd">Worked example &mdash; what the bottleneck forces the network to learn</div><div class="exgiven">An autoencoder on 28&times;28 greyscale digit images, with a 32-unit code.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Count the input dimensions</span><span class="exw">28 &#215; 28 = <b>784</b> numbers per image</span></div></li><li><div class="exb"><span class="exl">The bottleneck keeps only</span><span class="exw"><b>32</b> numbers</span></div></li><li><div class="exb"><span class="exl">Compression ratio</span><span class="exw"><span class="frac"><span class="num">784</span><span class="den">32</span></span> = <b>24.5&#215;</b> &mdash; 95.9% of the dimensions are discarded</span></div></li><li><div class="exb"><span class="exl">So what must the 32 numbers encode?</span><span class="exw">not pixels &mdash; there is no room. They must capture <b>slant, stroke thickness, loop size, digit identity</b> and similar factors that actually vary</span></div></li><li><div class="exb"><span class="exl">Check it by reconstructing</span><span class="exw">a trained network rebuilds a recognisable digit from those 32 numbers, so the information really is there</span></div></li><li><div class="exb"><span class="exl">Now widen the bottleneck to 784</span><span class="exw">the network can simply <b>copy input to output</b>: reconstruction error &#8594; 0 and <b>nothing is learned</b></span></div></li><li><div class="exb"><span class="exl">The diagnostic</span><span class="exw">a near-perfect reconstruction is a reason to be <b>suspicious</b>, not pleased</span></div></li></ol><div class="exans"><b>The constraint is the teacher.</b> With 32 units the network must decide what is worth keeping; with 784 it never has to decide anything, which is why an autoencoder is only as useful as its bottleneck is tight.</div></div></div></section>
+<footer><div class="wrap">INT396 &middot; Unsupervised Learning &middot; Unit IV &mdash; Dimensionality Reduction and Representation Learning &mdash; Visual Walkthrough &middot;
+School of Computer Science &amp; Engineering &middot; Session 2026&ndash;27</div></footer>
+<script>
+
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var C={navy:"#182B49",cyan:"#0096C7",purple:"#5C2D91",orange:"#ED771F",
+       green:"#107C41",red:"#B42318",grey:"#9AA7B5",rule:"#D8DFE8",ice:"#7EC5E2"};
+function el(p,n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);
+  p.appendChild(e);return e;}
+function clr(s){while(s.firstChild)s.removeChild(s.firstChild);}
+function line(s,A,B,col,w,dash){var l=el(s,"line",{x1:A.x,y1:A.y,x2:B.x,y2:B.y,
+  stroke:col,"stroke-width":w,"stroke-linecap":"round"});
+  if(dash)l.setAttribute("stroke-dasharray",dash);return l;}
+function dot(s,p,r,fill){return el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill});}
+function nodeC(s,p,label,fill,r){r=r||17;
+  el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill,stroke:"#fff","stroke-width":2.5});
+  var t=el(s,"text",{x:p.x,y:p.y+5,"text-anchor":"middle",fill:"#fff","font-size":"14",
+    "font-weight":"600","font-family":"Segoe UI,sans-serif"});t.textContent=label;}
+function txt(s,x,y,str,col,size,anchor,weight){
+  var t=el(s,"text",{x:x,y:y,"text-anchor":anchor||"middle",fill:col||C.navy,
+    "font-size":size||12,"font-weight":weight||"600","font-family":"Segoe UI,sans-serif"});
+  t.textContent=str;return t;}
+function box(s,x,y,w,h,fill,stroke,rx){return el(s,"rect",{x:x,y:y,width:w,height:h,
+  rx:rx===undefined?6:rx,fill:fill,stroke:stroke||"none","stroke-width":1.6});}
+function badge(s,A,B,str){var mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+  el(s,"circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:C.rule});
+  txt(s,mx,my+4,str,C.navy,12);}
+function arrow(s,A,B,col,w){
+  var dx=B.x-A.x,dy=B.y-A.y,L=Math.sqrt(dx*dx+dy*dy);if(!L)return;
+  var ux=dx/L,uy=dy/L,ex=B.x-ux*20,ey=B.y-uy*20;
+  el(s,"line",{x1:A.x+ux*20,y1:A.y+uy*20,x2:ex,y2:ey,stroke:col,"stroke-width":w||2.6,
+    "stroke-linecap":"round"});
+  var a=8;
+  el(s,"polygon",{points:[ex+","+ey,(ex-ux*a-uy*a*0.6)+","+(ey-uy*a+ux*a*0.6),
+    (ex-ux*a+uy*a*0.6)+","+(ey-uy*a-ux*a*0.6)].join(" "),fill:col});}
+
+/* ---- generic step player, wired to data-viz buttons ---- */
+var VIZ={};
+function register(id,build,render){
+  VIZ[id]={build:build,render:render,steps:[],i:0,timer:null};
+  resetViz(id);
+}
+function resetViz(id){var m=VIZ[id];if(!m)return;
+  m.steps=m.build();m.i=0;stopViz(id);drawViz(id);}
+function drawViz(id){var m=VIZ[id];
+  m.render(document.getElementById("svg-"+id),m.steps[m.i],m.i,m.steps);
+  var st=document.getElementById("st-"+id);
+  if(st)st.innerHTML=m.steps[m.i].msg||"";
+  syncViz(id);}
+/* keep the counter and the buttons honest about where we are */
+function syncViz(id){var m=VIZ[id],last=m.steps.length-1;
+  function btn(a){return document.querySelector(
+    'button[data-act="'+a+'"][data-viz="'+id+'"]');}
+  var b;
+  if((b=btn("step")))b.disabled=m.i>=last;
+  if((b=btn("back")))b.disabled=m.i<=0;
+  var sc=document.getElementById("sc-"+id);
+  if(sc)sc.innerHTML="step <em>"+m.i+"</em> of "+last;
+  var wrap=document.getElementById("wrap-"+id);
+  if(wrap){if(m.i>=last&&last>0)wrap.classList.add("done");
+           else wrap.classList.remove("done");}}
+function stepViz(id){var m=VIZ[id];
+  if(m.i<m.steps.length-1){m.i++;drawViz(id);}
+  if(m.i>=m.steps.length-1)stopViz(id);}
+/* step backwards, so a student can flip between before and after */
+function stepBackViz(id){var m=VIZ[id];
+  if(m.i>0){stopViz(id);m.i--;drawViz(id);}}
+function stopViz(id){var m=VIZ[id];if(m.timer){clearInterval(m.timer);m.timer=null;}
+  var b=document.querySelector('button[data-act="auto"][data-viz="'+id+'"]');
+  if(b)b.textContent="Auto-play";}
+/* ---- practice answers: reveal one, or all of a block ---- */
+document.addEventListener("click",function(e){
+  if(!e.target.closest)return;
+  var one=e.target.closest("button[data-ans]");
+  if(one){var p=document.getElementById(one.getAttribute("data-ans"));
+    if(p){var on=p.classList.toggle("on");
+      one.textContent=on?"Hide answer":"Show answer";}
+    return;}
+  var all=e.target.closest("button[data-all]");
+  if(all){var g=all.getAttribute("data-all"),
+      blk=all.closest(".prac"),show=all.textContent.indexOf("Show")===0;
+    blk.querySelectorAll(".pa").forEach(function(p){
+      p.classList.toggle("on",show);});
+    blk.querySelectorAll("button[data-ans]").forEach(function(b2){
+      b2.textContent=show?"Hide answer":"Show answer";});
+    all.textContent=show?"Hide all answers":"Show all answers";}
+});
+document.addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("button[data-viz]"):null;if(!b)return;
+  var id=b.getAttribute("data-viz"),act=b.getAttribute("data-act"),m=VIZ[id];if(!m)return;
+  if(act==="step")stepViz(id);
+  else if(act==="back")stepBackViz(id);
+  else if(act==="reset")resetViz(id);
+  else if(act==="auto"){
+    if(m.timer){stopViz(id);return;}
+    if(m.i>=m.steps.length-1)resetViz(id);
+    b.textContent="Pause";
+    m.timer=setInterval(function(){if(m.i>=m.steps.length-1)stopViz(id);else stepViz(id);},950);
+  }});
+
+
+/* ---------- curse of dimensionality ---------- */
+(function(){
+  var sl=document.getElementById("dSlider"),lab=document.getElementById("dVal"),
+      svg=document.getElementById("svg-curse"),st=document.getElementById("st-curse");
+  /* deterministic PRNG so the picture is stable across reloads */
+  var seed=12345;
+  function rnd(){seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;}
+  var CACHE={};
+  function stats(d){
+    if(CACHE[d])return CACHE[d];
+    seed=12345;var N=120,X=[];
+    for(var i=0;i<N;i++){var p=[];for(var k=0;k<d;k++)p.push(rnd());X.push(p);}
+    var D=[],mn=1e9,mx=0,s=0;
+    for(i=0;i<N;i++)for(var j=i+1;j<N;j++){
+      var t=0;for(k=0;k<d;k++){var e=X[i][k]-X[j][k];t+=e*e;}
+      t=Math.sqrt(t);D.push(t);s+=t;if(t<mn)mn=t;if(t>mx)mx=t;}
+    var mean=s/D.length,va=0;
+    D.forEach(function(t){va+=(t-mean)*(t-mean);});
+    var sd=Math.sqrt(va/D.length);
+    return CACHE[d]={D:D,mn:mn,mx:mx,mean:mean,sd:sd,spread:sd/mean,ratio:mn/mx};}
+  function draw(){
+    var d=+sl.value;lab.textContent=d;clr(svg);
+    var S=stats(d),W=560,L0=56,R=W-40,B=206,T0=34;
+    /* histogram of distances, normalised by the mean */
+    var nb=34,lo=0,hi=2.2,H=new Array(nb).fill(0);
+    S.D.forEach(function(t){var b=Math.floor((t/S.mean-lo)/(hi-lo)*nb);
+      if(b>=0&&b<nb)H[b]++;});
+    var mxh=Math.max.apply(null,H);
+    for(var b=0;b<nb;b++){
+      var h=H[b]/mxh*(B-T0),x=L0+b*(R-L0)/nb;
+      box(svg,x,B-h,(R-L0)/nb-1.5,h,C.cyan,null,2);}
+    line(svg,{x:L0,y:B},{x:R,y:B},C.rule,1.6);
+    var mx1=L0+(1-lo)/(hi-lo)*(R-L0);
+    line(svg,{x:mx1,y:T0-6},{x:mx1,y:B},C.navy,1.8,"4 3");
+    txt(svg,mx1,T0-12,"mean",C.navy,10);
+    [0,0.5,1,1.5,2].forEach(function(t){
+      txt(svg,L0+(t-lo)/(hi-lo)*(R-L0),B+16,t.toFixed(1),C.grey,9.5,"middle","400");});
+    txt(svg,(L0+R)/2,B+34,"pairwise distance ÷ mean distance",C.grey,11,"middle","400");
+    /* spread gauge */
+    var gx=L0,gy=B+54,gw=R-L0;
+    txt(svg,gx,gy-6,"spread = std / mean",C.grey,10.5,"start","600");
+    box(svg,gx,gy,gw,16,"#F0F2F5",null,8);
+    box(svg,gx,gy,Math.max(3,gw*S.spread/0.72),16,
+        S.spread>0.3?C.green:(S.spread>0.15?C.orange:C.red),null,8);
+    txt(svg,R,gy+34,"spread = "+S.spread.toFixed(4)+
+        "      nearest/farthest = "+S.ratio.toFixed(3),C.navy,11.5,"end","700");
+    st.innerHTML="At <b>d = "+d+"</b> the spread of pairwise distances is <b>"+
+      S.spread.toFixed(4)+"</b>, and the closest pair is <b>"+S.ratio.toFixed(3)+
+      "×</b> the distance of the farthest pair. "+
+      (d<=3?"Distances differ a lot, so “nearest neighbour” is meaningful."
+       :d<=12?"The histogram is already tightening around the mean."
+       :"The histogram has collapsed into a spike — almost every pair is the same distance apart, so distance has stopped discriminating and every distance-based algorithm is in trouble.");}
+  sl.addEventListener("input",draw);draw();
+})();
+/* ---------- PCA geometry ---------- */
+var PCAX=[[1,1],[2,3],[3,2],[4,5],[5,4]],PCAM=[3,3];
+(function(){
+  var sl=document.getElementById("paSlider"),lab=document.getElementById("paVal"),
+      svg=document.getElementById("svg-pcageo"),st=document.getElementById("st-pcageo");
+  function draw(){
+    var deg=+sl.value,th=deg*Math.PI/180,ux=Math.cos(th),uy=Math.sin(th);
+    lab.textContent=deg+"°";clr(svg);
+    var W=560,L0=58,B=262,T0=26,R=W-176;
+    function X(x){return L0+(x+3)/6*(R-L0);}
+    function Y(y){return B-(y+3)/6*(B-T0);}
+    for(var g=-3;g<=3;g++){
+      line(svg,{x:X(g),y:T0},{x:X(g),y:B},"#F0F4F8",1);
+      line(svg,{x:L0,y:Y(g)},{x:R,y:Y(g)},"#F0F4F8",1);}
+    line(svg,{x:L0,y:Y(0)},{x:R,y:Y(0)},C.rule,1.4);
+    line(svg,{x:X(0),y:T0},{x:X(0),y:B},C.rule,1.4);
+    line(svg,{x:X(-3*ux),y:Y(-3*uy)},{x:X(3*ux),y:Y(3*uy)},C.orange,2.6);
+    var s2=0;
+    PCAX.forEach(function(p){
+      var cx=p[0]-PCAM[0],cy=p[1]-PCAM[1],t=cx*ux+cy*uy;s2+=t*t;
+      line(svg,{x:X(cx),y:Y(cy)},{x:X(t*ux),y:Y(t*uy)},"#E8D9C6",1.5,"3 3");
+      dot(svg,{x:X(t*ux),y:Y(t*uy)},5,C.orange);
+      dot(svg,{x:X(cx),y:Y(cy)},7.5,C.cyan);});
+    var vr=s2/(PCAX.length-1);
+    var bx=R+18,bw=112;
+    txt(svg,bx,T0+14,"variance of the",C.grey,10.5,"start","600");
+    txt(svg,bx,T0+28,"orange shadows",C.grey,10.5,"start","600");
+    box(svg,bx,T0+38,bw,18,"#F0F2F5",null,9);
+    box(svg,bx,T0+38,Math.max(3,bw*vr/4.5),18,vr>4.45?C.green:C.orange,null,9);
+    txt(svg,bx,T0+76,vr.toFixed(4),vr>4.45?C.green:C.navy,19,"start","700");
+    txt(svg,bx,T0+94,"maximum is 4.5",C.grey,10,"start","400");
+    txt(svg,bx,T0+126,"λ₁ = 4.5  (90%)",C.cyan,11,"start","700");
+    txt(svg,bx,T0+144,"λ₂ = 0.5  (10%)",C.purple,11,"start","700");
+    txt(svg,bx,T0+168,"λ₁+λ₂ = 5.0",C.grey,10,"start","400");
+    txt(svg,bx,T0+182,"= total variance",C.grey,10,"start","400");
+    txt(svg,(L0+R)/2,B+24,"cyan = centred data    orange = its shadow on the line",
+        C.grey,10.5,"middle","400");
+    var near=Math.abs(((deg%180)+180)%180-45)<1.5;
+    st.innerHTML="At <b>θ = "+deg+"°</b> the shadows have variance <b>"+vr.toFixed(4)+
+      "</b>. "+(near
+        ?"This is the maximum. θ = 45° is the first principal component u₁ = (0.7071, 0.7071), its variance equals the top eigenvalue λ₁ = <b>4.5</b>, and that is <b>90%</b> of the total variance of 5.0 — so one dimension captures nearly everything."
+        :"Keep turning. The covariance matrix here is [[2.5, 2.0], [2.0, 2.5]], whose eigenvalues are 4.5 and 0.5; the maximum is reached at 45°.");}
+  sl.addEventListener("input",draw);draw();
+})();
+/* ---------- PCA computed step by step ---------- */
+(function(){
+  var X=[[1,1],[2,3],[3,2],[4,5],[5,4]],MX=3,MY=3,U=[0.7071,0.7071];
+  function build(){
+    return [
+     {k:0,msg:"Five points: (1,1) (2,3) (3,2) (4,5) (5,4). PCA will find the single direction along which they vary most."},
+     {k:1,msg:"<b>Step 1 — centre.</b> Mean = (3, 3). Subtract it from every point, so the cloud now sits around the origin: (−2,−2) (−1,0) (0,−1) (1,2) (2,1). Centring matters because PCA measures variance <i>about the mean</i>."},
+     {k:2,msg:"<b>Step 2 — covariance.</b> var(x) = (4+1+0+1+4)/4 = <b>2.5</b>; var(y) = <b>2.5</b>; cov(x,y) = (4+0+0+2+2)/4 = <b>2.0</b>. The large positive covariance says the two features rise together — which is exactly the redundancy PCA will exploit."},
+     {k:3,msg:"<b>Step 3 — eigenvalues.</b> Solve (2.5 − λ)² − 2² = 0, i.e. λ² − 5λ + 2.25 = 0 → λ = 2.5 ± 2 → <b>λ₁ = 4.5</b>, <b>λ₂ = 0.5</b>. These are the variances along the two principal directions."},
+     {k:4,msg:"<b>Step 4 — eigenvectors.</b> For λ₁: (2.5−4.5)u₁ + 2u₂ = 0 → u₁ = u₂ → <b>u = (0.7071, 0.7071)</b>, the 45° line. PC2 is perpendicular to it."},
+     {k:5,msg:"<b>Step 5 — project.</b> Each point's PC1 coordinate is its dot product with u: <b>−2.828, −0.707, −0.707, +2.121, +2.121</b>. Those five numbers are the 1-D representation of the data."},
+     {k:6,msg:"<b>Check:</b> the variance of those five projections is exactly <b>4.5</b> = λ₁, and 4.5 / (4.5 + 0.5) = <b>90%</b> of the total spread. One number per point instead of two, for a 10% loss."},
+     {k:7,msg:"<b>Step 6 — reconstruct</b>, to see precisely what was discarded. Rebuilding from PC1 alone gives (1,1) (2.5,2.5) (2.5,2.5) (4.5,4.5) (4.5,4.5) — every point snapped onto the 45° line. Total squared error = <b>2.0</b>, which is exactly 4λ₂. <b>The discarded eigenvalue is the error you will incur</b>, known in advance."}];}
+  function render(svg,s){
+    clr(svg);var W=560,L0=54,R=300,T0=24,B=252;
+    function PX(x){return L0+(x+3.4)/6.8*(R-L0);}
+    function PY(y){return B-(y+3.4)/6.8*(B-T0);}
+    box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
+    var cen=s.k>=1;
+    if(cen){
+      line(svg,{x:L0,y:PY(0)},{x:R,y:PY(0)},C.rule,1.4);
+      line(svg,{x:PX(0),y:T0},{x:PX(0),y:B},C.rule,1.4);}
+    if(s.k>=4){
+      line(svg,{x:PX(-3*U[0]),y:PY(-3*U[1])},{x:PX(3*U[0]),y:PY(3*U[1])},C.orange,2.6);
+      line(svg,{x:PX(2.2*-U[1]),y:PY(2.2*U[0])},{x:PX(-2.2*-U[1]),y:PY(-2.2*U[0])},
+           "#D8C9EC",2);
+      txt(svg,PX(2.3*U[0]),PY(2.3*U[1])-8,"PC1",C.orange,11);
+      txt(svg,PX(1.5*-U[1]),PY(1.5*U[0])-8,"PC2",C.purple,10.5);}
+    X.forEach(function(p){
+      var cx=cen?p[0]-MX:p[0]-MX, cy=cen?p[1]-MY:p[1]-MY;
+      var rawx=cen?cx:p[0]-MX, rawy=cen?cy:p[1]-MY;
+      if(s.k>=5){
+        var t=cx*U[0]+cy*U[1];
+        line(svg,{x:PX(cx),y:PY(cy)},{x:PX(t*U[0]),y:PY(t*U[1])},"#E8D9C6",1.5,"3 3");
+        dot(svg,{x:PX(t*U[0]),y:PY(t*U[1])},5,s.k>=7?C.green:C.orange);}
+      dot(svg,{x:PX(rawx),y:PY(rawy)},7,s.k>=7?"#BBD4E4":C.cyan);});
+    if(!cen)txt(svg,(L0+R)/2,B+18,"raw points",C.grey,10.5,"middle","400");
+    else txt(svg,(L0+R)/2,B+18,s.k>=7?"faded = original, green = rebuilt from PC1 only"
+             :"centred on the mean",C.grey,10.5,"middle","400");
+    /* right-hand panel */
+    var bx=R+26;
+    if(s.k>=2){
+      txt(svg,bx,T0+14,"covariance matrix",C.grey,10.5,"start","700");
+      [["2.5","2.0"],["2.0","2.5"]].forEach(function(row,r){
+        row.forEach(function(c2,c3){
+          box(svg,bx+c3*54,T0+24+r*30,50,26,"#E6F3FA",C.cyan,4);
+          txt(svg,bx+c3*54+25,T0+42+r*30,c2,C.navy,12.5);});});}
+    if(s.k>=3){
+      txt(svg,bx,T0+104,"eigenvalues",C.grey,10.5,"start","700");
+      txt(svg,bx,T0+126,"λ₁ = 4.5",C.orange,14,"start","700");
+      txt(svg,bx,T0+148,"λ₂ = 0.5",C.purple,13,"start","700");}
+    if(s.k>=4){
+      txt(svg,bx,T0+178,"PC1 direction",C.grey,10.5,"start","700");
+      txt(svg,bx,T0+198,"(0.707, 0.707)",C.orange,12.5,"start","700");}
+    if(s.k>=6){
+      box(svg,bx,T0+214,186,34,"#E4F6EB",C.green,5);
+      txt(svg,bx+93,T0+236,"90% of variance in 1-D",C.green,12);}
+    if(s.k>=7){
+      txt(svg,bx,T0+272,"reconstruction error",C.grey,10.5,"start","700");
+      txt(svg,bx,T0+292,"2.0  =  4λ₂",C.red,13,"start","700");}}
+  register("pcastep",build,render);
+})();
+/* ---------- scree plot ---------- */
+(function(){
+  var svg=document.getElementById("svg-scree"),st=document.getElementById("st-scree");
+  var EV=[8.4,4.1,2.2,1.1,0.72,0.48,0.35,0.26,0.19,0.14,0.09,0.06];
+  var tot=EV.reduce(function(a,b){return a+b;},0),cum=0,CU=EV.map(function(e){
+    cum+=e;return cum/tot;});
+  var W=560,L0=56,R=W-54,B=214,T0=30,bw=(R-L0)/EV.length;
+  txt(svg,(L0+R)/2,20,"eigenvalues, largest first",C.grey,11);
+  EV.forEach(function(e,i){
+    var h=e/EV[0]*(B-T0);
+    box(svg,L0+i*bw+3,B-h,bw-7,h,i<3?C.cyan:"#C9D6E0",null,3);
+    txt(svg,L0+i*bw+bw/2,B+15,"PC"+(i+1),C.grey,8.5,"middle","400");});
+  line(svg,{x:L0,y:B},{x:R,y:B},C.rule,1.6);
+  var d="";CU.forEach(function(c,i){
+    d+=(i?"L":"M")+(L0+i*bw+bw/2).toFixed(1)+","+(B-c*(B-T0)).toFixed(1);});
+  el(svg,"path",{d:d,fill:"none",stroke:C.orange,"stroke-width":2.6});
+  CU.forEach(function(c,i){dot(svg,{x:L0+i*bw+bw/2,y:B-c*(B-T0)},4,C.orange);});
+  /* the two guide lines sit close together, so their labels go to opposite ends */
+  [[0.9,"start",L0+4],[0.95,"end",R-4]].forEach(function(g){
+    var t=g[0],yy=B-t*(B-T0);
+    line(svg,{x:L0,y:yy},{x:R,y:yy},"#E8D9C6",1.4,"4 3");
+    txt(svg,g[2],yy-5,(100*t)+"%",C.orange,9.5,g[1],"700");});
+  var k90=CU.findIndex(function(c){return c>=0.9;})+1,
+      k95=CU.findIndex(function(c){return c>=0.95;})+1;
+  txt(svg,L0+2.5*bw,B-CU[2]*(B-T0)-14,"elbow",C.navy,10.5);
+  line(svg,{x:L0+3*bw,y:T0},{x:L0+3*bw,y:B},C.navy,1.6,"3 3");
+  txt(svg,(L0+R)/2,B+36,"bars = variance per component     line = cumulative variance",
+      C.grey,10.5,"middle","400");
+  txt(svg,(L0+R)/2,B+58,"keep 3 (the elbow) → "+(100*CU[2]).toFixed(1)+
+      "%      keep "+k90+" → 90%      keep "+k95+" → 95%",C.navy,11.5,"middle","700");
+  st.innerHTML="Three common rules, and they disagree — which is normal. The <b>elbow</b> "+
+    "is where the bars stop falling steeply, here after PC3 ("+(100*CU[2]).toFixed(1)+
+    "% of the variance). A <b>90% threshold</b> needs "+k90+" components and <b>95%</b> needs "+
+    k95+". Fewer components means a simpler model and more information thrown away; there is "+
+    "no formula that settles it, only the question of what the reduction is for.";
+})();
+/* ---------- swiss roll ---------- */
+(function(){
+  function roll(t){var r=0.42+0.30*t;return[r*Math.cos(t*4.6),r*Math.sin(t*4.6)];}
+  var N=46,PT=[];
+  for(var i=0;i<N;i++){var t=i/(N-1);PT.push({t:t,p:roll(t)});}
+  function build(){
+    return [{k:0,msg:"46 points sampled along a spiral. In the plane they are two-dimensional, but they really lie along a <b>one-dimensional curve</b> — a single number t tells you where a point is."},
+            {k:1,msg:"<b>PCA's view.</b> PCA can only project onto a straight line. Whichever line it picks, points from opposite arms of the spiral land on top of each other — the ends of the curve get folded together."},
+            {k:2,msg:"<b>The manifold view.</b> Measure distance <i>along the curve</i> instead, by hopping between near neighbours. Now the two ends are correctly far apart."},
+            {k:3,msg:"<b>Unrolled.</b> Laying the points out by their position along the curve recovers the single dimension that actually generated them. That is what Isomap, LLE and UMAP are each trying to do."}];}
+  function render(svg,s){
+    clr(svg);var W=560;
+    function X(x){return 150+x*150;}
+    function Y(y){return 150-y*150;}
+    if(s.k<3){
+      PT.forEach(function(q,i){
+        if(i)line(svg,{x:X(PT[i-1].p[0]),y:Y(PT[i-1].p[1])},{x:X(q.p[0]),y:Y(q.p[1])},
+                  s.k===2?C.green:"#E4EAF0",s.k===2?2.6:1.6);});
+      PT.forEach(function(q){
+        dot(svg,{x:X(q.p[0]),y:Y(q.p[1])},5,
+            "hsl("+(210-q.t*190).toFixed(0)+",72%,48%)");});
+      txt(svg,150,286,"the data, coloured by position along the curve",C.grey,10.5,"middle","400");}
+    if(s.k===1){
+      line(svg,{x:X(-0.95),y:Y(0)},{x:X(0.95),y:Y(0)},C.red,2.6);
+      PT.forEach(function(q){
+        line(svg,{x:X(q.p[0]),y:Y(q.p[1])},{x:X(q.p[0]),y:Y(0)},"#F2D7D4",1.2,"2 2");
+        dot(svg,{x:X(q.p[0]),y:Y(0)},4,"hsl("+(210-q.t*190).toFixed(0)+",72%,48%)");});
+      txt(svg,400,60,"PCA projects onto",C.red,11.5);
+      txt(svg,400,78,"a straight line",C.red,11.5);
+      txt(svg,400,104,"colours that began far",C.navy,10.5);
+      txt(svg,400,120,"apart now overlap — the",C.navy,10.5);
+      txt(svg,400,136,"curve has been folded",C.navy,10.5);}
+    if(s.k===2){
+      var a=PT[6],b=PT[30];
+      line(svg,{x:X(a.p[0]),y:Y(a.p[1])},{x:X(b.p[0]),y:Y(b.p[1])},C.red,2.4,"5 3");
+      txt(svg,400,64,"straight-line distance:",C.red,10.5);
+      txt(svg,400,80,"short — but wrong",C.red,11);
+      txt(svg,400,112,"distance along the curve:",C.green,10.5);
+      txt(svg,400,128,"long — and correct",C.green,11);
+      txt(svg,400,160,"manifold methods measure",C.navy,10);
+      txt(svg,400,176,"the second one",C.navy,10);}
+    if(s.k===3){
+      var x0=50,wd=460;
+      PT.forEach(function(q,i){
+        var x=x0+q.t*wd;
+        dot(svg,{x:x,y:150},6,"hsl("+(210-q.t*190).toFixed(0)+",72%,48%)");});
+      line(svg,{x:x0,y:178},{x:x0+wd,y:178},C.rule,1.6);
+      txt(svg,x0+wd/2,198,"position along the curve  —  one dimension, perfectly ordered",
+          C.green,11.5);
+      txt(svg,x0+wd/2,110,"the spiral, unrolled",C.navy,12.5);}}
+  register("roll",build,render);
+})();
+/* ---------- reading a t-SNE plot ---------- */
+(function(){
+  var svg=document.getElementById("svg-tsneread"),st=document.getElementById("st-tsneread");
+  var W=560;
+  txt(svg,150,22,"original space",C.grey,11.5);
+  txt(svg,410,22,"what t-SNE draws",C.grey,11.5);
+  box(svg,30,34,240,200,"#FAFCFE",C.rule,6);
+  box(svg,290,34,240,200,"#FAFCFE",C.rule,6);
+  function blob(ox,oy,cx,cy,r,col,m,seed){
+    var s=seed;function R(){s=(s*9301+49297)%233280;return s/233280;}
+    for(var i=0;i<m;i++){
+      var a=R()*6.283,rr=Math.sqrt(R())*r;
+      dot(svg,{x:ox+cx+rr*Math.cos(a),y:oy+cy+rr*Math.sin(a)},3.2,col);}}
+  /* left: a tight blob, a loose blob, close together */
+  blob(30,34,70,70,20,C.cyan,34,7);
+  blob(30,34,150,80,52,C.purple,34,11);
+  blob(30,34,110,180,16,C.green,20,3);
+  txt(svg,150,250,"one tight, one spread out, one small",C.grey,10,"middle","400");
+  /* right: t-SNE makes them all similar size and pushes them apart */
+  blob(290,34,60,70,38,C.cyan,34,7);
+  blob(290,34,180,70,38,C.purple,34,11);
+  blob(290,34,120,175,36,C.green,20,3);
+  txt(svg,410,250,"all three now look the same size",C.orange,10,"middle","600");
+  var tips=[["✓ which points are neighbours",C.green],
+            ["✗ how big a cluster is",C.red],
+            ["✗ how far apart two clusters are",C.red],
+            ["✗ whether a gap means anything",C.red]];
+  tips.forEach(function(t,i){
+    txt(svg,W/2,272+i*0,"",C.grey,10);});
+  tips.forEach(function(t,i){
+    txt(svg,120+ (i%2)*250, 272+Math.floor(i/2)*20, t[0], t[1],10.5,"start","600");});
+  st.innerHTML="t-SNE is optimised to get <b>neighbourhoods</b> right and nothing else. It "+
+    "inflates sparse clusters and compresses dense ones, so relative sizes carry no meaning, "+
+    "and the distance between two drawn clusters is essentially arbitrary. Use it to ask "+
+    "<i>is there structure here?</i> — then confirm what that structure is with something else.";
+})();
+/* ---------- autoencoder ---------- */
+(function(){
+  function build(){
+    return [{k:0,msg:"An autoencoder for 8-dimensional input with a <b>2-dimensional</b> bottleneck. The target output is the input itself — no labels anywhere."},
+            {k:1,msg:"<b>Encode.</b> The 8 inputs are squeezed through narrowing layers down to 2 numbers. Six dimensions' worth of information has to be discarded; the network must learn which six matter least."},
+            {k:2,msg:"<b>The code z.</b> These two numbers are the learned representation. This is what you keep, plot, or feed to a clustering algorithm."},
+            {k:3,msg:"<b>Decode.</b> From those 2 numbers alone the decoder tries to rebuild all 8 original values."},
+            {k:4,msg:"<b>The loss.</b> Compare the reconstruction with the original input. Backpropagate. The <b>only</b> way to lower this loss is for the bottleneck to carry genuinely informative features — which is how an autoencoder learns a representation without ever being told anything."},
+            {k:5,msg:"<b>Why the width matters.</b> Widen the bottleneck to 8 and the network can simply copy its input across, achieving zero loss while learning nothing at all. The constraint <i>is</i> the teacher."}];}
+  function render(svg,s){
+    clr(svg);var W=560,sizes=[8,5,2,5,8],xs=[62,168,280,392,498],cy=132;
+    var names=["input x","","code z","","output x̂"];
+    sizes.forEach(function(m,L){
+      var sp=Math.min(22,170/m);
+      for(var i=0;i<m;i++){
+        var y=cy-(m-1)*sp/2+i*sp;
+        var lit=(s.k>=1&&L<=1)||(s.k>=2&&L===2)||(s.k>=3&&L>=3)||s.k>=4;
+        var col=L===2?C.purple:(L<2?C.cyan:C.green);
+        el(svg,"circle",{cx:xs[L],cy:y,r:L===2?9:6.5,
+          fill:lit?col:"#EDF1F5",stroke:lit?"#fff":C.rule,"stroke-width":1.6});
+        if(L<sizes.length-1){
+          var m2=sizes[L+1],sp2=Math.min(22,170/m2);
+          for(var j=0;j<m2;j++){
+            var y2=cy-(m2-1)*sp2/2+j*sp2;
+            line(svg,{x:xs[L]+8,y:y},{x:xs[L+1]-8,y:y2},
+                 lit?"#DCE4EC":"#F2F5F9",0.8);}}}
+      if(names[L])txt(svg,xs[L],cy+112,names[L],L===2?C.purple:C.grey,11,"middle","600");
+      txt(svg,xs[L],cy-86,m+"d",L===2?C.purple:C.grey,10.5,"middle","700");});
+    txt(svg,170,22,"ENCODER",C.cyan,11);
+    txt(svg,390,22,"DECODER",C.green,11);
+    box(svg,246,cy-120,70,19,"#F3EEFB",C.purple,4);
+    txt(svg,281,cy-107,"bottleneck",C.purple,9.5);
+    if(s.k>=4){
+      el(svg,"path",{d:"M498,"+(cy+92)+" Q280,"+(cy+140)+" 62,"+(cy+92),
+        fill:"none",stroke:C.orange,"stroke-width":2.2,"stroke-dasharray":"5 3"});
+      txt(svg,280,cy+152,"loss = ‖x − x̂‖²   —   backpropagate",
+          C.orange,11.5);}
+    if(s.k===5){
+      box(svg,150,cy+168,260,34,"#FBE9E7",C.red,5);
+      txt(svg,280,cy+190,"bottleneck of 8 → copies the input, learns nothing",
+          C.red,10.5);}}
+  register("ae",build,render);
+})();
+
+</script>
+</body>
+</html>
