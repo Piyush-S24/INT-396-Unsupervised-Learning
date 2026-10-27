@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INT396 &middot; Unsupervised Learning Unit V &mdash; Association Rules and Anomaly Detection &mdash; Numericals</title>
+<style>
+:root{--navy:#182B49;--navy2:#253E64;--cyan:#0096C7;--ice:#7EC5E2;--purple:#5C2D91;
+      --orange:#ED771F;--green:#107C41;--red:#B42318;--grey:#586476;--rule:#D8DFE8;
+      --bg:#F6F9FC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);
+     font:15px/1.65 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{background:var(--navy);color:#fff;padding:28px 0 24px;border-bottom:4px solid var(--cyan)}
+header .eyebrow{color:var(--ice);font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+header h1{margin:7px 0 6px;font-size:32px;font-weight:600;line-height:1.2}
+header p{margin:0;color:#C9D8E6;font-size:15.5px;max-width:860px}
+nav{background:var(--navy2);position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(24,43,73,.2)}
+nav ul{display:flex;flex-wrap:wrap;gap:2px;list-style:none;margin:0;padding:0}
+nav a{display:block;padding:11px 14px;color:#D8E6F2;text-decoration:none;font-size:13.5px;font-weight:600}
+nav a:hover{background:rgba(255,255,255,.13);color:#fff}
+section{padding:34px 0 12px;border-bottom:1px solid var(--rule)}
+h2{font-size:24px;margin:0 0 6px;font-weight:600}
+h2 .num{display:inline-block;background:var(--cyan);color:#fff;font-size:13px;
+        padding:3px 9px;border-radius:4px;margin-right:10px;vertical-align:3px}
+h3{font-size:17.5px;margin:24px 0 8px;font-weight:600;color:var(--navy)}
+.lede{color:var(--grey);font-size:15.5px;margin:0 0 16px;max-width:920px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+/* ---- formula sheet ---- */
+.fsheet{border:1px solid var(--rule);border-top:3px solid var(--navy);border-radius:4px;
+        background:var(--card);margin:18px 0;padding:15px 20px 8px}
+.fshd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:8px}
+.fst{width:100%;border-collapse:collapse;margin:0;font-size:14px;box-shadow:none}
+.fst td{border:0;border-top:1px solid #E1EAF3;padding:9px 8px;vertical-align:middle;
+        background:none}
+.fst tr:first-child td{border-top:0}
+.fst tbody tr:nth-child(even){background:none}
+td.fsn{width:23%;font-weight:600;color:var(--navy);font-size:13.5px}
+td.fsf{width:42%}
+td.fsf .math{font-size:16.5px;line-height:1.9;white-space:normal}
+td.fsw{color:var(--grey);font-size:13px}
+/* ---- the method ---- */
+.meth{border:1px solid var(--rule);border-left:3px solid var(--navy);border-radius:4px;
+      background:var(--card);margin:18px 0;padding:15px 20px 16px}
+.methd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);margin-bottom:9px}
+.meth ol{margin:0;padding-left:22px}
+.meth li{font-size:14.8px;line-height:1.68;padding:4px 0;color:var(--navy)}
+.meth li::marker{color:var(--grey);font-weight:700}
+/* ---- practice ---- */
+.prac{border:1px solid var(--rule);border-radius:4px;background:var(--card);
+      margin:18px 0;padding:15px 20px 16px}
+.prhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.pall{margin-left:auto;font-size:12px;padding:5px 11px}
+.prac ol{margin:0;padding-left:22px}
+.prac>ol>li{padding:11px 0;border-top:1px solid #EEF2F6}
+.prac>ol>li:first-child{border-top:0}
+.prac li::marker{color:var(--grey);font-weight:700}
+/* Numericals pages run quiet: panels are white with a thin rule, and colour is
+   reserved for meaning (a revealed answer, a caution) rather than decoration. */
+body.quiet .formula{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--navy);border-radius:4px}
+body.quiet .formula .flabel{color:var(--navy)}
+body.quiet .ex{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .exgiven{background:#F7FAFC;border-color:var(--rule)}
+body.quiet .why{background:var(--card)}
+body.quiet .whygrid{background:var(--rule)}
+body.quiet .wq.w3{background:var(--card)}
+body.quiet .take{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .warn{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--orange);border-radius:4px}
+.pq{font-size:14.8px;line-height:1.68;color:var(--navy);margin-bottom:7px}
+.pbtn{font-size:12px;padding:4px 10px}
+.pa{display:none;margin-top:9px;background:#E4F6EB;border-left:3px solid var(--green);
+    border-radius:5px;padding:9px 13px;font-size:14.5px;line-height:1.7;color:var(--navy)}
+.pa.on{display:block}
+.pa b{color:var(--green)}
+.ex{border:1.5px solid #BFD9CB;border-left:5px solid var(--green);border-radius:9px;
+    background:#FBFEFC;margin:18px 0;padding:14px 18px 16px}
+.exhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--green);margin-bottom:9px}
+.exgiven{font-size:14.5px;background:#fff;border:1px solid #DCE9E1;border-radius:6px;
+         padding:9px 13px;margin-bottom:12px}
+.exsteps{list-style:none;counter-reset:exs;margin:0;padding:0}
+.exsteps li{counter-increment:exs;display:grid;grid-template-columns:26px 1fr;gap:11px;
+            padding:7px 0;border-top:1px solid #E7F0EA;align-items:baseline}
+.exsteps li:first-child{border-top:0}
+.exsteps li::before{content:counter(exs);display:block;width:21px;height:21px;
+                    border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;
+                    font-weight:700;text-align:center;line-height:21px}
+.exb{min-width:0}
+.exl{font-size:13.5px;color:var(--grey);display:block;margin-bottom:3px}
+.exw{font-size:15.5px;color:var(--navy);font-family:"Cambria Math",Cambria,Georgia,serif;
+     display:block;line-height:1.8}
+.exans{margin-top:12px;background:#E4F6EB;border-radius:6px;padding:10px 14px;
+       font-size:15px;color:var(--navy);font-weight:600}
+.exans b{color:var(--green)}
+@media(max-width:700px){.exsteps li{grid-template-columns:22px 1fr;gap:8px}}
+.why{border:1.5px solid #CBD9E6;border-radius:9px;margin:18px 0;overflow:hidden;
+     background:linear-gradient(180deg,#F4F9FD 0,#fff 54px)}
+.whyhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);padding:13px 18px 0}
+.whygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E3EAF1;
+         margin-top:12px;border-top:1px solid #E3EAF1}
+.wq{background:var(--card);padding:14px 17px 16px}
+.wq h5{margin:0 0 7px;font-size:12px;font-weight:700;letter-spacing:.03em}
+.wq p{margin:0;font-size:14px;line-height:1.62}
+.wq.w1 h5{color:var(--cyan)}
+.wq.w2 h5{color:var(--purple)}
+.wq.w3 h5{color:var(--orange)}
+.wq.w3{background:#FFFBF7}
+@media(max-width:900px){.whygrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:15px 17px}
+.card h4{margin:0 0 7px;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan)}
+.card p{margin:0;font-size:14.5px}
+.take{background:#E4F6EB;border-left:5px solid var(--green);border-radius:6px;padding:12px 16px;margin:14px 0}
+.take b.hd{color:var(--green);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.take b{color:var(--navy)}
+.warn{background:#FDEEEC;border-left:5px solid var(--orange);border-radius:6px;padding:12px 16px;margin:14px 0}
+.warn b.hd{color:var(--orange);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.warn b{color:var(--navy)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600;font-size:13px}
+tbody tr:nth-child(even){background:#F2F7FB}
+td.hi{background:#FFF3E0;font-weight:700}
+code{background:#EEF3F8;padding:1px 5px;border-radius:4px;font-size:13.5px}
+footer{background:var(--navy);color:#9FB4CA;padding:22px 0;font-size:13.5px}
+
+/* ---------------- formula block ---------------- */
+.formula{background:#F3EEFB;border-left:5px solid var(--purple);border-radius:6px;
+         padding:14px 18px;margin:14px 0;overflow-x:auto}
+.formula .flabel{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;
+                 text-transform:uppercase;color:var(--purple);margin-bottom:9px}
+.formula small{display:block;font:13.5px/1.55 "Segoe UI",sans-serif;color:var(--grey);margin-top:10px}
+
+/* ---------------- real maths ---------------- */
+.math{font-family:"Cambria Math",Cambria,"Times New Roman",Georgia,serif;
+      font-size:20px;line-height:2.1;color:var(--navy);white-space:nowrap}
+.math i,.math .var{font-style:italic;font-family:inherit}
+.math .op{font-style:normal;padding:0 .22em}
+.math b.vecb{font-weight:700;font-style:normal}
+.math sub{font-size:.62em;vertical-align:-.3em}
+.math sup{font-size:.62em;vertical-align:.45em}
+.cases{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .2em}
+.cases .cb{font-size:2.5em;font-weight:300;line-height:.86;margin-right:.14em}
+.cases table{border-collapse:collapse;margin:0;width:auto;box-shadow:none;font-size:.86em}
+.cases tbody tr,.cases tbody tr:nth-child(even){border:0;background:none}
+.cases td{border:0;padding:.14em .2em;background:none;white-space:nowrap;
+          line-height:1.5;vertical-align:middle}
+.cases td.cc{font-size:.8em;font-style:normal;color:var(--grey);padding-left:1.5em;
+             font-family:"Segoe UI",system-ui,sans-serif}
+.frac{display:inline-block;vertical-align:-.52em;text-align:center;margin:0 .26em}
+.frac .num{display:block;padding:0 .4em .12em;border-bottom:1.7px solid currentColor;line-height:1.22}
+.frac .den{display:block;padding:.12em .4em 0;line-height:1.22}
+.sqrt{display:inline-block;position:relative;margin:0 .15em}
+.sqrt .rad{font-size:1.12em;vertical-align:-.06em}
+.sqrt .rand{border-top:1.6px solid currentColor;padding:.1em .22em 0 .12em;margin-left:-.12em}
+.bigop{display:inline-block;text-align:center;vertical-align:-.5em;margin:0 .2em;line-height:1}
+.bigop .glyph{display:block;font-size:1.5em;line-height:.88}
+.bigop.int .glyph{font-size:1.75em}
+.bigop .lim{display:block;font-size:.5em;line-height:1.25;font-style:italic}
+.paren{font-size:1.18em;padding:0 .06em}
+.paren.big{font-size:1.5em;vertical-align:-.16em}
+.bar{padding:0 .09em}
+.hat{position:relative;display:inline-block;font-style:italic}
+.hat::after{content:"\0302";position:absolute;left:0;right:0;top:-.46em;
+            text-align:center;font-size:.72em;font-style:normal;line-height:1;
+            font-family:"Cambria Math",Cambria,serif}
+.matrix{display:inline-block;vertical-align:middle;margin:0 .18em}
+.matrix .mb{display:inline-block;font-size:2.1em;vertical-align:middle;font-weight:300}
+.matrix table{display:inline-table;width:auto;border:0;margin:0 .1em;vertical-align:middle}
+.matrix td{border:0;padding:.08em .38em;text-align:center;font-size:.86em;background:none}
+
+/* ---------------- visualisation ---------------- */
+.viz{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:16px 0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:600 13.5px "Segoe UI",sans-serif;padding:8px 14px;border-radius:6px;
+       border:1px solid var(--cyan);background:var(--cyan);color:#fff;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:#fff;color:var(--cyan)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select{font:14px "Segoe UI";padding:7px 9px;border-radius:6px;border:1px solid var(--rule);background:#fff}
+svg{width:100%;height:auto;display:block;background:#fff;border-radius:6px;max-width:1040px;margin:0 auto}
+.status{font-size:15.5px;line-height:1.6;background:#EAF4FA;border-left:4px solid var(--cyan);
+        border-radius:6px;padding:12px 16px;margin-top:12px;min-height:48px;color:var(--navy)}
+.status b{color:var(--cyan)}
+.stepcount{font-size:12.5px;font-weight:700;color:var(--grey);letter-spacing:.03em;
+           margin-left:auto;padding-right:4px;white-space:nowrap}
+.stepcount em{font-style:normal;color:var(--cyan);font-size:14.5px}
+.viz.done .stepcount em{color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--grey);margin-top:9px;justify-content:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body class="quiet">
+<header><div class="wrap">
+  <div class="eyebrow">INT396 &middot; Unsupervised Learning &middot; Unit V</div>
+  <h1>Association Rules and Anomaly Detection &mdash; Numericals</h1>
+  <p>Every formula this unit needs, what to do with it, and a worked example with the full arithmetic. Work the practice questions before revealing the answers.</p>
+</div></header>
+<nav><div class="wrap"><ul><li><a href="#metrics">1 &middot; The four measures</a></li><li><a href="#apriori">2 &middot; Apriori &amp; FP-Growth</a></li><li><a href="#lof">3 &middot; LOF</a></li><li><a href="#iforest">4 &middot; Isolation Forest</a></li></ul></div></nav>
+<div class="fsheet"><div class="fshd">Formula sheet &mdash; everything this unit needs</div><table class="fst"><tr><td class="fsn">Support</td><td class="fsf"><span class="math">supp(<i>A</i>) = <span class="frac"><span class="num">baskets containing <i>A</i></span><span class="den"><i>N</i></span></span></span></td><td class="fsw">how often the itemset occurs at all</td></tr><tr><td class="fsn">Confidence</td><td class="fsf"><span class="math">conf(<i>A</i>&#8594;<i>B</i>) = <span class="frac"><span class="num">supp(<i>A</i>&#8746;<i>B</i>)</span><span class="den">supp(<i>A</i>)</span></span></span></td><td class="fsw"><i>P</i>(<i>B</i> | <i>A</i>)</td></tr><tr><td class="fsn">Lift</td><td class="fsf"><span class="math">lift = <span class="frac"><span class="num">conf</span><span class="den">supp(<i>B</i>)</span></span></span></td><td class="fsw"><b>&gt;1</b> real, <b>=1</b> independent, <b>&lt;1</b> negative</td></tr><tr><td class="fsn">Conviction</td><td class="fsf"><span class="math">conv = <span class="frac"><span class="num">1 &#8722; supp(<i>B</i>)</span><span class="den">1 &#8722; conf</span></span></span></td><td class="fsw">&#8734; when the rule never fails; &lt;1 is negative</td></tr><tr><td class="fsn">Apriori principle</td><td class="fsf"><span class="math"><i>A</i> &#8838; <i>B</i> &#8658; supp(<i>A</i>) &#8805; supp(<i>B</i>)</span></td><td class="fsw">so an infrequent set makes every superset infrequent</td></tr><tr><td class="fsn">k-distance</td><td class="fsf"><span class="math">distance to the <i>k</i>-th nearest neighbour</span></td><td class="fsw">the basis of every LOF quantity</td></tr><tr><td class="fsn">Reachability</td><td class="fsf"><span class="math">reach<sub><i>k</i></sub><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span> = max <span class="paren">[</span>k-dist(<i>B</i>), <i>d</i><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span><span class="paren">]</span></span></td><td class="fsw">floored at <i>B</i>'s own k-distance</td></tr><tr><td class="fsn">lrd</td><td class="fsf"><span class="math">lrd(<i>A</i>) = <span class="frac"><span class="num">1</span><span class="den">mean reach-dist to <i>A</i>'s <i>k</i> neighbours</span></span></span></td><td class="fsw">local reachability density &mdash; high means tightly packed</td></tr><tr><td class="fsn">LOF</td><td class="fsf"><span class="math">LOF(<i>A</i>) = <span class="frac"><span class="num">mean lrd of <i>A</i>'s neighbours</span><span class="den">lrd(<i>A</i>)</span></span></span></td><td class="fsw">&#8776; 1 normal; &#8811; 1 outlier</td></tr><tr><td class="fsn">Isolation score</td><td class="fsf"><span class="math"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num"><i>E</i><span class="paren">[</span><i>h</i><span class="paren">]</span></span><span class="den"><i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span></span></span></sup>,&nbsp; <i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span> = 2<i>H</i><span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span> &#8722; <span class="frac"><span class="num">2<span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den"><i>n</i></span></span></span></td><td class="fsw">near 1 anomaly, near 0.5 normal</td></tr></table></div>
+<section id="metrics"><div class="wrap"><h2><span class="num">1</span>Support, confidence, lift and conviction</h2><p class="lede">Four numbers describing one rule. Reading only the first two is how people act on rules that are worthless.</p><div class="formula"><span class="flabel">All four</span><div class="math">supp = <span class="frac"><span class="num">count(<i>A</i>&#8746;<i>B</i>)</span><span class="den"><i>N</i></span></span>,&nbsp; conf = <span class="frac"><span class="num">supp(<i>A</i>&#8746;<i>B</i>)</span><span class="den">supp(<i>A</i>)</span></span>,&nbsp; lift = <span class="frac"><span class="num">conf</span><span class="den">supp(<i>B</i>)</span></span>,&nbsp; conv = <span class="frac"><span class="num">1 &#8722; supp(<i>B</i>)</span><span class="den">1 &#8722; conf</span></span></div><small>Lift and conviction both compare the rule against chance. Confidence does not, which is exactly why it misleads.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li>Count <i>N</i>, the total number of baskets.</li><li>Count baskets containing <i>A</i>, containing <i>B</i>, and containing both.</li><li>supp(<i>A</i>&#8746;<i>B</i>) = both / <i>N</i>.</li><li>conf = both / count(<i>A</i>) &mdash; divide by a <b>count</b>, not by <i>N</i>.</li><li>lift = conf / supp(<i>B</i>). Compute supp(<i>B</i>) on its own first.</li><li>conv = (1 &#8722; supp(<i>B</i>)) / (1 &#8722; conf). If conf = 1 the denominator is 0 and conviction is &#8734;.</li><li>Judge on <b>lift</b>, and report confidence alongside it, never alone.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; three rules, and the trap</div><div class="exgiven">Seven baskets: {E,J} {B,J,M,U} {E,U} {E,M,U} {B,J,M,U} {B,J,U} {J,M}. B = Bread, J = Jam, U = Butter, M = Milk, E = Eggs. Counts: B 3, J 5, U 5, M 4, E 3; {J,U} 3; {B,J,U} 3.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Rule 1 {Bread} &#8594; {Jam, Butter} &mdash; support</span><span class="exw"><span class="frac"><span class="num">3</span><span class="den">7</span></span> = <b>0.4286</b></span></div></li><li><div class="exb"><span class="exl">Its confidence</span><span class="exw"><span class="frac"><span class="num">3</span><span class="den">3</span></span> = <b>1.0000</b></span></div></li><li><div class="exb"><span class="exl">Its lift</span><span class="exw">supp({J,U}) = <span class="frac"><span class="num">3</span><span class="den">7</span></span> = 0.4286 &#8594; lift = <span class="frac"><span class="num">1.0000</span><span class="den">0.4286</span></span> = <b>2.333</b></span></div></li><li><div class="exb"><span class="exl">Its conviction</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.4286</span><span class="den">1 &#8722; 1.0000</span></span> = <span class="frac"><span class="num">0.5714</span><span class="den">0</span></span> = <b>&#8734;</b> &mdash; the rule never once fails</span></div></li><li><div class="exb"><span class="exl">Rule 2 {Jam} &#8594; {Butter}</span><span class="exw">conf = <span class="frac"><span class="num">3</span><span class="den">5</span></span> = <b>0.600</b>; supp(U) = <span class="frac"><span class="num">5</span><span class="den">7</span></span> = 0.714 &#8594; lift = <span class="frac"><span class="num">0.600</span><span class="den">0.714</span></span> = <b>0.840</b></span></div></li><li><div class="exb"><span class="exl">Its conviction</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.714</span><span class="den">1 &#8722; 0.600</span></span> = <span class="frac"><span class="num">0.286</span><span class="den">0.400</span></span> = <b>0.715</b> &mdash; also below 1</span></div></li><li><div class="exb"><span class="exl">Rule 3 {Jam} &#8594; {Bread} &mdash; same confidence</span><span class="exw">conf = <span class="frac"><span class="num">3</span><span class="den">5</span></span> = <b>0.600</b>; supp(B) = <span class="frac"><span class="num">3</span><span class="den">7</span></span> = 0.4286 &#8594; lift = <span class="frac"><span class="num">0.600</span><span class="den">0.4286</span></span> = <b>1.400</b></span></div></li></ol><div class="exans"><b>Rules 2 and 3 have identical confidence (0.600) and opposite verdicts.</b> Butter is in 5 of 7 baskets anyway, so Jam makes it <i>less</i> likely; Bread is in only 3, so Jam genuinely predicts it. Sort an association table by confidence and you will act on rule 2.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr9">Show all answers</button></div><ol><li><div class="pq">From 2000 baskets: Nappies 300, Beer 400, both 150. Compute all four measures for {Nappies} &#8594; {Beer}.</div><button class="ghost pbtn" data-ans="pr9-1">Show answer</button><div class="pa" id="pr9-1">supp = 150/2000 = <b>0.075</b>. conf = 150/300 = <b>0.50</b>. supp(Beer) = 400/2000 = 0.20 &#8594; lift = 0.50/0.20 = <b>2.5</b>. conv = (1&minus;0.20)/(1&minus;0.50) = 0.80/0.50 = <b>1.6</b>. Strong positive association.</div></li><li><div class="pq">A rule has lift exactly 1.0. What does that mean, whatever its confidence?</div><button class="ghost pbtn" data-ans="pr9-2">Show answer</button><div class="pa" id="pr9-2"><i>A</i> and <i>B</i> are <b>statistically independent</b> &mdash; knowing <i>A</i> tells you nothing at all about <i>B</i>. A confidence of 0.9 with lift 1.0 simply means <i>B</i> appears in 90% of <i>all</i> baskets. The rule is worthless.</div></li><li><div class="pq">Why is conviction &#8734; when confidence is 1?</div><button class="ghost pbtn" data-ans="pr9-3">Show answer</button><div class="pa" id="pr9-3">The denominator is 1 &#8722; conf = 0. Conviction measures how often the rule <b>would</b> be wrong by chance divided by how often it <b>is</b> wrong; if it is never wrong, that ratio is unbounded. Report it as &#8734; and note the rule has no counterexample in this data.</div></li></ol></div></div></section>
+<section id="apriori"><div class="wrap"><h2><span class="num">2</span>Apriori and FP-Growth</h2><p class="lede">With <i>d</i> items there are 2<sup><i>d</i></sup> possible itemsets. Both algorithms exist to avoid counting them all.</p><div class="formula"><span class="flabel">The Apriori principle</span><div class="math"><i>A</i> &#8838; <i>B</i>&nbsp;&nbsp;&#8658;&nbsp;&nbsp;supp(<i>A</i>) &#8805; supp(<i>B</i>)&nbsp;&nbsp;&#8658;&nbsp;&nbsp;<i>A</i> infrequent &#8658; every superset infrequent</div><small><b>Downward closure.</b> Adding an item can only reduce support, so one failed count eliminates an entire branch without ever being examined.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li><b>Level 1:</b> count every single item. Keep those with count &#8805; minsup.</li><li><b>Join:</b> combine surviving <i>k</i>-itemsets in pairs to form candidate (<i>k</i>+1)-itemsets.</li><li><b>Prune:</b> discard any candidate having an infrequent <i>k</i>-subset &mdash; this is where the saving happens.</li><li>Count the survivors with one database pass. Repeat until nothing survives.</li><li>Apriori needs <b>one pass per level</b> and generates candidates.</li><li><b>FP-Growth:</b> pass 1 counts items; sort them by <b>descending frequency</b>.</li><li>Pass 2 inserts each basket, rewritten in that order, into a prefix tree, reusing shared prefixes. Two passes total, zero candidates.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; Apriori level by level, then the FP-tree</div><div class="exgiven">The same seven baskets, minimum support <b>3 of 7</b>.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Level 1 counts</span><span class="exw">J = 5, U = 5, M = 4, B = 3, E = 3 &#8594; all five survive</span></div></li><li><div class="exb"><span class="exl">Join to level 2</span><span class="exw"><span class="frac"><span class="num">5 &#215; 4</span><span class="den">2</span></span> = <b>10</b> candidate pairs</span></div></li><li><div class="exb"><span class="exl">Count them</span><span class="exw">{J,U} 3, {J,M} 3, {J,B} 3, {U,M} 3, {U,B} 3, {M,B} 2, {E,U} 2, {E,M} 1, {E,J} 1, {E,B} 0</span></div></li><li><div class="exb"><span class="exl">Prune</span><span class="exw">{M,B}, {E,U}, {E,M}, {E,J}, {E,B} all fall below 3 and are <b>dropped</b></span></div></li><li><div class="exb"><span class="exl">Apply downward closure</span><span class="exw">because {E,J} is infrequent, every superset &mdash; {E,J,U}, {E,J,M}, {E,J,B}, {E,J,M,U}&hellip; &mdash; is infrequent and is <b>never counted</b></span></div></li><li><div class="exb"><span class="exl">Level 3: only sets whose every pair survived</span><span class="exw">{J,U,B} qualifies ({J,U}, {J,B}, {U,B} all frequent) &#8594; count = <b>3</b> &#10003;</span></div></li><li><div class="exb"><span class="exl">Total Apriori work</span><span class="exw"><b>17</b> candidates counted over <b>3</b> database passes</span></div></li><li><div class="exb"><span class="exl">Now FP-Growth. Order items by descending count</span><span class="exw"><b>J(5) &#8594; U(5) &#8594; M(4) &#8594; B(3) &#8594; E(3)</b>, ties alphabetical</span></div></li><li><div class="exb"><span class="exl">Rewrite each basket in that order and insert</span><span class="exw">{B,J,M,U} &#8594; JUMB, which appears <b>twice</b> &mdash; the second insertion creates <b>no new nodes</b>, it just increments four counters</span></div></li><li><div class="exb"><span class="exl">Tree size</span><span class="exw"><b>11</b> nodes represent all 7 baskets, in <b>2</b> passes, with <b>0</b> candidates</span></div></li></ol><div class="exans"><b>Largest frequent itemset {Bread, Jam, Butter} at 3/7.</b> Apriori: 17 candidates, 3 passes. FP-Growth: 0 candidates, 2 passes. The saving comes entirely from the frequency ordering &mdash; insert alphabetically and the tree stops compressing.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr10">Show all answers</button></div><ol><li><div class="pq">Items A, B, C, D are all frequent. How many level-2 candidates does the join produce?</div><button class="ghost pbtn" data-ans="pr10-1">Show answer</button><div class="pa" id="pr10-1"><span class="frac"><span class="num">4 &#215; 3</span><span class="den">2</span></span> = <b>6</b>: AB, AC, AD, BC, BD, CD.</div></li><li><div class="pq">{A,B} is infrequent. Which level-3 candidates can be skipped without counting?</div><button class="ghost pbtn" data-ans="pr10-2">Show answer</button><div class="pa" id="pr10-2">Every superset of {A,B}: <b>{A,B,C}, {A,B,D}</b> and any larger set containing both A and B. By downward closure they cannot possibly reach minimum support, so no database pass is needed for them.</div></li><li><div class="pq">Why must FP-Growth sort items by descending frequency before insertion?</div><button class="ghost pbtn" data-ans="pr10-3">Show answer</button><div class="pa" id="pr10-3">So the <b>most common items sit nearest the root</b> and the maximum number of baskets share a prefix. Insert in any other order and the tree becomes wide and shallow with almost no sharing &mdash; you pay the memory cost of the tree and get none of the compression.</div></li></ol></div></div></section>
+<section id="lof"><div class="wrap"><h2><span class="num">3</span>Local Outlier Factor</h2><p class="lede">Three quantities computed in order. Each depends on the one before, so the bookkeeping matters as much as the formulas.</p><div class="formula"><span class="flabel">Steps 1 and 2</span><div class="math">reach<sub><i>k</i></sub><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span> = max <span class="paren">[</span>k-dist(<i>B</i>),&nbsp; <i>d</i><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span><span class="paren">]</span>,&nbsp;&nbsp;&nbsp;lrd(<i>A</i>) = <span class="frac"><span class="num">1</span><span class="den">mean reach to <i>A</i>'s <i>k</i> NN</span></span></div><small>The floor stops a very close pair producing an explosively large density. Note reach is <b>not symmetric</b>.</small></div><div class="formula"><span class="flabel">Step 3</span><div class="math">LOF(<i>A</i>) = <span class="frac"><span class="num">mean lrd of <i>A</i>'s <i>k</i> neighbours</span><span class="den">lrd(<i>A</i>)</span></span></div><small>&#8776; <b>1</b> means as dense as the neighbourhood &mdash; normal. <b>&gt; 1</b> means the neighbours are denser than you are &mdash; outlier.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li>For every point, find its <i>k</i> nearest neighbours and its <b>k-distance</b> (the distance to the <i>k</i>-th).</li><li>For each point <i>A</i> and each of its neighbours <i>B</i>: reach = max(k-dist(<i>B</i>), d(<i>A</i>, <i>B</i>)).</li><li>lrd(<i>A</i>) = 1 / (mean of those reach values).</li><li>LOF(<i>A</i>) = (mean lrd of <i>A</i>'s neighbours) / lrd(<i>A</i>).</li><li>Read the result: &#8776; 1 normal, &#8811; 1 outlier. There is no absolute distance threshold anywhere &mdash; that is what makes it <b>local</b>.</li><li>Keep 4 decimals; the ratios are small and rounding early destroys them.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; LOF for five points, computed in full</div><div class="exgiven">A(1.0, 1.0) B(1.2, 1.4) C(0.8, 1.3) D(1.4, 1.0) in a tight cluster, plus O(4.0, 4.0) alone. Take <i>k</i> = 2.</div><ol class="exsteps"><li><div class="exb"><span class="exl">k-distances (distance to the 2nd nearest)</span><span class="exw">A: <b>0.4000</b>, B: <b>0.4472</b>, C: <b>0.4123</b>, D: <b>0.4472</b>, O: <b>3.9699</b></span></div></li><li><div class="exb"><span class="exl">Nearest-neighbour sets</span><span class="exw">A: {C, D}; B: {C, A}; C: {A, B}; D: {A, B}; O: {B, D}</span></div></li><li><div class="exb"><span class="exl">Local reachability densities</span><span class="exw">lrd(A) = <b>2.3269</b>, lrd(B) = <b>2.3269</b>, lrd(C) = <b>2.3607</b>, lrd(D) = <b>2.3607</b></span></div></li><li><div class="exb"><span class="exl">And for O</span><span class="exw">its reach distances are around 3.9 &#8594; lrd(O) = <b>0.2567</b>, an order of magnitude lower</span></div></li><li><div class="exb"><span class="exl">LOF(A) = mean lrd of {C, D} divided by lrd(A)</span><span class="exw"><span class="frac"><span class="num">(2.3607 + 2.3607) / 2</span><span class="den">2.3269</span></span> = <span class="frac"><span class="num">2.3607</span><span class="den">2.3269</span></span> = <b>1.0145</b></span></div></li><li><div class="exb"><span class="exl">The rest of the cluster</span><span class="exw">LOF(B) = <b>1.0073</b>, LOF(C) = <b>0.9857</b>, LOF(D) = <b>0.9857</b></span></div></li><li><div class="exb"><span class="exl">LOF(O) = mean lrd of {B, D} divided by lrd(O)</span><span class="exw"><span class="frac"><span class="num">(2.3269 + 2.3607) / 2</span><span class="den">0.2567</span></span> = <span class="frac"><span class="num">2.3438</span><span class="den">0.2567</span></span> = <b>9.1300</b></span></div></li></ol><div class="exans"><b>The cluster sits at &#8776; 1.0; O scores 9.13.</b> O's neighbours are about nine times denser than O is. The threshold is set just above 1, <b>not</b> at any absolute distance &mdash; which is exactly what lets LOF work when one region of the data is naturally sparser than another.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr11">Show all answers</button></div><ol><li><div class="pq">A point has LOF = 1.05. Outlier or not?</div><button class="ghost pbtn" data-ans="pr11-1">Show answer</button><div class="pa" id="pr11-1"><b>Not an outlier.</b> 1.05 means its neighbours are only 5% denser than it is, which is ordinary variation. Typical thresholds sit around 1.5&ndash;2.0; values near 1 are the definition of normal.</div></li><li><div class="pq">Why is reachability distance floored at the neighbour's k-distance rather than just using the raw distance?</div><button class="ghost pbtn" data-ans="pr11-2">Show answer</button><div class="pa" id="pr11-2">To <b>stabilise the density estimate</b>. If <i>A</i> happens to sit almost on top of <i>B</i>, the raw distance is nearly 0 and 1/mean would explode. Flooring at k-dist(<i>B</i>) means very close pairs are treated as being at <i>B</i>'s characteristic scale, which stops a single coincidence dominating.</div></li><li><div class="pq">One cluster is tight and another is loose. A point sits just outside the tight one. Would a global distance threshold catch it? Would LOF?</div><button class="ghost pbtn" data-ans="pr11-3">Show answer</button><div class="pa" id="pr11-3">A <b>global threshold would miss it</b> &mdash; its distance to its neighbours is smaller than ordinary distances inside the loose cluster, so any threshold that flags it would flood you with false alarms from the loose cluster. <b>LOF catches it</b>, because it compares the point only against <i>its own</i> neighbourhood.</div></li></ol></div></div></section>
+<section id="iforest"><div class="wrap"><h2><span class="num">4</span>Isolation Forest</h2><p class="lede">No distances at all. Count how many random cuts it takes to separate a point from the rest, and normalise.</p><div class="formula"><span class="flabel">Normaliser and score</span><div class="math"><i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span> = 2<i>H</i><span class="paren">(</span><i>n</i> &#8722; 1<span class="paren">)</span> &#8722; <span class="frac"><span class="num">2<span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den"><i>n</i></span></span>,&nbsp;&nbsp;&nbsp;<i>s</i><span class="paren">(</span><i>x</i>, <i>n</i><span class="paren">)</span> = 2<sup>&#8722;<span class="frac"><span class="num"><i>E</i><span class="paren">[</span><i>h</i><span class="paren">(</span><i>x</i><span class="paren">)</span><span class="paren">]</span></span><span class="den"><i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span></span></span></sup></div><small><i>H</i>(<i>i</i>) &#8776; ln <i>i</i> + 0.5772 is the harmonic number. <i>c</i>(<i>n</i>) normalises by the path length a random point would need.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li>Compute <i>c</i>(<i>n</i>) for your subsample size (256 is the usual default).</li><li>Use <i>H</i>(<i>n</i>&#8722;1) &#8776; ln(<i>n</i>&#8722;1) + 0.5772.</li><li>Average the path length <i>h</i>(<i>x</i>) for the point across all trees.</li><li>Score = 2<sup>&#8722;<i>E</i>[<i>h</i>] / <i>c</i>(<i>n</i>)</sup>.</li><li>Read it: near <b>1</b> isolated almost at once = anomaly; near <b>0.5</b> unremarkable; well below 0.5 = deep inside a dense region.</li><li>Never quote the raw path length &mdash; a path of 8 is short for <i>n</i> = 10 000 and long for <i>n</i> = 100.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; turning path lengths into scores</div><div class="exgiven">A forest built on subsamples of <i>n</i> = 256. One point is isolated after an average of 2 splits; another needs 12.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Harmonic number</span><span class="exw"><i>H</i>(255) &#8776; ln 255 + 0.5772 = 5.5413 + 0.5772 = <b>6.1185</b></span></div></li><li><div class="exb"><span class="exl">Normaliser</span><span class="exw"><i>c</i>(256) = 2(6.1185) &#8722; <span class="frac"><span class="num">2 &#215; 255</span><span class="den">256</span></span> = 12.2370 &#8722; 1.9922 = <b>10.2448</b></span></div></li><li><div class="exb"><span class="exl">Score for the quickly isolated point</span><span class="exw"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num">2</span><span class="den">10.2448</span></span></sup> = 2<sup>&#8722;0.1952</sup> = <b>0.8734</b></span></div></li><li><div class="exb"><span class="exl">Score for the crowded point</span><span class="exw"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num">12</span><span class="den">10.2448</span></span></sup> = 2<sup>&#8722;1.1713</sup> = <b>0.4440</b></span></div></li><li><div class="exb"><span class="exl">Two more for the scale</span><span class="exw"><i>E</i>[<i>h</i>] = 4 &#8594; <b>0.763</b>; <i>E</i>[<i>h</i>] = 8 &#8594; <b>0.582</b></span></div></li><li><div class="exb"><span class="exl">Interpret</span><span class="exw">0.873 is a clear anomaly; 0.444 is more typical than average &mdash; it sits deep in a dense region</span></div></li></ol><div class="exans"><b>0.873 versus 0.444</b>, from nothing but a count of random cuts. No distance was ever computed, which is why Isolation Forest is linear in <i>n</i>, trivially parallel, and the usual first thing to try on a large unlabelled dataset.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr12">Show all answers</button></div><ol><li><div class="pq">Compute <i>c</i>(<i>n</i>) for <i>n</i> = 100.</div><button class="ghost pbtn" data-ans="pr12-1">Show answer</button><div class="pa" id="pr12-1"><i>H</i>(99) &#8776; ln 99 + 0.5772 = 4.5951 + 0.5772 = 5.1723. <i>c</i>(100) = 2(5.1723) &minus; 2(99)/100 = 10.3446 &minus; 1.98 = <b>8.3646</b>.</div></li><li><div class="pq">With <i>c</i>(<i>n</i>) = 8.36, a point has average path length 3. What is its score?</div><button class="ghost pbtn" data-ans="pr12-2">Show answer</button><div class="pa" id="pr12-2"><i>s</i> = 2<sup>&minus;3/8.36</sup> = 2<sup>&minus;0.3589</sup> = <b>0.7797</b> &mdash; comfortably above 0.5, so <b>anomalous</b>.</div></li><li><div class="pq">Why does Isolation Forest cope with high dimensions better than LOF?</div><button class="ghost pbtn" data-ans="pr12-3">Show answer</button><div class="pa" id="pr12-3">Because it <b>never computes a distance</b>. LOF depends entirely on nearest-neighbour distances, which concentrate in high dimensions until they carry no information. Isolation Forest only ever asks “does this point fall left or right of a random cut on a random feature?”, which stays meaningful.</div></li></ol></div></div></section>
+<footer><div class="wrap">INT396 &middot; Unsupervised Learning &middot; Unit V &mdash; Association Rules and Anomaly Detection &mdash; Numericals &middot;
+School of Computer Science &amp; Engineering &middot; Session 2026&ndash;27</div></footer>
+<script>
+
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var C={navy:"#182B49",cyan:"#0096C7",purple:"#5C2D91",orange:"#ED771F",
+       green:"#107C41",red:"#B42318",grey:"#9AA7B5",rule:"#D8DFE8",ice:"#7EC5E2"};
+function el(p,n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);
+  p.appendChild(e);return e;}
+function clr(s){while(s.firstChild)s.removeChild(s.firstChild);}
+function line(s,A,B,col,w,dash){var l=el(s,"line",{x1:A.x,y1:A.y,x2:B.x,y2:B.y,
+  stroke:col,"stroke-width":w,"stroke-linecap":"round"});
+  if(dash)l.setAttribute("stroke-dasharray",dash);return l;}
+function dot(s,p,r,fill){return el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill});}
+function nodeC(s,p,label,fill,r){r=r||17;
+  el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill,stroke:"#fff","stroke-width":2.5});
+  var t=el(s,"text",{x:p.x,y:p.y+5,"text-anchor":"middle",fill:"#fff","font-size":"14",
+    "font-weight":"600","font-family":"Segoe UI,sans-serif"});t.textContent=label;}
+function txt(s,x,y,str,col,size,anchor,weight){
+  var t=el(s,"text",{x:x,y:y,"text-anchor":anchor||"middle",fill:col||C.navy,
+    "font-size":size||12,"font-weight":weight||"600","font-family":"Segoe UI,sans-serif"});
+  t.textContent=str;return t;}
+function box(s,x,y,w,h,fill,stroke,rx){return el(s,"rect",{x:x,y:y,width:w,height:h,
+  rx:rx===undefined?6:rx,fill:fill,stroke:stroke||"none","stroke-width":1.6});}
+function badge(s,A,B,str){var mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+  el(s,"circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:C.rule});
+  txt(s,mx,my+4,str,C.navy,12);}
+function arrow(s,A,B,col,w){
+  var dx=B.x-A.x,dy=B.y-A.y,L=Math.sqrt(dx*dx+dy*dy);if(!L)return;
+  var ux=dx/L,uy=dy/L,ex=B.x-ux*20,ey=B.y-uy*20;
+  el(s,"line",{x1:A.x+ux*20,y1:A.y+uy*20,x2:ex,y2:ey,stroke:col,"stroke-width":w||2.6,
+    "stroke-linecap":"round"});
+  var a=8;
+  el(s,"polygon",{points:[ex+","+ey,(ex-ux*a-uy*a*0.6)+","+(ey-uy*a+ux*a*0.6),
+    (ex-ux*a+uy*a*0.6)+","+(ey-uy*a-ux*a*0.6)].join(" "),fill:col});}
+
+/* ---- generic step player, wired to data-viz buttons ---- */
+var VIZ={};
+function register(id,build,render){
+  VIZ[id]={build:build,render:render,steps:[],i:0,timer:null};
+  resetViz(id);
+}
+function resetViz(id){var m=VIZ[id];if(!m)return;
+  m.steps=m.build();m.i=0;stopViz(id);drawViz(id);}
+function drawViz(id){var m=VIZ[id];
+  m.render(document.getElementById("svg-"+id),m.steps[m.i],m.i,m.steps);
+  var st=document.getElementById("st-"+id);
+  if(st)st.innerHTML=m.steps[m.i].msg||"";
+  syncViz(id);}
+/* keep the counter and the buttons honest about where we are */
+function syncViz(id){var m=VIZ[id],last=m.steps.length-1;
+  function btn(a){return document.querySelector(
+    'button[data-act="'+a+'"][data-viz="'+id+'"]');}
+  var b;
+  if((b=btn("step")))b.disabled=m.i>=last;
+  if((b=btn("back")))b.disabled=m.i<=0;
+  var sc=document.getElementById("sc-"+id);
+  if(sc)sc.innerHTML="step <em>"+m.i+"</em> of "+last;
+  var wrap=document.getElementById("wrap-"+id);
+  if(wrap){if(m.i>=last&&last>0)wrap.classList.add("done");
+           else wrap.classList.remove("done");}}
+function stepViz(id){var m=VIZ[id];
+  if(m.i<m.steps.length-1){m.i++;drawViz(id);}
+  if(m.i>=m.steps.length-1)stopViz(id);}
+/* step backwards, so a student can flip between before and after */
+function stepBackViz(id){var m=VIZ[id];
+  if(m.i>0){stopViz(id);m.i--;drawViz(id);}}
+function stopViz(id){var m=VIZ[id];if(m.timer){clearInterval(m.timer);m.timer=null;}
+  var b=document.querySelector('button[data-act="auto"][data-viz="'+id+'"]');
+  if(b)b.textContent="Auto-play";}
+/* ---- practice answers: reveal one, or all of a block ---- */
+document.addEventListener("click",function(e){
+  if(!e.target.closest)return;
+  var one=e.target.closest("button[data-ans]");
+  if(one){var p=document.getElementById(one.getAttribute("data-ans"));
+    if(p){var on=p.classList.toggle("on");
+      one.textContent=on?"Hide answer":"Show answer";}
+    return;}
+  var all=e.target.closest("button[data-all]");
+  if(all){var g=all.getAttribute("data-all"),
+      blk=all.closest(".prac"),show=all.textContent.indexOf("Show")===0;
+    blk.querySelectorAll(".pa").forEach(function(p){
+      p.classList.toggle("on",show);});
+    blk.querySelectorAll("button[data-ans]").forEach(function(b2){
+      b2.textContent=show?"Hide answer":"Show answer";});
+    all.textContent=show?"Hide all answers":"Show all answers";}
+});
+document.addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("button[data-viz]"):null;if(!b)return;
+  var id=b.getAttribute("data-viz"),act=b.getAttribute("data-act"),m=VIZ[id];if(!m)return;
+  if(act==="step")stepViz(id);
+  else if(act==="back")stepBackViz(id);
+  else if(act==="reset")resetViz(id);
+  else if(act==="auto"){
+    if(m.timer){stopViz(id);return;}
+    if(m.i>=m.steps.length-1)resetViz(id);
+    b.textContent="Pause";
+    m.timer=setInterval(function(){if(m.i>=m.steps.length-1)stopViz(id);else stepViz(id);},950);
+  }});
+
+
+</script>
+</body>
+</html>

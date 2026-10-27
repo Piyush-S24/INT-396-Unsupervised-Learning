@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INT396 &middot; Unsupervised Learning Unit VI &mdash; Evaluation of Unsupervised Learning &mdash; Numericals</title>
+<style>
+:root{--navy:#182B49;--navy2:#253E64;--cyan:#0096C7;--ice:#7EC5E2;--purple:#5C2D91;
+      --orange:#ED771F;--green:#107C41;--red:#B42318;--grey:#586476;--rule:#D8DFE8;
+      --bg:#F6F9FC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);
+     font:15px/1.65 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{background:var(--navy);color:#fff;padding:28px 0 24px;border-bottom:4px solid var(--cyan)}
+header .eyebrow{color:var(--ice);font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+header h1{margin:7px 0 6px;font-size:32px;font-weight:600;line-height:1.2}
+header p{margin:0;color:#C9D8E6;font-size:15.5px;max-width:860px}
+nav{background:var(--navy2);position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(24,43,73,.2)}
+nav ul{display:flex;flex-wrap:wrap;gap:2px;list-style:none;margin:0;padding:0}
+nav a{display:block;padding:11px 14px;color:#D8E6F2;text-decoration:none;font-size:13.5px;font-weight:600}
+nav a:hover{background:rgba(255,255,255,.13);color:#fff}
+section{padding:34px 0 12px;border-bottom:1px solid var(--rule)}
+h2{font-size:24px;margin:0 0 6px;font-weight:600}
+h2 .num{display:inline-block;background:var(--cyan);color:#fff;font-size:13px;
+        padding:3px 9px;border-radius:4px;margin-right:10px;vertical-align:3px}
+h3{font-size:17.5px;margin:24px 0 8px;font-weight:600;color:var(--navy)}
+.lede{color:var(--grey);font-size:15.5px;margin:0 0 16px;max-width:920px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+/* ---- formula sheet ---- */
+.fsheet{border:1px solid var(--rule);border-top:3px solid var(--navy);border-radius:4px;
+        background:var(--card);margin:18px 0;padding:15px 20px 8px}
+.fshd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:8px}
+.fst{width:100%;border-collapse:collapse;margin:0;font-size:14px;box-shadow:none}
+.fst td{border:0;border-top:1px solid #E1EAF3;padding:9px 8px;vertical-align:middle;
+        background:none}
+.fst tr:first-child td{border-top:0}
+.fst tbody tr:nth-child(even){background:none}
+td.fsn{width:23%;font-weight:600;color:var(--navy);font-size:13.5px}
+td.fsf{width:42%}
+td.fsf .math{font-size:16.5px;line-height:1.9;white-space:normal}
+td.fsw{color:var(--grey);font-size:13px}
+/* ---- the method ---- */
+.meth{border:1px solid var(--rule);border-left:3px solid var(--navy);border-radius:4px;
+      background:var(--card);margin:18px 0;padding:15px 20px 16px}
+.methd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);margin-bottom:9px}
+.meth ol{margin:0;padding-left:22px}
+.meth li{font-size:14.8px;line-height:1.68;padding:4px 0;color:var(--navy)}
+.meth li::marker{color:var(--grey);font-weight:700}
+/* ---- practice ---- */
+.prac{border:1px solid var(--rule);border-radius:4px;background:var(--card);
+      margin:18px 0;padding:15px 20px 16px}
+.prhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.pall{margin-left:auto;font-size:12px;padding:5px 11px}
+.prac ol{margin:0;padding-left:22px}
+.prac>ol>li{padding:11px 0;border-top:1px solid #EEF2F6}
+.prac>ol>li:first-child{border-top:0}
+.prac li::marker{color:var(--grey);font-weight:700}
+/* Numericals pages run quiet: panels are white with a thin rule, and colour is
+   reserved for meaning (a revealed answer, a caution) rather than decoration. */
+body.quiet .formula{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--navy);border-radius:4px}
+body.quiet .formula .flabel{color:var(--navy)}
+body.quiet .ex{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .exgiven{background:#F7FAFC;border-color:var(--rule)}
+body.quiet .why{background:var(--card)}
+body.quiet .whygrid{background:var(--rule)}
+body.quiet .wq.w3{background:var(--card)}
+body.quiet .take{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .warn{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--orange);border-radius:4px}
+.pq{font-size:14.8px;line-height:1.68;color:var(--navy);margin-bottom:7px}
+.pbtn{font-size:12px;padding:4px 10px}
+.pa{display:none;margin-top:9px;background:#E4F6EB;border-left:3px solid var(--green);
+    border-radius:5px;padding:9px 13px;font-size:14.5px;line-height:1.7;color:var(--navy)}
+.pa.on{display:block}
+.pa b{color:var(--green)}
+.ex{border:1.5px solid #BFD9CB;border-left:5px solid var(--green);border-radius:9px;
+    background:#FBFEFC;margin:18px 0;padding:14px 18px 16px}
+.exhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--green);margin-bottom:9px}
+.exgiven{font-size:14.5px;background:#fff;border:1px solid #DCE9E1;border-radius:6px;
+         padding:9px 13px;margin-bottom:12px}
+.exsteps{list-style:none;counter-reset:exs;margin:0;padding:0}
+.exsteps li{counter-increment:exs;display:grid;grid-template-columns:26px 1fr;gap:11px;
+            padding:7px 0;border-top:1px solid #E7F0EA;align-items:baseline}
+.exsteps li:first-child{border-top:0}
+.exsteps li::before{content:counter(exs);display:block;width:21px;height:21px;
+                    border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;
+                    font-weight:700;text-align:center;line-height:21px}
+.exb{min-width:0}
+.exl{font-size:13.5px;color:var(--grey);display:block;margin-bottom:3px}
+.exw{font-size:15.5px;color:var(--navy);font-family:"Cambria Math",Cambria,Georgia,serif;
+     display:block;line-height:1.8}
+.exans{margin-top:12px;background:#E4F6EB;border-radius:6px;padding:10px 14px;
+       font-size:15px;color:var(--navy);font-weight:600}
+.exans b{color:var(--green)}
+@media(max-width:700px){.exsteps li{grid-template-columns:22px 1fr;gap:8px}}
+.why{border:1.5px solid #CBD9E6;border-radius:9px;margin:18px 0;overflow:hidden;
+     background:linear-gradient(180deg,#F4F9FD 0,#fff 54px)}
+.whyhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);padding:13px 18px 0}
+.whygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E3EAF1;
+         margin-top:12px;border-top:1px solid #E3EAF1}
+.wq{background:var(--card);padding:14px 17px 16px}
+.wq h5{margin:0 0 7px;font-size:12px;font-weight:700;letter-spacing:.03em}
+.wq p{margin:0;font-size:14px;line-height:1.62}
+.wq.w1 h5{color:var(--cyan)}
+.wq.w2 h5{color:var(--purple)}
+.wq.w3 h5{color:var(--orange)}
+.wq.w3{background:#FFFBF7}
+@media(max-width:900px){.whygrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:15px 17px}
+.card h4{margin:0 0 7px;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan)}
+.card p{margin:0;font-size:14.5px}
+.take{background:#E4F6EB;border-left:5px solid var(--green);border-radius:6px;padding:12px 16px;margin:14px 0}
+.take b.hd{color:var(--green);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.take b{color:var(--navy)}
+.warn{background:#FDEEEC;border-left:5px solid var(--orange);border-radius:6px;padding:12px 16px;margin:14px 0}
+.warn b.hd{color:var(--orange);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.warn b{color:var(--navy)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600;font-size:13px}
+tbody tr:nth-child(even){background:#F2F7FB}
+td.hi{background:#FFF3E0;font-weight:700}
+code{background:#EEF3F8;padding:1px 5px;border-radius:4px;font-size:13.5px}
+footer{background:var(--navy);color:#9FB4CA;padding:22px 0;font-size:13.5px}
+
+/* ---------------- formula block ---------------- */
+.formula{background:#F3EEFB;border-left:5px solid var(--purple);border-radius:6px;
+         padding:14px 18px;margin:14px 0;overflow-x:auto}
+.formula .flabel{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;
+                 text-transform:uppercase;color:var(--purple);margin-bottom:9px}
+.formula small{display:block;font:13.5px/1.55 "Segoe UI",sans-serif;color:var(--grey);margin-top:10px}
+
+/* ---------------- real maths ---------------- */
+.math{font-family:"Cambria Math",Cambria,"Times New Roman",Georgia,serif;
+      font-size:20px;line-height:2.1;color:var(--navy);white-space:nowrap}
+.math i,.math .var{font-style:italic;font-family:inherit}
+.math .op{font-style:normal;padding:0 .22em}
+.math b.vecb{font-weight:700;font-style:normal}
+.math sub{font-size:.62em;vertical-align:-.3em}
+.math sup{font-size:.62em;vertical-align:.45em}
+.cases{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .2em}
+.cases .cb{font-size:2.5em;font-weight:300;line-height:.86;margin-right:.14em}
+.cases table{border-collapse:collapse;margin:0;width:auto;box-shadow:none;font-size:.86em}
+.cases tbody tr,.cases tbody tr:nth-child(even){border:0;background:none}
+.cases td{border:0;padding:.14em .2em;background:none;white-space:nowrap;
+          line-height:1.5;vertical-align:middle}
+.cases td.cc{font-size:.8em;font-style:normal;color:var(--grey);padding-left:1.5em;
+             font-family:"Segoe UI",system-ui,sans-serif}
+.frac{display:inline-block;vertical-align:-.52em;text-align:center;margin:0 .26em}
+.frac .num{display:block;padding:0 .4em .12em;border-bottom:1.7px solid currentColor;line-height:1.22}
+.frac .den{display:block;padding:.12em .4em 0;line-height:1.22}
+.sqrt{display:inline-block;position:relative;margin:0 .15em}
+.sqrt .rad{font-size:1.12em;vertical-align:-.06em}
+.sqrt .rand{border-top:1.6px solid currentColor;padding:.1em .22em 0 .12em;margin-left:-.12em}
+.bigop{display:inline-block;text-align:center;vertical-align:-.5em;margin:0 .2em;line-height:1}
+.bigop .glyph{display:block;font-size:1.5em;line-height:.88}
+.bigop.int .glyph{font-size:1.75em}
+.bigop .lim{display:block;font-size:.5em;line-height:1.25;font-style:italic}
+.paren{font-size:1.18em;padding:0 .06em}
+.paren.big{font-size:1.5em;vertical-align:-.16em}
+.bar{padding:0 .09em}
+.hat{position:relative;display:inline-block;font-style:italic}
+.hat::after{content:"\0302";position:absolute;left:0;right:0;top:-.46em;
+            text-align:center;font-size:.72em;font-style:normal;line-height:1;
+            font-family:"Cambria Math",Cambria,serif}
+.matrix{display:inline-block;vertical-align:middle;margin:0 .18em}
+.matrix .mb{display:inline-block;font-size:2.1em;vertical-align:middle;font-weight:300}
+.matrix table{display:inline-table;width:auto;border:0;margin:0 .1em;vertical-align:middle}
+.matrix td{border:0;padding:.08em .38em;text-align:center;font-size:.86em;background:none}
+
+/* ---------------- visualisation ---------------- */
+.viz{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:16px 0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:600 13.5px "Segoe UI",sans-serif;padding:8px 14px;border-radius:6px;
+       border:1px solid var(--cyan);background:var(--cyan);color:#fff;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:#fff;color:var(--cyan)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select{font:14px "Segoe UI";padding:7px 9px;border-radius:6px;border:1px solid var(--rule);background:#fff}
+svg{width:100%;height:auto;display:block;background:#fff;border-radius:6px;max-width:1040px;margin:0 auto}
+.status{font-size:15.5px;line-height:1.6;background:#EAF4FA;border-left:4px solid var(--cyan);
+        border-radius:6px;padding:12px 16px;margin-top:12px;min-height:48px;color:var(--navy)}
+.status b{color:var(--cyan)}
+.stepcount{font-size:12.5px;font-weight:700;color:var(--grey);letter-spacing:.03em;
+           margin-left:auto;padding-right:4px;white-space:nowrap}
+.stepcount em{font-style:normal;color:var(--cyan);font-size:14.5px}
+.viz.done .stepcount em{color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--grey);margin-top:9px;justify-content:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body class="quiet">
+<header><div class="wrap">
+  <div class="eyebrow">INT396 &middot; Unsupervised Learning &middot; Unit VI</div>
+  <h1>Evaluation of Unsupervised Learning &mdash; Numericals</h1>
+  <p>Every formula this unit needs, what to do with it, and a worked example with the full arithmetic. Work the practice questions before revealing the answers.</p>
+</div></header>
+<nav><div class="wrap"><ul><li><a href="#coh">1 &middot; Cohesion &amp; separation</a></li><li><a href="#sil">2 &middot; Silhouette</a></li><li><a href="#indices">3 &middot; DB, Dunn, Rand &amp; ARI</a></li></ul></div></nav>
+<div class="fsheet"><div class="fshd">Formula sheet &mdash; everything this unit needs</div><table class="fst"><tr><td class="fsn">Cohesion (SSE)</td><td class="fsf"><span class="math">SSE = <span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>k</i></span></span><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>x</i> &#8712; <i>C</i><sub><i>k</i></sub></span></span>&nbsp;<span class="bar">&#8214;</span><i>x</i> &#8722; <i>&mu;</i><sub><i>k</i></sub><span class="bar">&#8214;</span><sup>2</sup></span></td><td class="fsw">within-cluster; lower is tighter</td></tr><tr><td class="fsn">Separation (SSB)</td><td class="fsf"><span class="math">SSB = <span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>k</i></span></span><span class="bar">|</span><i>C</i><sub><i>k</i></sub><span class="bar">|</span> <span class="bar">&#8214;</span><i>&mu;</i><sub><i>k</i></sub> &#8722; <i>&mu;</i><span class="bar">&#8214;</span><sup>2</sup></span></td><td class="fsw">between-cluster; higher is better separated</td></tr><tr><td class="fsn">Decomposition</td><td class="fsf"><span class="math">SSE + SSB = SST</span></td><td class="fsw">a constant for the data &mdash; one objective, two views</td></tr><tr><td class="fsn">Silhouette</td><td class="fsf"><span class="math"><i>s</i><span class="paren">(</span><i>i</i><span class="paren">)</span> = <span class="frac"><span class="num"><i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span> &#8722; <i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span></span><span class="den">max<span class="paren">[</span><i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span>, <i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span><span class="paren">]</span></span></span></span></td><td class="fsw"><i>a</i> = own cluster, <i>b</i> = nearest other; negative = misassigned</td></tr><tr><td class="fsn">Davies&ndash;Bouldin</td><td class="fsf"><span class="math">DB = <span class="frac"><span class="num">1</span><span class="den"><i>K</i></span></span><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>i</i></span></span> max<sub><i>j</i>&#8800;<i>i</i></sub> <span class="frac"><span class="num"><i>S</i><sub><i>i</i></sub> + <i>S</i><sub><i>j</i></sub></span><span class="den"><i>M</i><sub><i>i</i><i>j</i></sub></span></span></span></td><td class="fsw"><b>lower</b> is better; 0 is perfect</td></tr><tr><td class="fsn">Dunn</td><td class="fsf"><span class="math">Dunn = <span class="frac"><span class="num">min inter-cluster distance</span><span class="den">max cluster diameter</span></span></span></td><td class="fsw"><b>higher</b> is better; very sensitive to outliers</td></tr><tr><td class="fsn">Rand index</td><td class="fsf"><span class="math">RI = <span class="frac"><span class="num"><i>a</i> + <i>b</i></span><span class="den"><span class="frac"><span class="num"><i>n</i><span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den">2</span></span></span></span></span></td><td class="fsw"><i>a</i> = pairs together in both, <i>b</i> = apart in both</td></tr><tr><td class="fsn">Adjusted Rand</td><td class="fsf"><span class="math">ARI = <span class="frac"><span class="num">RI &#8722; E[RI]</span><span class="den">max(RI) &#8722; E[RI]</span></span></span></td><td class="fsw">0 = chance, 1 = perfect; <b>always report this one</b></td></tr></table></div>
+<section id="coh"><div class="wrap"><h2><span class="num">1</span>Cohesion, separation and the identity</h2><p class="lede">The two quantities every internal measure is built from &mdash; and they are two views of one number, not two competing goals.</p><div class="formula"><span class="flabel">The decomposition identity</span><div class="math">SSE + SSB = SST</div><small>SST depends only on the data, so it is <b>fixed</b> whatever clustering you choose. Tightening the clusters must therefore separate them further.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li>Compute the centroid of each cluster (coordinate-wise mean of its members).</li><li>Compute the overall mean <i>&mu;</i> of all points.</li><li><b>SSE:</b> for each point, squared distance to <b>its own</b> centroid; sum everything.</li><li><b>SSB:</b> for each cluster, (size) &#215; (squared distance from its centroid to <i>&mu;</i>); sum.</li><li><b>SST:</b> for each point, squared distance to <i>&mu;</i>; sum.</li><li><b>Check SSE + SSB = SST.</b> If it does not, you have an arithmetic error &mdash; this is a free correctness test.</li><li>Never compare SSE across different <i>k</i>: it always falls as <i>k</i> rises.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; all three quantities, and the check</div><div class="exgiven">Seven points A(1,1) B(1.5,2) C(2,1.5) D(7,7) E(7.5,8) F(8,7) G(4.5,4.5), clustered as {A, B, C, G} and {D, E, F}.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Centroid of cluster 1</span><span class="exw"><i>&mu;</i><sub>1</sub> = <span class="paren">(</span><span class="frac"><span class="num">1+1.5+2+4.5</span><span class="den">4</span></span>, <span class="frac"><span class="num">1+2+1.5+4.5</span><span class="den">4</span></span><span class="paren">)</span> = <b>(2.25, 2.25)</b></span></div></li><li><div class="exb"><span class="exl">Centroid of cluster 2</span><span class="exw"><i>&mu;</i><sub>2</sub> = <span class="paren">(</span><span class="frac"><span class="num">7+7.5+8</span><span class="den">3</span></span>, <span class="frac"><span class="num">7+8+7</span><span class="den">3</span></span><span class="paren">)</span> = <b>(7.5, 7.333)</b></span></div></li><li><div class="exb"><span class="exl">Cohesion of cluster 1 &mdash; squared distances to <i>&mu;</i><sub>1</sub></span><span class="exw">A 3.125, B 0.625, C 0.625, <b>G 10.125</b> &#8594; SSE<sub>1</sub> = <b>14.500</b></span></div></li><li><div class="exb"><span class="exl">Cohesion of cluster 2</span><span class="exw">SSE<sub>2</sub> = <b>1.167</b> &mdash; far tighter</span></div></li><li><div class="exb"><span class="exl">Total cohesion</span><span class="exw">SSE = 14.500 + 1.167 = <b>15.667</b></span></div></li><li><div class="exb"><span class="exl">Overall mean</span><span class="exw"><i>&mu;</i> = <b>(4.5, 4.429)</b></span></div></li><li><div class="exb"><span class="exl">Separation</span><span class="exw">SSB = 4 &#183; <i>d</i><sup>2</sup>(<i>&mu;</i><sub>1</sub>, <i>&mu;</i>) + 3 &#183; <i>d</i><sup>2</sup>(<i>&mu;</i><sub>2</sub>, <i>&mu;</i>) = <b>91.548</b></span></div></li><li><div class="exb"><span class="exl">The check</span><span class="exw">SSE + SSB = 15.667 + 91.548 = <b>107.214</b>, and SST computed directly = <b>107.214</b> &#10003;</span></div></li></ol><div class="exans">The identity holds exactly. Note that <b>G alone contributes 10.125 of cluster 1's 14.500</b> &mdash; the first arithmetic hint that G is in the wrong cluster, which the next section confirms.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr13">Show all answers</button></div><ol><li><div class="pq">A cluster has points (0,0), (2,0), (1,2). Find its centroid and its cohesion.</div><button class="ghost pbtn" data-ans="pr13-1">Show answer</button><div class="pa" id="pr13-1">Centroid = ((0+2+1)/3, (0+0+2)/3) = <b>(1, 0.667)</b>. Squared distances: (0,0) &#8594; 1+0.444 = 1.444; (2,0) &#8594; 1+0.444 = 1.444; (1,2) &#8594; 0+1.778 = 1.778. <b>SSE = 4.667</b>.</div></li><li><div class="pq">Your SSE is 40, SSB is 55, SST is 100. What has gone wrong?</div><button class="ghost pbtn" data-ans="pr13-2">Show answer</button><div class="pa" id="pr13-2">40 + 55 = 95 &#8800; 100, so there is an <b>arithmetic error</b> somewhere. The identity is exact, so the three numbers must reconcile. Most often the overall mean <i>&mu;</i> was computed wrongly, or a cluster size was mis-weighted in SSB.</div></li><li><div class="pq">Why can you not choose <i>k</i> by minimising SSE?</div><button class="ghost pbtn" data-ans="pr13-3">Show answer</button><div class="pa" id="pr13-3">SSE <b>always decreases</b> as <i>k</i> rises and reaches <b>0</b> at <i>k</i> = <i>n</i>, with every point its own cluster. Minimising it therefore always returns the degenerate answer. SSE is only comparable <b>at a fixed <i>k</i></b> &mdash; which is what k-Means restarts use it for.</div></li></ol></div></div></section>
+<section id="sil"><div class="wrap"><h2><span class="num">2</span>Silhouette</h2><p class="lede">A verdict <b>per point</b>, not just per clustering &mdash; which is what makes it actionable.</p><div class="formula"><span class="flabel">The silhouette of one point</span><div class="math"><i>s</i><span class="paren">(</span><i>i</i><span class="paren">)</span> = <span class="frac"><span class="num"><i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span> &#8722; <i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span></span><span class="den">max <span class="paren">[</span><i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span>, <i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span><span class="paren">]</span></span></span></div><small><i>a</i>(<i>i</i>) is the mean distance to <b>its own</b> cluster; <i>b</i>(<i>i</i>) is the mean distance to the <b>nearest other</b> cluster. Range &#8722;1 to +1.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li>For point <i>i</i>, compute the mean distance to every <b>other</b> member of its own cluster &#8594; <i>a</i>(<i>i</i>). (Exclude itself.)</li><li>For each other cluster, compute the mean distance from <i>i</i> to all its members.</li><li>Take the <b>smallest</b> of those &#8594; <i>b</i>(<i>i</i>).</li><li>s = (<i>b</i> &#8722; <i>a</i>) / max(<i>a</i>, <i>b</i>).</li><li>Read the sign: positive = correctly placed; near 0 = on the boundary; <b>negative = in the wrong cluster</b>.</li><li>Average over all points for the overall score &mdash; but <b>always look at the per-point values too</b>.</li><li>Guide: &gt;0.70 strong, 0.51&ndash;0.70 reasonable, 0.26&ndash;0.50 weak, &#8804;0.25 no real structure.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; finding the misassigned point</div><div class="exgiven">The same seven points. G(4.5, 4.5) has been put in the left cluster {A, B, C, G}, but it sits between the two groups. Compute <i>s</i>(G).</div><ol class="exsteps"><li><div class="exb"><span class="exl"><i>a</i>(G) &mdash; mean distance to its own cluster</span><span class="exw"><i>d</i>(G,A) = 4.9497, <i>d</i>(G,B) = 3.9051, <i>d</i>(G,C) = 3.9051 &#8594; <span class="frac"><span class="num">12.7599</span><span class="den">3</span></span> = <b>4.2533</b></span></div></li><li><div class="exb"><span class="exl"><i>b</i>(G) &mdash; mean distance to the nearest other cluster</span><span class="exw"><i>d</i>(G,D) = 3.5355, <i>d</i>(G,E) = 4.6098, <i>d</i>(G,F) = 4.3012 &#8594; <span class="frac"><span class="num">12.4465</span><span class="den">3</span></span> = <b>4.1488</b></span></div></li><li><div class="exb"><span class="exl">Apply the formula</span><span class="exw"><span class="frac"><span class="num">4.1488 &#8722; 4.2533</span><span class="den">max(4.2533, 4.1488)</span></span> = <span class="frac"><span class="num">&#8722;0.1045</span><span class="den">4.2533</span></span> = <b>&#8722;0.0246</b></span></div></li><li><div class="exb"><span class="exl">Read the sign</span><span class="exw"><b>negative</b> &#8594; G is on average closer to the <i>other</i> cluster than to its own, so it is in the wrong one</span></div></li><li><div class="exb"><span class="exl">A well-placed point for contrast</span><span class="exw"><i>s</i>(F) = <b>0.8581</b>; every other point scores above 0.73</span></div></li><li><div class="exb"><span class="exl">Overall average</span><span class="exw"><span class="frac"><span class="num">0.7364+0.7624+0.7621+0.8424+0.8565+0.8581 &#8722; 0.0246</span><span class="den">7</span></span> = <b>0.6848</b></span></div></li></ol><div class="exans"><b>Overall 0.6848 reads as “reasonable structure” and tells you nothing.</b> The single <b>negative</b> value tells you exactly which point to move &mdash; which is why the per-point plot is worth far more than the mean.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr14">Show all answers</button></div><ol><li><div class="pq">A point has <i>a</i> = 2.0 and <i>b</i> = 6.0. Compute its silhouette.</div><button class="ghost pbtn" data-ans="pr14-1">Show answer</button><div class="pa" id="pr14-1">(6.0 &minus; 2.0)/max(2.0, 6.0) = 4.0/6.0 = <b>0.667</b> &mdash; comfortably inside the right cluster.</div></li><li><div class="pq">Another has <i>a</i> = 5.0 and <i>b</i> = 5.0. What is its silhouette, and what does it mean?</div><button class="ghost pbtn" data-ans="pr14-2">Show answer</button><div class="pa" id="pr14-2">(5.0 &minus; 5.0)/5.0 = <b>0.000</b>. The point is <b>exactly on the boundary</b> &mdash; equally close to its own cluster and the next one. It could go either way, and a small change in the data would move it.</div></li><li><div class="pq">Overall silhouette is 0.72, but one cluster averages 0.35 while the others average 0.85. What should you do?</div><button class="ghost pbtn" data-ans="pr14-3">Show answer</button><div class="pa" id="pr14-3">Investigate <b>that one cluster</b>. The healthy average hides it. Likely causes: it is really two clusters that should be split, or it is a diffuse group of points that do not belong together at all. The aggregate score would never have revealed this &mdash; only the per-cluster breakdown does.</div></li></ol></div></div></section>
+<section id="indices"><div class="wrap"><h2><span class="num">3</span>Davies&ndash;Bouldin, Dunn, Rand and ARI</h2><p class="lede">Three more internal indices and the external pair. Same ingredients, different aggregation &mdash; and they can disagree.</p><div class="formula"><span class="flabel">Two internal indices</span><div class="math">DB = <span class="frac"><span class="num">1</span><span class="den"><i>K</i></span></span><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>i</i></span></span>&nbsp;max<sub><i>j</i>&#8800;<i>i</i></sub> <span class="frac"><span class="num"><i>S</i><sub><i>i</i></sub> + <i>S</i><sub><i>j</i></sub></span><span class="den"><i>M</i><sub><i>i</i><i>j</i></sub></span></span>,&nbsp;&nbsp;&nbsp;Dunn = <span class="frac"><span class="num">min inter</span><span class="den">max diameter</span></span></div><small><i>S</i><sub><i>i</i></sub> is cluster <i>i</i>'s mean distance to its own centroid; <i>M</i><sub><i>i</i><i>j</i></sub> is the distance between centroids. <b>DB lower is better; Dunn higher is better.</b></small></div><div class="formula"><span class="flabel">External validation</span><div class="math">RI = <span class="frac"><span class="num"><i>a</i> + <i>b</i></span><span class="den">all pairs</span></span>,&nbsp;&nbsp;&nbsp;ARI = <span class="frac"><span class="num">RI &#8722; E[RI]</span><span class="den">max(RI) &#8722; E[RI]</span></span></div><small>Compare <b>pairs</b> of points, not labels &mdash; cluster numbering is arbitrary. ARI subtracts the agreement two random partitions would get for nothing.</small></div><div class="meth"><div class="methd">The method &mdash; what to actually do</div><ol><li><b>DB:</b> compute each cluster's mean distance to its own centroid (<i>S</i>) and the centroid separations (<i>M</i>). For <i>k</i> = 2 there is one pairing.</li><li><b>Dunn:</b> find the smallest distance between any two points in <i>different</i> clusters, and the largest distance between any two points in the <i>same</i> cluster. Divide.</li><li><b>Rand:</b> go through all <span class="frac"><span class="num"><i>n</i><span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den">2</span></span> pairs. Count <i>a</i> (together in both partitions) and <i>b</i> (apart in both).</li><li>RI = (<i>a</i> + <i>b</i>) / (all pairs).</li><li>ARI corrects for chance &mdash; <b>always report ARI</b>, never the raw Rand index alone.</li></ol></div><div class="ex"><div class="exhd">Worked example &mdash; all four on the same clustering</div><div class="exgiven">The seven points again. Our clustering {A,B,C,G} and {D,E,F}; the truth is {A,B,C} and {D,E,F,G} &mdash; so <b>G is the single error</b>. Scatter <i>S</i><sub>1</sub> = 1.633, <i>S</i><sub>2</sub> = 0.623, centroid separation <i>M</i><sub>12</sub> = 7.308.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Davies&ndash;Bouldin (one pairing for <i>k</i> = 2)</span><span class="exw"><span class="frac"><span class="num">1.633 + 0.623</span><span class="den">7.308</span></span> = <span class="frac"><span class="num">2.256</span><span class="den">7.308</span></span> = <b>0.3087</b></span></div></li><li><div class="exb"><span class="exl">Dunn &mdash; closest cross-cluster pair</span><span class="exw"><i>d</i>(G, D) = <b>3.5355</b></span></div></li><li><div class="exb"><span class="exl">Dunn &mdash; widest within-cluster pair</span><span class="exw"><i>d</i>(A, G) = <b>4.9497</b> &mdash; G again</span></div></li><li><div class="exb"><span class="exl">Dunn index</span><span class="exw"><span class="frac"><span class="num">3.5355</span><span class="den">4.9497</span></span> = <b>0.7143</b>; below 1 means a cluster is wider than the gap between clusters</span></div></li><li><div class="exb"><span class="exl">Rand index &mdash; count the pairs</span><span class="exw">21 pairs total. Together in both: {AB, AC, BC, DE, DF, EF} &#8594; <i>a</i> = <b>6</b>. Apart in both: <b>9</b></span></div></li><li><div class="exb"><span class="exl">RI</span><span class="exw"><span class="frac"><span class="num">6 + 9</span><span class="den">21</span></span> = <span class="frac"><span class="num">15</span><span class="den">21</span></span> = <b>0.7143</b></span></div></li><li><div class="exb"><span class="exl">ARI, after removing chance agreement</span><span class="exw"><b>0.4167</b></span></div></li></ol><div class="exans"><b>One misplaced point out of seven drops ARI to 0.417</b> while the raw Rand index still reads 0.714 &mdash; inflated by the 9 “apart” agreements any partition gets free. All three internal indices are reporting the <b>same defect in different units</b>: G inflates cluster 1's scatter, its diameter, and scores negative itself.</div></div><div class="prac"><div class="prhd">Practice<button class="ghost pall" data-all="pr15">Show all answers</button></div><ol><li><div class="pq">Two clusters have <i>S</i> = 1.2 and 0.8, with centroid separation 5.0. Compute DB.</div><button class="ghost pbtn" data-ans="pr15-1">Show answer</button><div class="pa" id="pr15-1"><span class="frac"><span class="num">1.2 + 0.8</span><span class="den">5.0</span></span> = <span class="frac"><span class="num">2.0</span><span class="den">5.0</span></span> = <b>0.40</b>. Lower is better, so this is a reasonably well-separated pair.</div></li><li><div class="pq">Min inter-cluster distance is 2.0; max cluster diameter is 8.0. Compute Dunn and interpret.</div><button class="ghost pbtn" data-ans="pr15-2">Show answer</button><div class="pa" id="pr15-2">2.0/8.0 = <b>0.25</b>. Well below 1, meaning some cluster is <b>four times wider</b> than the gap separating the clusters &mdash; poor separation, or one cluster containing an outlier that inflates its diameter.</div></li><li><div class="pq">Two random partitions of 100 points often give a Rand index around 0.5&ndash;0.7. What ARI would they give?</div><button class="ghost pbtn" data-ans="pr15-3">Show answer</button><div class="pa" id="pr15-3"><b>Approximately 0.</b> That is the entire purpose of the adjustment: ARI subtracts the expected agreement, so chance-level partitions score 0 rather than an impressive-looking 0.6. This is why a raw Rand index can never be interpreted on its own.</div></li></ol></div></div></section>
+<footer><div class="wrap">INT396 &middot; Unsupervised Learning &middot; Unit VI &mdash; Evaluation of Unsupervised Learning &mdash; Numericals &middot;
+School of Computer Science &amp; Engineering &middot; Session 2026&ndash;27</div></footer>
+<script>
+
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var C={navy:"#182B49",cyan:"#0096C7",purple:"#5C2D91",orange:"#ED771F",
+       green:"#107C41",red:"#B42318",grey:"#9AA7B5",rule:"#D8DFE8",ice:"#7EC5E2"};
+function el(p,n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);
+  p.appendChild(e);return e;}
+function clr(s){while(s.firstChild)s.removeChild(s.firstChild);}
+function line(s,A,B,col,w,dash){var l=el(s,"line",{x1:A.x,y1:A.y,x2:B.x,y2:B.y,
+  stroke:col,"stroke-width":w,"stroke-linecap":"round"});
+  if(dash)l.setAttribute("stroke-dasharray",dash);return l;}
+function dot(s,p,r,fill){return el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill});}
+function nodeC(s,p,label,fill,r){r=r||17;
+  el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill,stroke:"#fff","stroke-width":2.5});
+  var t=el(s,"text",{x:p.x,y:p.y+5,"text-anchor":"middle",fill:"#fff","font-size":"14",
+    "font-weight":"600","font-family":"Segoe UI,sans-serif"});t.textContent=label;}
+function txt(s,x,y,str,col,size,anchor,weight){
+  var t=el(s,"text",{x:x,y:y,"text-anchor":anchor||"middle",fill:col||C.navy,
+    "font-size":size||12,"font-weight":weight||"600","font-family":"Segoe UI,sans-serif"});
+  t.textContent=str;return t;}
+function box(s,x,y,w,h,fill,stroke,rx){return el(s,"rect",{x:x,y:y,width:w,height:h,
+  rx:rx===undefined?6:rx,fill:fill,stroke:stroke||"none","stroke-width":1.6});}
+function badge(s,A,B,str){var mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+  el(s,"circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:C.rule});
+  txt(s,mx,my+4,str,C.navy,12);}
+function arrow(s,A,B,col,w){
+  var dx=B.x-A.x,dy=B.y-A.y,L=Math.sqrt(dx*dx+dy*dy);if(!L)return;
+  var ux=dx/L,uy=dy/L,ex=B.x-ux*20,ey=B.y-uy*20;
+  el(s,"line",{x1:A.x+ux*20,y1:A.y+uy*20,x2:ex,y2:ey,stroke:col,"stroke-width":w||2.6,
+    "stroke-linecap":"round"});
+  var a=8;
+  el(s,"polygon",{points:[ex+","+ey,(ex-ux*a-uy*a*0.6)+","+(ey-uy*a+ux*a*0.6),
+    (ex-ux*a+uy*a*0.6)+","+(ey-uy*a-ux*a*0.6)].join(" "),fill:col});}
+
+/* ---- generic step player, wired to data-viz buttons ---- */
+var VIZ={};
+function register(id,build,render){
+  VIZ[id]={build:build,render:render,steps:[],i:0,timer:null};
+  resetViz(id);
+}
+function resetViz(id){var m=VIZ[id];if(!m)return;
+  m.steps=m.build();m.i=0;stopViz(id);drawViz(id);}
+function drawViz(id){var m=VIZ[id];
+  m.render(document.getElementById("svg-"+id),m.steps[m.i],m.i,m.steps);
+  var st=document.getElementById("st-"+id);
+  if(st)st.innerHTML=m.steps[m.i].msg||"";
+  syncViz(id);}
+/* keep the counter and the buttons honest about where we are */
+function syncViz(id){var m=VIZ[id],last=m.steps.length-1;
+  function btn(a){return document.querySelector(
+    'button[data-act="'+a+'"][data-viz="'+id+'"]');}
+  var b;
+  if((b=btn("step")))b.disabled=m.i>=last;
+  if((b=btn("back")))b.disabled=m.i<=0;
+  var sc=document.getElementById("sc-"+id);
+  if(sc)sc.innerHTML="step <em>"+m.i+"</em> of "+last;
+  var wrap=document.getElementById("wrap-"+id);
+  if(wrap){if(m.i>=last&&last>0)wrap.classList.add("done");
+           else wrap.classList.remove("done");}}
+function stepViz(id){var m=VIZ[id];
+  if(m.i<m.steps.length-1){m.i++;drawViz(id);}
+  if(m.i>=m.steps.length-1)stopViz(id);}
+/* step backwards, so a student can flip between before and after */
+function stepBackViz(id){var m=VIZ[id];
+  if(m.i>0){stopViz(id);m.i--;drawViz(id);}}
+function stopViz(id){var m=VIZ[id];if(m.timer){clearInterval(m.timer);m.timer=null;}
+  var b=document.querySelector('button[data-act="auto"][data-viz="'+id+'"]');
+  if(b)b.textContent="Auto-play";}
+/* ---- practice answers: reveal one, or all of a block ---- */
+document.addEventListener("click",function(e){
+  if(!e.target.closest)return;
+  var one=e.target.closest("button[data-ans]");
+  if(one){var p=document.getElementById(one.getAttribute("data-ans"));
+    if(p){var on=p.classList.toggle("on");
+      one.textContent=on?"Hide answer":"Show answer";}
+    return;}
+  var all=e.target.closest("button[data-all]");
+  if(all){var g=all.getAttribute("data-all"),
+      blk=all.closest(".prac"),show=all.textContent.indexOf("Show")===0;
+    blk.querySelectorAll(".pa").forEach(function(p){
+      p.classList.toggle("on",show);});
+    blk.querySelectorAll("button[data-ans]").forEach(function(b2){
+      b2.textContent=show?"Hide answer":"Show answer";});
+    all.textContent=show?"Hide all answers":"Show all answers";}
+});
+document.addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("button[data-viz]"):null;if(!b)return;
+  var id=b.getAttribute("data-viz"),act=b.getAttribute("data-act"),m=VIZ[id];if(!m)return;
+  if(act==="step")stepViz(id);
+  else if(act==="back")stepBackViz(id);
+  else if(act==="reset")resetViz(id);
+  else if(act==="auto"){
+    if(m.timer){stopViz(id);return;}
+    if(m.i>=m.steps.length-1)resetViz(id);
+    b.textContent="Pause";
+    m.timer=setInterval(function(){if(m.i>=m.steps.length-1)stopViz(id);else stepViz(id);},950);
+  }});
+
+
+</script>
+</body>
+</html>

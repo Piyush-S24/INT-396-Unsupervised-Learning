@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INT396 &middot; Unsupervised Learning Unit V &mdash; Association Rule Mining and Anomaly Detection &mdash; Visual Walkthrough</title>
+<style>
+:root{--navy:#182B49;--navy2:#253E64;--cyan:#0096C7;--ice:#7EC5E2;--purple:#5C2D91;
+      --orange:#ED771F;--green:#107C41;--red:#B42318;--grey:#586476;--rule:#D8DFE8;
+      --bg:#F6F9FC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);
+     font:15px/1.65 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{background:var(--navy);color:#fff;padding:28px 0 24px;border-bottom:4px solid var(--cyan)}
+header .eyebrow{color:var(--ice);font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+header h1{margin:7px 0 6px;font-size:32px;font-weight:600;line-height:1.2}
+header p{margin:0;color:#C9D8E6;font-size:15.5px;max-width:860px}
+nav{background:var(--navy2);position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(24,43,73,.2)}
+nav ul{display:flex;flex-wrap:wrap;gap:2px;list-style:none;margin:0;padding:0}
+nav a{display:block;padding:11px 14px;color:#D8E6F2;text-decoration:none;font-size:13.5px;font-weight:600}
+nav a:hover{background:rgba(255,255,255,.13);color:#fff}
+section{padding:34px 0 12px;border-bottom:1px solid var(--rule)}
+h2{font-size:24px;margin:0 0 6px;font-weight:600}
+h2 .num{display:inline-block;background:var(--cyan);color:#fff;font-size:13px;
+        padding:3px 9px;border-radius:4px;margin-right:10px;vertical-align:3px}
+h3{font-size:17.5px;margin:24px 0 8px;font-weight:600;color:var(--navy)}
+.lede{color:var(--grey);font-size:15.5px;margin:0 0 16px;max-width:920px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+/* ---- formula sheet ---- */
+.fsheet{border:1px solid var(--rule);border-top:3px solid var(--navy);border-radius:4px;
+        background:var(--card);margin:18px 0;padding:15px 20px 8px}
+.fshd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:8px}
+.fst{width:100%;border-collapse:collapse;margin:0;font-size:14px;box-shadow:none}
+.fst td{border:0;border-top:1px solid #E1EAF3;padding:9px 8px;vertical-align:middle;
+        background:none}
+.fst tr:first-child td{border-top:0}
+.fst tbody tr:nth-child(even){background:none}
+td.fsn{width:23%;font-weight:600;color:var(--navy);font-size:13.5px}
+td.fsf{width:42%}
+td.fsf .math{font-size:16.5px;line-height:1.9;white-space:normal}
+td.fsw{color:var(--grey);font-size:13px}
+/* ---- the method ---- */
+.meth{border:1px solid var(--rule);border-left:3px solid var(--navy);border-radius:4px;
+      background:var(--card);margin:18px 0;padding:15px 20px 16px}
+.methd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);margin-bottom:9px}
+.meth ol{margin:0;padding-left:22px}
+.meth li{font-size:14.8px;line-height:1.68;padding:4px 0;color:var(--navy)}
+.meth li::marker{color:var(--grey);font-weight:700}
+/* ---- practice ---- */
+.prac{border:1px solid var(--rule);border-radius:4px;background:var(--card);
+      margin:18px 0;padding:15px 20px 16px}
+.prhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.pall{margin-left:auto;font-size:12px;padding:5px 11px}
+.prac ol{margin:0;padding-left:22px}
+.prac>ol>li{padding:11px 0;border-top:1px solid #EEF2F6}
+.prac>ol>li:first-child{border-top:0}
+.prac li::marker{color:var(--grey);font-weight:700}
+/* Numericals pages run quiet: panels are white with a thin rule, and colour is
+   reserved for meaning (a revealed answer, a caution) rather than decoration. */
+body.quiet .formula{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--navy);border-radius:4px}
+body.quiet .formula .flabel{color:var(--navy)}
+body.quiet .ex{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .exgiven{background:#F7FAFC;border-color:var(--rule)}
+body.quiet .why{background:var(--card)}
+body.quiet .whygrid{background:var(--rule)}
+body.quiet .wq.w3{background:var(--card)}
+body.quiet .take{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .warn{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--orange);border-radius:4px}
+.pq{font-size:14.8px;line-height:1.68;color:var(--navy);margin-bottom:7px}
+.pbtn{font-size:12px;padding:4px 10px}
+.pa{display:none;margin-top:9px;background:#E4F6EB;border-left:3px solid var(--green);
+    border-radius:5px;padding:9px 13px;font-size:14.5px;line-height:1.7;color:var(--navy)}
+.pa.on{display:block}
+.pa b{color:var(--green)}
+.ex{border:1.5px solid #BFD9CB;border-left:5px solid var(--green);border-radius:9px;
+    background:#FBFEFC;margin:18px 0;padding:14px 18px 16px}
+.exhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--green);margin-bottom:9px}
+.exgiven{font-size:14.5px;background:#fff;border:1px solid #DCE9E1;border-radius:6px;
+         padding:9px 13px;margin-bottom:12px}
+.exsteps{list-style:none;counter-reset:exs;margin:0;padding:0}
+.exsteps li{counter-increment:exs;display:grid;grid-template-columns:26px 1fr;gap:11px;
+            padding:7px 0;border-top:1px solid #E7F0EA;align-items:baseline}
+.exsteps li:first-child{border-top:0}
+.exsteps li::before{content:counter(exs);display:block;width:21px;height:21px;
+                    border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;
+                    font-weight:700;text-align:center;line-height:21px}
+.exb{min-width:0}
+.exl{font-size:13.5px;color:var(--grey);display:block;margin-bottom:3px}
+.exw{font-size:15.5px;color:var(--navy);font-family:"Cambria Math",Cambria,Georgia,serif;
+     display:block;line-height:1.8}
+.exans{margin-top:12px;background:#E4F6EB;border-radius:6px;padding:10px 14px;
+       font-size:15px;color:var(--navy);font-weight:600}
+.exans b{color:var(--green)}
+@media(max-width:700px){.exsteps li{grid-template-columns:22px 1fr;gap:8px}}
+.why{border:1.5px solid #CBD9E6;border-radius:9px;margin:18px 0;overflow:hidden;
+     background:linear-gradient(180deg,#F4F9FD 0,#fff 54px)}
+.whyhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);padding:13px 18px 0}
+.whygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E3EAF1;
+         margin-top:12px;border-top:1px solid #E3EAF1}
+.wq{background:var(--card);padding:14px 17px 16px}
+.wq h5{margin:0 0 7px;font-size:12px;font-weight:700;letter-spacing:.03em}
+.wq p{margin:0;font-size:14px;line-height:1.62}
+.wq.w1 h5{color:var(--cyan)}
+.wq.w2 h5{color:var(--purple)}
+.wq.w3 h5{color:var(--orange)}
+.wq.w3{background:#FFFBF7}
+@media(max-width:900px){.whygrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:15px 17px}
+.card h4{margin:0 0 7px;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan)}
+.card p{margin:0;font-size:14.5px}
+.take{background:#E4F6EB;border-left:5px solid var(--green);border-radius:6px;padding:12px 16px;margin:14px 0}
+.take b.hd{color:var(--green);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.take b{color:var(--navy)}
+.warn{background:#FDEEEC;border-left:5px solid var(--orange);border-radius:6px;padding:12px 16px;margin:14px 0}
+.warn b.hd{color:var(--orange);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.warn b{color:var(--navy)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600;font-size:13px}
+tbody tr:nth-child(even){background:#F2F7FB}
+td.hi{background:#FFF3E0;font-weight:700}
+code{background:#EEF3F8;padding:1px 5px;border-radius:4px;font-size:13.5px}
+footer{background:var(--navy);color:#9FB4CA;padding:22px 0;font-size:13.5px}
+
+/* ---------------- formula block ---------------- */
+.formula{background:#F3EEFB;border-left:5px solid var(--purple);border-radius:6px;
+         padding:14px 18px;margin:14px 0;overflow-x:auto}
+.formula .flabel{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;
+                 text-transform:uppercase;color:var(--purple);margin-bottom:9px}
+.formula small{display:block;font:13.5px/1.55 "Segoe UI",sans-serif;color:var(--grey);margin-top:10px}
+
+/* ---------------- real maths ---------------- */
+.math{font-family:"Cambria Math",Cambria,"Times New Roman",Georgia,serif;
+      font-size:20px;line-height:2.1;color:var(--navy);white-space:nowrap}
+.math i,.math .var{font-style:italic;font-family:inherit}
+.math .op{font-style:normal;padding:0 .22em}
+.math b.vecb{font-weight:700;font-style:normal}
+.math sub{font-size:.62em;vertical-align:-.3em}
+.math sup{font-size:.62em;vertical-align:.45em}
+.cases{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .2em}
+.cases .cb{font-size:2.5em;font-weight:300;line-height:.86;margin-right:.14em}
+.cases table{border-collapse:collapse;margin:0;width:auto;box-shadow:none;font-size:.86em}
+.cases tbody tr,.cases tbody tr:nth-child(even){border:0;background:none}
+.cases td{border:0;padding:.14em .2em;background:none;white-space:nowrap;
+          line-height:1.5;vertical-align:middle}
+.cases td.cc{font-size:.8em;font-style:normal;color:var(--grey);padding-left:1.5em;
+             font-family:"Segoe UI",system-ui,sans-serif}
+.frac{display:inline-block;vertical-align:-.52em;text-align:center;margin:0 .26em}
+.frac .num{display:block;padding:0 .4em .12em;border-bottom:1.7px solid currentColor;line-height:1.22}
+.frac .den{display:block;padding:.12em .4em 0;line-height:1.22}
+.sqrt{display:inline-block;position:relative;margin:0 .15em}
+.sqrt .rad{font-size:1.12em;vertical-align:-.06em}
+.sqrt .rand{border-top:1.6px solid currentColor;padding:.1em .22em 0 .12em;margin-left:-.12em}
+.bigop{display:inline-block;text-align:center;vertical-align:-.5em;margin:0 .2em;line-height:1}
+.bigop .glyph{display:block;font-size:1.5em;line-height:.88}
+.bigop.int .glyph{font-size:1.75em}
+.bigop .lim{display:block;font-size:.5em;line-height:1.25;font-style:italic}
+.paren{font-size:1.18em;padding:0 .06em}
+.paren.big{font-size:1.5em;vertical-align:-.16em}
+.bar{padding:0 .09em}
+.hat{position:relative;display:inline-block;font-style:italic}
+.hat::after{content:"\0302";position:absolute;left:0;right:0;top:-.46em;
+            text-align:center;font-size:.72em;font-style:normal;line-height:1;
+            font-family:"Cambria Math",Cambria,serif}
+.matrix{display:inline-block;vertical-align:middle;margin:0 .18em}
+.matrix .mb{display:inline-block;font-size:2.1em;vertical-align:middle;font-weight:300}
+.matrix table{display:inline-table;width:auto;border:0;margin:0 .1em;vertical-align:middle}
+.matrix td{border:0;padding:.08em .38em;text-align:center;font-size:.86em;background:none}
+
+/* ---------------- visualisation ---------------- */
+.viz{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:16px 0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:600 13.5px "Segoe UI",sans-serif;padding:8px 14px;border-radius:6px;
+       border:1px solid var(--cyan);background:var(--cyan);color:#fff;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:#fff;color:var(--cyan)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select{font:14px "Segoe UI";padding:7px 9px;border-radius:6px;border:1px solid var(--rule);background:#fff}
+svg{width:100%;height:auto;display:block;background:#fff;border-radius:6px;max-width:1040px;margin:0 auto}
+.status{font-size:15.5px;line-height:1.6;background:#EAF4FA;border-left:4px solid var(--cyan);
+        border-radius:6px;padding:12px 16px;margin-top:12px;min-height:48px;color:var(--navy)}
+.status b{color:var(--cyan)}
+.stepcount{font-size:12.5px;font-weight:700;color:var(--grey);letter-spacing:.03em;
+           margin-left:auto;padding-right:4px;white-space:nowrap}
+.stepcount em{font-style:normal;color:var(--cyan);font-size:14.5px}
+.viz.done .stepcount em{color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--grey);margin-top:9px;justify-content:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body class="">
+<header><div class="wrap">
+  <div class="eyebrow">INT396 &middot; Unsupervised Learning &middot; Unit V</div>
+  <h1>Association Rule Mining and Anomaly Detection &mdash; Visual Walkthrough</h1>
+  <p>Finding what goes together, and finding what does not belong. Step through Apriori's pruning, watch an FP-tree compress seven baskets, and see why two rules with identical confidence can mean opposite things.</p>
+</div></header>
+<nav><div class="wrap"><ul><li><a href="#metrics">1 &middot; The four metrics</a></li><li><a href="#apriori">2 &middot; Apriori</a></li><li><a href="#fp">3 &middot; FP-Growth</a></li><li><a href="#anomtypes">4 &middot; Anomaly vs novelty</a></li><li><a href="#iforest">5 &middot; Isolation Forest</a></li><li><a href="#lof">6 &middot; LOF</a></li><li><a href="#apps">7 &middot; Applications</a></li></ul></div></nav>
+<section id="metrics"><div class="wrap"><h2><span class="num">1</span>Support, confidence, lift and conviction</h2><p class="lede">Four numbers that describe one rule <i>A</i> &#8594; <i>B</i>. They are not interchangeable, and reading only the first two is how people end up acting on rules that are worthless.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A transaction database contains millions of co-occurrences, nearly all of them coincidence. These four numbers are how you separate a pattern worth acting on from two popular items that simply happen to be popular at the same time.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just count the commonest pairs?&rdquo;</b> Because the commonest pairs are simply the commonest <i>items</i> &mdash; bread and milk appear together because both appear in almost every basket, which you already knew. <b>&ldquo;Why not stop at confidence?&rdquo;</b> Because confidence is inflated for free by any consequent that is common anyway.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You sort your rules by <b>confidence</b> and act on the top of the list. On the seven baskets below, two rules have <b>identical</b> confidence of 0.600 and opposite meanings &mdash; one is a genuine pattern, the other is negatively associated. Confidence cannot tell them apart; lift can.</p></div></div></div><div class="grid"><div><div class="formula"><span class="flabel">Support</span><div class="math"><span class="op">supp</span><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">baskets with</span> <i>A</i></span><span class="den"><span class="op">all baskets</span></span></span></div><small>How often the itemset occurs at all. A rule with tiny support may be real but is rarely worth acting on.</small></div></div><div><div class="formula"><span class="flabel">Confidence</span><div class="math"><span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">supp</span><span class="paren">(</span><i>A</i> &#8746; <i>B</i><span class="paren">)</span></span><span class="den"><span class="op">supp</span><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></div><small>Of the baskets containing <i>A</i>, what fraction also contain <i>B</i>? This is <i>P</i>(<i>B</i> | <i>A</i>).</small></div></div></div><div class="grid"><div><div class="formula"><span class="flabel">Lift</span><div class="math"><span class="op">lift</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span></span><span class="den"><span class="op">supp</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span></span></div><small>Confidence compared against chance. <b>&gt; 1</b> real, <b>= 1</b> independent, <b>&lt; 1</b> negatively associated.</small></div></div><div><div class="formula"><span class="flabel">Conviction</span><div class="math"><span class="op">conv</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num">1 &#8722; <span class="op">supp</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span><span class="den">1 &#8722; <span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span></span></span></div><small>How often the rule <i>would</i> be wrong by chance, divided by how often it is actually wrong. &#8734; means it never fails.</small></div></div></div><h3>Seven baskets, four numbers, three very different rules</h3><div class="viz" id="wrap-rules"><div class="controls"><button class="ghost" data-act="back" data-viz="rules">&#9664; Back</button><button data-act="step" data-viz="rules">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="rules">Auto-play</button><button class="ghost" data-act="reset" data-viz="rules">Reset</button><span class="stepcount" id="sc-rules">step <em>0</em> of 0</span></div><svg id="svg-rules" viewBox="0 0 560 330"></svg><div class="status" id="st-rules"></div></div><div class="warn"><b class="hd">Confidence is the one that lies</b><br>Two of the rules below have <b>exactly the same confidence of 0.60</b>. One is a genuine pattern and the other is worse than useless. Confidence cannot distinguish them because a consequent that is common anyway earns high confidence for free &mdash; which is precisely what lift corrects for.</div><div class="ex"><div class="exhd">Worked example &mdash; all four metrics for one rule, then the trap</div><div class="exgiven">Seven baskets: {E,J} {B,J,M,U} {E,U} {E,M,U} {B,J,M,U} {B,J,U} {J,M}. B=Bread, J=Jam, U=Butter, M=Milk, E=Eggs.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Rule <b>{Bread} &#8594; {Jam, Butter}</b> &mdash; support</span><span class="exw">all three appear together in baskets 2, 5, 6 &#8594; <span class="frac"><span class="num">3</span><span class="den">7</span></span> = <b>0.4286</b></span></div></li><li><div class="exb"><span class="exl">Confidence &mdash; divide by the support of the antecedent</span><span class="exw">Bread appears in 3 baskets, so conf = <span class="frac"><span class="num">3/7</span><span class="den">3/7</span></span> = <b>1.000</b></span></div></li><li><div class="exb"><span class="exl">Lift &mdash; divide confidence by the consequent's own frequency</span><span class="exw">{Jam, Butter} appears in 3 of 7 &#8594; lift = <span class="frac"><span class="num">1.000</span><span class="den">3/7</span></span> = <b>2.333</b></span></div></li><li><div class="exb"><span class="exl">Conviction &mdash; how often it would fail by chance, over how often it does</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.4286</span><span class="den">1 &#8722; 1.000</span></span> = <span class="frac"><span class="num">0.5714</span><span class="den">0</span></span> = <b>&#8734;</b>, because the rule never fails once</span></div></li><li><div class="exb"><span class="exl">Now the trap: <b>{Jam} &#8594; {Butter}</b></span><span class="exw">support <span class="frac"><span class="num">3</span><span class="den">7</span></span> = 0.4286, conf = <span class="frac"><span class="num">3/7</span><span class="den">5/7</span></span> = <b>0.600</b></span></div></li><li><div class="exb"><span class="exl">Its lift</span><span class="exw">Butter appears in 5 of 7 baskets anyway &#8594; lift = <span class="frac"><span class="num">0.600</span><span class="den">5/7</span></span> = <b>0.840</b>, which is <b>below 1</b></span></div></li><li><div class="exb"><span class="exl">And its conviction</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.714</span><span class="den">1 &#8722; 0.600</span></span> = <span class="frac"><span class="num">0.286</span><span class="den">0.400</span></span> = <b>0.714</b>, also below 1</span></div></li></ol><div class="exans"><b>{Jam} &#8594; {Bread}</b> has the <i>same</i> confidence of 0.600 but a lift of <b>1.40</b>. Identical confidence, opposite conclusions &mdash; which is the entire reason lift and conviction exist.</div></div></div></section>
+<section id="apriori"><div class="wrap"><h2><span class="num">2</span>The Apriori algorithm</h2><p class="lede">Checking every possible itemset is hopeless &mdash; <i>d</i> items give 2<sup><i>d</i></sup> subsets. Apriori makes it tractable with one observation.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>With <i>d</i> items there are 2<sup><i>d</i></sup> possible itemsets &mdash; for a supermarket's 10 000 products that is a number with 3000 digits. Apriori makes the search finite by never counting an itemset that <b>cannot</b> be frequent.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not count everything and filter?&rdquo;</b> Because you cannot even enumerate the candidates, let alone scan the database for each. <b>&ldquo;Why not sample the transactions?&rdquo;</b> You lose exactly the rare-but-real rules that are usually the interesting ones &mdash; the obvious patterns survive sampling, the surprising ones do not.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Set the support threshold too <b>low</b> and the candidate sets explode until the algorithm will not finish; too <b>high</b> and you are left with only the rules you could have guessed. Neither failure announces itself &mdash; one just runs forever and the other returns nothing useful.</p></div></div></div><div class="formula"><span class="flabel">The pruning rule</span><div class="math"><i>X</i> &#8838; <i>Y</i>&nbsp;&nbsp;&#8658;&nbsp;&nbsp;<span class="op">supp</span><span class="paren">(</span><i>X</i><span class="paren">)</span> &#8805; <span class="op">supp</span><span class="paren">(</span><i>Y</i><span class="paren">)</span>&nbsp;&nbsp;&nbsp;&#8658;&nbsp;&nbsp;&nbsp;<span class="op">X infrequent</span> &#8658; <span class="op">every superset infrequent</span></div><small><b>The Apriori principle (downward closure).</b> Adding an item to a set can only ever reduce how many baskets contain it. So the moment an itemset falls below the threshold, every set containing it can be discarded without being counted.</small></div><h3>Level by level, with the pruning visible</h3><div class="viz" id="wrap-apri"><div class="controls"><button class="ghost" data-act="back" data-viz="apri">&#9664; Back</button><button data-act="step" data-viz="apri">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="apri">Auto-play</button><button class="ghost" data-act="reset" data-viz="apri">Reset</button><span class="stepcount" id="sc-apri">step <em>0</em> of 0</span></div><svg id="svg-apri" viewBox="0 0 560 350"></svg><div class="status" id="st-apri"></div></div><div class="take"><b class="hd">Why it is still expensive</b><br>Apriori needs one <b>full pass over the database per level</b>, and the join step can still generate a great many candidates. On dense data with a low support threshold that cost becomes the bottleneck &mdash; which is the problem FP-Growth was invented to solve.</div><div class="ex"><div class="exhd">Worked example &mdash; two levels of Apriori, with the pruning made explicit</div><div class="exgiven">The same seven baskets, minimum support <b>3 of 7</b>.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Level 1 &mdash; count every single item</span><span class="exw">J=5, U=5, M=4, B=3, E=3 &nbsp;&#8594;&nbsp; all five clear the threshold</span></div></li><li><div class="exb"><span class="exl">Level 2 &mdash; join the survivors into pairs</span><span class="exw"><span class="frac"><span class="num">5 &#215; 4</span><span class="den">2</span></span> = <b>10</b> candidate pairs to count</span></div></li><li><div class="exb"><span class="exl">Count them</span><span class="exw">{J,U}=3, {J,M}=3, {J,B}=3, {U,M}=3, {U,B}=3, {M,B}=2, {E,U}=2, {E,M}=1, {E,J}=1, {M,B}&hellip;</span></div></li><li><div class="exb"><span class="exl">Prune &mdash; this is where the saving happens</span><span class="exw">{E,J}, {E,M}, {E,U} and {M,B} all fall below 3 and are <b>dropped</b></span></div></li><li><div class="exb"><span class="exl">Apply downward closure</span><span class="exw">because {E,J} is infrequent, <b>every</b> superset of it &mdash; {E,J,U}, {E,J,M}, {E,J,B}, {E,J,M,U}&hellip; &mdash; is infrequent too, and none is ever counted</span></div></li><li><div class="exb"><span class="exl">Level 3 &mdash; only sets whose every pair survived may be generated</span><span class="exw">{J,U,B} qualifies (all of {J,U}, {J,B}, {U,B} are frequent) &#8594; count it &#8594; <b>3</b> &nbsp;&#10003;</span></div></li><li><div class="exb"><span class="exl">Total work</span><span class="exw"><b>17</b> candidate itemsets counted, over <b>3</b> database passes</span></div></li></ol><div class="exans">Without pruning, level 3 alone would have had <span class="frac"><span class="num">5 &#215; 4 &#215; 3</span><span class="den">6</span></span> = 10 candidates instead of a handful. <b>The largest frequent itemset is {Bread, Jam, Butter} at 3/7</b> &mdash; and that is where the lift-2.33 rule came from.</div></div></div></section>
+<section id="fp"><div class="wrap"><h2><span class="num">3</span>FP-Growth</h2><p class="lede">Compress the whole database into a tree <b>once</b>, then mine the tree. Two passes over the data instead of one per level, and no candidate generation at all.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Apriori's cost is one full database pass <b>per level</b> plus a candidate explosion. FP-Growth compresses the entire database into a tree in two passes and then mines the tree &mdash; no candidates are ever generated at all.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use Apriori, it is simpler to explain?&rdquo;</b> On sparse data with a high threshold it is perfectly adequate. On dense data or a low threshold the candidate generation dominates everything, and FP-Growth wins by a wide margin. <b>&ldquo;Why not always FP-Growth then?&rdquo;</b> The tree must fit in <b>memory</b>; Apriori's working set is much smaller.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Insert the items in the wrong order and the compression disappears. Sorting by <b>descending frequency</b> is what makes transactions share prefixes near the root; insert alphabetically and you get a wide, shallow tree with almost no sharing &mdash; all the cost, none of the benefit.</p></div></div></div><h3>Building the FP-tree</h3><div class="viz" id="wrap-fptree"><div class="controls"><button class="ghost" data-act="back" data-viz="fptree">&#9664; Back</button><button data-act="step" data-viz="fptree">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="fptree">Auto-play</button><button class="ghost" data-act="reset" data-viz="fptree">Reset</button><span class="stepcount" id="sc-fptree">step <em>0</em> of 0</span></div><svg id="svg-fptree" viewBox="0 0 560 340"></svg><div class="status" id="st-fptree"></div></div><table><thead><tr><th></th><th>Apriori</th><th>FP-Growth</th></tr></thead><tbody><tr><td><b>Database passes</b></td><td>one per level</td><td>exactly two</td></tr><tr><td><b>Candidate generation</b></td><td>yes &mdash; the expensive part</td><td>none</td></tr><tr><td><b>Data structure</b></td><td>candidate lists</td><td>a prefix tree plus a header table</td></tr><tr><td><b>Memory</b></td><td>modest</td><td>the tree must fit in memory</td></tr><tr><td><b>Faster when</b></td><td>data is sparse and support is high</td><td>data is dense or support is low &mdash; usually, by a wide margin</td></tr></tbody></table><div class="take"><b class="hd">Why the ordering by frequency matters</b><br>Items are sorted by descending frequency <i>before</i> being inserted, so the most common items sit near the root and the maximum number of transactions share a prefix. Insert in a different order and the tree becomes wide and shallow, the compression disappears, and the algorithm loses its advantage entirely.</div><div class="ex"><div class="exhd">Worked example &mdash; building the FP-tree, and counting what it saved</div><div class="exgiven">The same seven baskets, minimum support 3.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Pass 1 &mdash; count items and discard the infrequent</span><span class="exw">J=5, U=5, M=4, B=3, E=3 &mdash; all five are frequent here, so none is dropped</span></div></li><li><div class="exb"><span class="exl">Fix the global order, descending by count</span><span class="exw"><b>J &#8594; U &#8594; M &#8594; B &#8594; E</b> (ties broken alphabetically)</span></div></li><li><div class="exb"><span class="exl">Pass 2 &mdash; rewrite each basket in that order</span><span class="exw">{E,J}&#8594;JE &nbsp;&middot;&nbsp; {B,J,M,U}&#8594;JUMB &nbsp;&middot;&nbsp; {E,U}&#8594;UE &nbsp;&middot;&nbsp; {E,M,U}&#8594;UME &nbsp;&middot;&nbsp; {B,J,M,U}&#8594;JUMB &nbsp;&middot;&nbsp; {B,J,U}&#8594;JUB &nbsp;&middot;&nbsp; {J,M}&#8594;JM</span></div></li><li><div class="exb"><span class="exl">Insert each path from the root, reusing prefixes</span><span class="exw">JUMB appears <b>twice</b>, so the second insertion creates <b>no new nodes</b> &mdash; it just increments four counters</span></div></li><li><div class="exb"><span class="exl">Count the tree</span><span class="exw"><b>11</b> distinct nodes represent all 7 transactions</span></div></li><li><div class="exb"><span class="exl">Compare the two algorithms on this data</span><span class="exw">Apriori: <b>17</b> candidates counted over <b>3</b> passes. FP-Growth: <b>0</b> candidates, <b>2</b> passes</span></div></li></ol><div class="exans">The saving comes entirely from the <b>frequency ordering</b>: because J and U are commonest they sit nearest the root, so the maximum number of baskets share a prefix. Order the items any other way and the tree stops compressing.</div></div></div></section>
+<section id="anomtypes"><div class="wrap"><h2><span class="num">4</span>Anomaly detection, and how it differs from novelty</h2><p class="lede">The same mathematics, two genuinely different situations &mdash; and mixing them up is the usual cause of a detector that works in testing and fails in production.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Anomaly detection and novelty detection use the same mathematics on two genuinely different situations, and confusing them is the usual reason a detector works in testing and fails in production. The difference is whether your training data is already contaminated with the thing you are hunting.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just train a classifier on fraud versus not-fraud?&rdquo;</b> Because you have almost no positive examples &mdash; often fewer than 1 in 1000 &mdash; and because the frauds that matter most are the ones <b>nobody has seen yet</b>, which by definition are not in your labels. Unsupervised methods can flag a pattern that has never occurred before; a classifier cannot.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You fit a novelty detector on <b>contaminated</b> data. It learns that the anomalies are part of normal, and then obligingly fails to flag them &mdash; a detector that is silent for exactly the reason you built it.</p></div></div></div><div class="grid"><div><div class="grid"><div class="card"><h4>Anomaly detection</h4><p>The training data is <b>contaminated</b> &mdash; it already contains the odd cases you are hunting for. You are asking which of <i>these</i> points are unusual. Isolation Forest and LOF are used this way.</p></div></div></div><div><div class="grid"><div class="card"><h4>Novelty detection</h4><p>The training data is known to be <b>clean</b>. You fit what normal looks like, then ask whether a <i>new</i> point belongs. One-class SVM and autoencoder reconstruction error are used this way.</p></div></div></div></div><table><thead><tr><th>Type</th><th>What it means</th><th>Example</th></tr></thead><tbody><tr><td><b>Point anomaly</b></td><td>a single value unlike the rest</td><td>one transaction of ₹12 lakh on a card that averages ₹3 000</td></tr><tr><td><b>Contextual anomaly</b></td><td>normal in general, abnormal in this context</td><td>₹50 000 of spending is normal &mdash; at 3 a.m. in another country it is not</td></tr><tr><td><b>Collective anomaly</b></td><td>each point is fine; the pattern is not</td><td>a hundred successful logins, each ordinary, all within one minute</td></tr></tbody></table><div class="warn"><b class="hd">The problem that makes this hard</b><br>Anomalies are rare, so the classes are extremely imbalanced; you usually have no labels; what counts as normal <b>drifts</b>; and the cost of a miss and the cost of a false alarm are wildly different and rarely written down. A detector that flags 1% of a million daily transactions produces ten thousand alerts a day &mdash; which no team can review, so in practice it produces none.</div><div class="ex"><div class="exhd">Worked example &mdash; classifying three real alerts by type</div><div class="exgiven">A bank's monitoring system raises three flags on one customer's account in a week.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Flag 1: a single transaction of &#8377;12 lakh on a card averaging &#8377;3 000</span><span class="exw">the value alone is unlike anything else &#8594; <b>point anomaly</b></span></div></li><li><div class="exb"><span class="exl">Flag 2: &#8377;50 000 of spending, at 03:00, in another country</span><span class="exw">&#8377;50 000 is entirely normal for this customer <i>during the day, at home</i> &#8594; <b>contextual anomaly</b></span></div></li><li><div class="exb"><span class="exl">Why flag 2 is harder</span><span class="exw">no single feature is unusual &mdash; only the <b>combination</b> of amount, time and location is, so a per-feature threshold would miss it</span></div></li><li><div class="exb"><span class="exl">Flag 3: 100 successful logins, each ordinary, all inside one minute</span><span class="exw">every individual event is unremarkable; the <b>pattern</b> is not &#8594; <b>collective anomaly</b></span></div></li><li><div class="exb"><span class="exl">Which setting is this?</span><span class="exw">the training data is historical transactions, which certainly contain past fraud &#8594; <b>anomaly detection</b> (contaminated), not novelty detection</span></div></li><li><div class="exb"><span class="exl">So which methods apply?</span><span class="exw">Isolation Forest and LOF, which tolerate contamination &mdash; <b>not</b> one-class SVM, which assumes a clean training set</span></div></li></ol><div class="exans">Three flags, three different kinds of anomaly, and only one of them &mdash; the point anomaly &mdash; would be caught by a simple threshold. <b>Naming the type tells you which method can possibly work.</b></div></div></div></section>
+<section id="iforest"><div class="wrap"><h2><span class="num">5</span>Isolation Forest</h2><p class="lede">Every other method models what normal looks like and measures distance from it. Isolation Forest inverts the question: anomalies are <b>easy to separate</b>, so just see how quickly a random split isolates each point.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Every distance-based detector has to compute distances, which collapses in high dimensions and costs O(<i>n</i><sup>2</sup>). Isolation Forest never computes a distance at all &mdash; it asks how many random cuts it takes to separate a point from the rest, which is cheap, parallel and dimension-tolerant.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not model what normal looks like and measure deviation?&rdquo;</b> That requires estimating a density in high dimensions, which needs far more data than you have. Isolation Forest inverts the question: instead of modelling the many, it looks for the <b>few that are easy to separate</b>. <b>&ldquo;Why random splits rather than good ones?&rdquo;</b> Because averaging over many random trees is what makes the estimate stable, and random is far cheaper.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Use the raw path length instead of the <b>normalised score</b> and the numbers mean nothing across datasets &mdash; a path of 8 is short for <i>n</i> = 10 000 and long for <i>n</i> = 100. The division by <i>c</i>(<i>n</i>) is what makes scores comparable at all.</p></div></div></div><h3>Watch two points get isolated</h3><p class="lede">Split on a random feature at a random value, repeatedly, until a point is alone. Count the splits. An outlier falls out almost immediately; a point in the crowd takes many.</p><div class="viz" id="wrap-iso"><div class="controls"><button class="ghost" data-act="back" data-viz="iso">&#9664; Back</button><button data-act="step" data-viz="iso">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="iso">Auto-play</button><button class="ghost" data-act="reset" data-viz="iso">Reset</button><span class="stepcount" id="sc-iso">step <em>0</em> of 0</span></div><svg id="svg-iso" viewBox="0 0 560 300"></svg><div class="status" id="st-iso"></div></div><div class="formula"><span class="flabel">Turning path length into a score</span><div class="math"><i>s</i><span class="paren">(</span><i>x</i>, <i>n</i><span class="paren">)</span> = 2<sup>&#8722;<span class="frac"><span class="num"><i>E</i><span class="paren">[</span><i>h</i><span class="paren">(</span><i>x</i><span class="paren">)</span><span class="paren">]</span></span><span class="den"><i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span></span></span></sup>,&nbsp;&nbsp;&nbsp;<i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span> = 2<i>H</i><span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span> &#8722; <span class="frac"><span class="num">2<span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den"><i>n</i></span></span></div><small><b>The score.</b> <i>E</i>[<i>h</i>(<i>x</i>)] is the average number of splits needed across all the trees; <i>c</i>(<i>n</i>) normalises it by what you would expect for a random point. Scores near <b>1</b> are anomalies, near <b>0.5</b> are normal.</small></div><table><thead><tr><th>Average path length (out of <i>n</i> = 256)</th><th>Score <i>s</i></th><th>Reading</th></tr></thead><tbody><tr><td>2</td><td>0.873</td><td>isolated almost at once &mdash; a clear anomaly</td></tr><tr><td>4</td><td>0.763</td><td>suspicious</td></tr><tr><td>8</td><td>0.582</td><td>unremarkable</td></tr><tr><td>12</td><td>0.444</td><td>deep in a dense region &mdash; very normal</td></tr></tbody></table><div class="take"><b class="hd">Why it scales so well</b><br>No distances are ever computed, so there is no <i>O</i><sup></sup>(<i>n</i><sup>2</sup>) distance matrix and no curse of dimensionality through the distance metric. Each tree is built from a small subsample &mdash; 256 points is the usual default &mdash; which makes it linear in <i>n</i> and trivially parallel. It is normally the first thing to try on a large unlabelled dataset.</div><div class="ex"><div class="exhd">Worked example &mdash; turning path length into an anomaly score</div><div class="exgiven">A forest built on subsamples of <i>n</i> = 256. Two points: an outlier isolated after an average of 2 splits, and a crowded point needing 12.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Compute the normaliser <i>c</i>(<i>n</i>)</span><span class="exw"><i>c</i>(<i>n</i>) = 2<i>H</i>(<i>n</i>&#8722;1) &#8722; <span class="frac"><span class="num">2(<i>n</i>&#8722;1)</span><span class="den"><i>n</i></span></span> where <i>H</i> is the harmonic number</span></div></li><li><div class="exb"><span class="exl">Evaluate it for <i>n</i> = 256</span><span class="exw">2(ln 255 + 0.5772) &#8722; <span class="frac"><span class="num">2 &#215; 255</span><span class="den">256</span></span> = 2(6.118) &#8722; 1.992 = <b>10.24</b></span></div></li><li><div class="exb"><span class="exl">Score the outlier, <i>E</i>[<i>h</i>] = 2</span><span class="exw"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num">2</span><span class="den">10.24</span></span></sup> = 2<sup>&#8722;0.195</sup> = <b>0.873</b></span></div></li><li><div class="exb"><span class="exl">Score the crowded point, <i>E</i>[<i>h</i>] = 12</span><span class="exw"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num">12</span><span class="den">10.24</span></span></sup> = 2<sup>&#8722;1.172</sup> = <b>0.444</b></span></div></li><li><div class="exb"><span class="exl">Read the scale</span><span class="exw"><i>s</i> near <b>1</b> = isolated almost at once = anomaly; &nbsp;<i>s</i> near <b>0.5</b> = unremarkable; &nbsp;<i>s</i> well below 0.5 = deep inside a dense region</span></div></li><li><div class="exb"><span class="exl">Why this scales</span><span class="exw">no distances, trees built from 256-point subsamples, and every tree independent &#8594; <b>linear in <i>n</i> and trivially parallel</b></span></div></li></ol><div class="exans"><b>0.873 versus 0.444</b> from nothing but a count of random cuts. That is why Isolation Forest is usually the first thing to try on a large unlabelled dataset.</div></div></div></section>
+<section id="lof"><div class="wrap"><h2><span class="num">6</span>Local Outlier Factor</h2><p class="lede">A point can be perfectly normal for its own neighbourhood and look like an outlier globally. LOF compares each point's density against the density of its neighbours, so “unusual” is judged <b>locally</b>.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A point can be perfectly normal for its own neighbourhood and look like an outlier globally &mdash; or the reverse. LOF judges every point against <b>its own local density</b> rather than against the dataset as a whole, which is the only way to handle data with regions of genuinely different density.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use a global distance threshold?&rdquo;</b> Because with one tight cluster and one loose one, any single threshold is wrong for at least one of them: it either floods you with false alarms from the loose cluster or misses real outliers around the tight one. <b>&ldquo;Why not Isolation Forest, it is faster?&rdquo;</b> It is &mdash; but it looks at global separability and will miss a point that is anomalous only <i>relative to its immediate neighbours</i>.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Pick <i>k</i> badly and the score becomes meaningless. Too small and LOF reacts to single-point noise; too large and it stops being local at all, which was the whole point. There is no default that is right for every dataset.</p></div></div></div><div class="formula"><span class="flabel">Step 1: reachability distance</span><div class="math"><span class="op">reach-dist</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span> = <span class="op">max</span> <span class="paren">[</span><span class="op">k-dist</span><span class="paren">(</span><i>B</i><span class="paren">)</span>,&nbsp; <i>d</i><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span><span class="paren">]</span></div><small>Reachability distance from <i>A</i> to <i>B</i>, floored at <i>B</i>'s own k-distance. The floor stops a very close pair producing an explosively large density estimate.</small></div><div class="formula"><span class="flabel">Step 2: local density</span><div class="math"><span class="op">lrd</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num">1</span><span class="den"><span class="frac"><span class="num"><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>B</i> &#8712; <i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></span><span class="den"><span class="bar">|</span><i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span><span class="bar">|</span></span></span>&nbsp;<span class="op">reach-dist</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span></span></span></div><small><b>Local reachability density</b> &mdash; the reciprocal of the average reachability distance to <i>A</i>'s <i>k</i> nearest neighbours. High means tightly packed.</small></div><div class="formula"><span class="flabel">Step 3: the LOF score</span><div class="math"><span class="op">LOF</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>B</i> &#8712; <i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span>&nbsp;<span class="frac"><span class="num"><span class="op">lrd</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span><span class="den"><span class="op">lrd</span><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></span><span class="den"><span class="bar">|</span><i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span><span class="bar">|</span></span></span></div><small><b>The ratio that matters.</b> How dense are my neighbours compared with me? &#8776; <b>1</b> means I am as dense as they are &mdash; normal. <b>&gt; 1</b> means they are much denser than me &mdash; I am in a sparse pocket they are not, so I am an outlier.</small></div><h3>Five points, worked through completely</h3><div class="viz" id="wrap-lofviz"><div class="controls"><button class="ghost" data-act="back" data-viz="lofviz">&#9664; Back</button><button data-act="step" data-viz="lofviz">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="lofviz">Auto-play</button><button class="ghost" data-act="reset" data-viz="lofviz">Reset</button><span class="stepcount" id="sc-lofviz">step <em>0</em> of 0</span></div><svg id="svg-lofviz" viewBox="0 0 560 302"></svg><div class="status" id="st-lofviz"></div></div><div class="take"><b class="hd">The case only LOF gets right</b><br>Put a tight cluster next to a loose one, and place a point just outside the tight cluster. Globally it is nowhere near the edge of the data, and a distance-threshold method will not flag it &mdash; but relative to the tight cluster it belongs to, it is clearly sparse. LOF catches it precisely because every comparison is made against the local neighbourhood rather than the dataset as a whole.</div><div class="ex"><div class="exhd">Worked example &mdash; LOF computed in full for five points</div><div class="exgiven">Four points in a tight cluster &mdash; A(1.0, 1.0) B(1.2, 1.4) C(0.8, 1.3) D(1.4, 1.0) &mdash; plus O(4.0, 4.0) on its own. Take <i>k</i> = 2.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Find each point's 2 nearest neighbours and its <i>k</i>-distance</span><span class="exw">A: {C, D}, <i>k</i>-dist <b>0.400</b>; &nbsp;B: {C, A}, <b>0.447</b>; &nbsp;C: {A, B}, <b>0.412</b>; &nbsp;D: {A, B}, <b>0.447</b>; &nbsp;O: {B, D}, <b>3.970</b></span></div></li><li><div class="exb"><span class="exl">Reachability distance floors the true distance at the neighbour's <i>k</i>-distance</span><span class="exw">reach(<i>A</i>,<i>B</i>) = max(<i>k</i>-dist(<i>B</i>), <i>d</i>(<i>A</i>,<i>B</i>))</span></div></li><li><div class="exb"><span class="exl">Local reachability density = 1 / mean reachability to those neighbours</span><span class="exw">lrd(A) = <b>2.327</b>, lrd(B) = <b>2.327</b>, lrd(C) = <b>2.361</b>, lrd(D) = <b>2.361</b>, lrd(O) = <b>0.257</b></span></div></li><li><div class="exb"><span class="exl">LOF = mean neighbour density &#247; my own density</span><span class="exw">LOF(A) = <span class="frac"><span class="num">(2.361 + 2.361)/2</span><span class="den">2.327</span></span> = <b>1.015</b></span></div></li><li><div class="exb"><span class="exl">The rest of the cluster</span><span class="exw">LOF(B) = <b>1.007</b>, LOF(C) = <b>0.986</b>, LOF(D) = <b>0.986</b> &mdash; all essentially 1</span></div></li><li><div class="exb"><span class="exl">And the outlier</span><span class="exw">O's neighbours are about nine times denser than O is &#8594; LOF(O) = <b>9.130</b></span></div></li></ol><div class="exans"><b>&#8776;1.0 for the cluster, 9.13 for O.</b> The threshold is set just above 1, not at any absolute distance &mdash; which is exactly what makes LOF <i>local</i>, and what lets it work when one region of the data is naturally sparser than another.</div></div></div></section>
+<section id="apps"><div class="wrap"><h2><span class="num">7</span>Applications: market basket, cybersecurity and fraud</h2><p class="lede">Three settings where these two families of method do the work.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>These methods earn their place wherever labels arrive late, incompletely, or describe only attacks that have already happened. A method that needs no labels can flag the pattern nobody has seen before &mdash; which, in fraud and intrusion detection, is the only kind that matters.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not a supervised model trained on confirmed fraud?&rdquo;</b> Use one &mdash; but it can only recognise fraud that <i>resembles past fraud</i>, and attackers change tactics precisely to avoid that. The usual production design is both: unsupervised detection generates candidates, a supervised model ranks them.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You set the threshold by the model's statistics instead of by <b>how many alerts a team can review</b>. A detector flagging 1% of a million daily transactions produces ten thousand alerts; nobody reads them, so within a fortnight the system catches <b>nothing</b> despite excellent AUC.</p></div></div></div><div class="grid"><div class="card"><h4>Market basket analysis</h4><p>Store layout, bundling, and recommendation. The classic lesson is that the valuable rules are the <b>surprising</b> ones &mdash; high lift on items nobody would have paired. A rule linking bread and butter has high confidence and tells you nothing you did not know.</p></div><div class="card"><h4>Intrusion detection</h4><p>Normal network traffic forms dense regions in feature space; an intrusion is a connection pattern outside them. Unsupervised methods matter here because the attacks that hurt most are the ones nobody has a signature for yet.</p></div><div class="card"><h4>Payment fraud</h4><p>Overwhelmingly imbalanced &mdash; often fewer than one in a thousand. Anomaly detection generates candidates and a supervised model (trained on confirmed fraud) ranks them, because neither approach is sufficient alone.</p></div><div class="card"><h4>Why unsupervised, specifically</h4><p>In all three, labels arrive late, are incomplete, and describe attacks that have already happened. A method that needs no labels can flag the pattern that has never been seen before &mdash; which is the only kind that matters.</p></div></div><h3>Where the thresholds actually bite</h3><div class="viz" id="wrap-alerts"><svg id="svg-alerts" viewBox="0 0 560 290"></svg><div class="status" id="st-alerts"></div></div><div class="take"><b class="hd">The number that decides whether the system is used</b><br>Not accuracy, not AUC &mdash; <b>how many alerts a day</b>, against how many a team can genuinely investigate. A detector with excellent statistics that produces more alerts than anyone can read is worth nothing, because within a fortnight everybody ignores it. The threshold is set by the review capacity, and the model is then judged on how much real fraud it catches within that budget.</div><div class="ex"><div class="exhd">Worked example &mdash; setting the threshold from review capacity, not from AUC</div><div class="exgiven">A bank processes <b>1 000 000</b> transactions a day. About <b>0.1%</b> are fraudulent, so roughly 1 000 real cases. The investigation team can review <b>200</b> alerts a day.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Threshold at the top 5% of anomaly score</span><span class="exw">0.05 &#215; 1 000 000 = <b>50 000</b> alerts/day &mdash; 250&#215; the team's capacity</span></div></li><li><div class="exb"><span class="exl">Top 1%</span><span class="exw"><b>10 000</b> alerts/day &mdash; still 50&#215; over</span></div></li><li><div class="exb"><span class="exl">Top 0.1%</span><span class="exw"><b>1 000</b> alerts/day &mdash; 5&#215; over; the queue grows by 800 every day</span></div></li><li><div class="exb"><span class="exl">Top 0.02% &mdash; the only one that fits</span><span class="exw"><b>200</b> alerts/day &#8594; exactly reviewable</span></div></li><li><div class="exb"><span class="exl">Now ask the question that matters</span><span class="exw">of the 1 000 real frauds, how many land in those top 200? That is <b>recall at the operating point</b>, and it is the only number worth quoting</span></div></li><li><div class="exb"><span class="exl">Suppose the model puts 150 of them there</span><span class="exw">recall@200 = <span class="frac"><span class="num">150</span><span class="den">1000</span></span> = <b>15%</b>, precision = <span class="frac"><span class="num">150</span><span class="den">200</span></span> = <b>75%</b></span></div></li></ol><div class="exans"><b>Capacity sets the threshold; the model is then judged on recall at that threshold.</b> A model with better AUC that only reaches 12% recall@200 is the worse system here &mdash; which is why the headline metric and the deployed metric are rarely the same.</div></div></div></section>
+<footer><div class="wrap">INT396 &middot; Unsupervised Learning &middot; Unit V &mdash; Association Rule Mining and Anomaly Detection &mdash; Visual Walkthrough &middot;
+School of Computer Science &amp; Engineering &middot; Session 2026&ndash;27</div></footer>
+<script>
+
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var C={navy:"#182B49",cyan:"#0096C7",purple:"#5C2D91",orange:"#ED771F",
+       green:"#107C41",red:"#B42318",grey:"#9AA7B5",rule:"#D8DFE8",ice:"#7EC5E2"};
+function el(p,n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);
+  p.appendChild(e);return e;}
+function clr(s){while(s.firstChild)s.removeChild(s.firstChild);}
+function line(s,A,B,col,w,dash){var l=el(s,"line",{x1:A.x,y1:A.y,x2:B.x,y2:B.y,
+  stroke:col,"stroke-width":w,"stroke-linecap":"round"});
+  if(dash)l.setAttribute("stroke-dasharray",dash);return l;}
+function dot(s,p,r,fill){return el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill});}
+function nodeC(s,p,label,fill,r){r=r||17;
+  el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill,stroke:"#fff","stroke-width":2.5});
+  var t=el(s,"text",{x:p.x,y:p.y+5,"text-anchor":"middle",fill:"#fff","font-size":"14",
+    "font-weight":"600","font-family":"Segoe UI,sans-serif"});t.textContent=label;}
+function txt(s,x,y,str,col,size,anchor,weight){
+  var t=el(s,"text",{x:x,y:y,"text-anchor":anchor||"middle",fill:col||C.navy,
+    "font-size":size||12,"font-weight":weight||"600","font-family":"Segoe UI,sans-serif"});
+  t.textContent=str;return t;}
+function box(s,x,y,w,h,fill,stroke,rx){return el(s,"rect",{x:x,y:y,width:w,height:h,
+  rx:rx===undefined?6:rx,fill:fill,stroke:stroke||"none","stroke-width":1.6});}
+function badge(s,A,B,str){var mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+  el(s,"circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:C.rule});
+  txt(s,mx,my+4,str,C.navy,12);}
+function arrow(s,A,B,col,w){
+  var dx=B.x-A.x,dy=B.y-A.y,L=Math.sqrt(dx*dx+dy*dy);if(!L)return;
+  var ux=dx/L,uy=dy/L,ex=B.x-ux*20,ey=B.y-uy*20;
+  el(s,"line",{x1:A.x+ux*20,y1:A.y+uy*20,x2:ex,y2:ey,stroke:col,"stroke-width":w||2.6,
+    "stroke-linecap":"round"});
+  var a=8;
+  el(s,"polygon",{points:[ex+","+ey,(ex-ux*a-uy*a*0.6)+","+(ey-uy*a+ux*a*0.6),
+    (ex-ux*a+uy*a*0.6)+","+(ey-uy*a-ux*a*0.6)].join(" "),fill:col});}
+
+/* ---- generic step player, wired to data-viz buttons ---- */
+var VIZ={};
+function register(id,build,render){
+  VIZ[id]={build:build,render:render,steps:[],i:0,timer:null};
+  resetViz(id);
+}
+function resetViz(id){var m=VIZ[id];if(!m)return;
+  m.steps=m.build();m.i=0;stopViz(id);drawViz(id);}
+function drawViz(id){var m=VIZ[id];
+  m.render(document.getElementById("svg-"+id),m.steps[m.i],m.i,m.steps);
+  var st=document.getElementById("st-"+id);
+  if(st)st.innerHTML=m.steps[m.i].msg||"";
+  syncViz(id);}
+/* keep the counter and the buttons honest about where we are */
+function syncViz(id){var m=VIZ[id],last=m.steps.length-1;
+  function btn(a){return document.querySelector(
+    'button[data-act="'+a+'"][data-viz="'+id+'"]');}
+  var b;
+  if((b=btn("step")))b.disabled=m.i>=last;
+  if((b=btn("back")))b.disabled=m.i<=0;
+  var sc=document.getElementById("sc-"+id);
+  if(sc)sc.innerHTML="step <em>"+m.i+"</em> of "+last;
+  var wrap=document.getElementById("wrap-"+id);
+  if(wrap){if(m.i>=last&&last>0)wrap.classList.add("done");
+           else wrap.classList.remove("done");}}
+function stepViz(id){var m=VIZ[id];
+  if(m.i<m.steps.length-1){m.i++;drawViz(id);}
+  if(m.i>=m.steps.length-1)stopViz(id);}
+/* step backwards, so a student can flip between before and after */
+function stepBackViz(id){var m=VIZ[id];
+  if(m.i>0){stopViz(id);m.i--;drawViz(id);}}
+function stopViz(id){var m=VIZ[id];if(m.timer){clearInterval(m.timer);m.timer=null;}
+  var b=document.querySelector('button[data-act="auto"][data-viz="'+id+'"]');
+  if(b)b.textContent="Auto-play";}
+/* ---- practice answers: reveal one, or all of a block ---- */
+document.addEventListener("click",function(e){
+  if(!e.target.closest)return;
+  var one=e.target.closest("button[data-ans]");
+  if(one){var p=document.getElementById(one.getAttribute("data-ans"));
+    if(p){var on=p.classList.toggle("on");
+      one.textContent=on?"Hide answer":"Show answer";}
+    return;}
+  var all=e.target.closest("button[data-all]");
+  if(all){var g=all.getAttribute("data-all"),
+      blk=all.closest(".prac"),show=all.textContent.indexOf("Show")===0;
+    blk.querySelectorAll(".pa").forEach(function(p){
+      p.classList.toggle("on",show);});
+    blk.querySelectorAll("button[data-ans]").forEach(function(b2){
+      b2.textContent=show?"Hide answer":"Show answer";});
+    all.textContent=show?"Hide all answers":"Show all answers";}
+});
+document.addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("button[data-viz]"):null;if(!b)return;
+  var id=b.getAttribute("data-viz"),act=b.getAttribute("data-act"),m=VIZ[id];if(!m)return;
+  if(act==="step")stepViz(id);
+  else if(act==="back")stepBackViz(id);
+  else if(act==="reset")resetViz(id);
+  else if(act==="auto"){
+    if(m.timer){stopViz(id);return;}
+    if(m.i>=m.steps.length-1)resetViz(id);
+    b.textContent="Pause";
+    m.timer=setInterval(function(){if(m.i>=m.steps.length-1)stopViz(id);else stepViz(id);},950);
+  }});
+
+
+var BASKETS=["EJ","BJMU","EU","EMU","BJMU","BJU","JM"].map(function(s){return s.split("");});
+var INAME={B:"Bread",M:"Milk",U:"Butter",J:"Jam",E:"Eggs"};
+function bsup(set){var c=0;BASKETS.forEach(function(t){
+  if(set.every(function(x){return t.indexOf(x)>=0;}))c++;});return c/BASKETS.length;}
+function bkey(a){return a.slice().sort().join("");}
+/* ---------- the four metrics ---------- */
+(function(){
+  var R=[["B","JU"],["J","B"],["J","U"]];
+  function calc(a,c){
+    var A=a.split(""),C=c.split(""),s=bsup(A.concat(C)),conf=s/bsup(A),
+        lift=conf/bsup(C),conv=conf>=0.999999?Infinity:(1-bsup(C))/(1-conf);
+    return{s:s,conf:conf,lift:lift,conv:conv};}
+  function build(){
+    var out=[{k:-1,msg:"Seven baskets. Minimum support will be 3 out of 7. Step through three rules and watch how the four numbers disagree."}];
+    R.forEach(function(r,i){
+      var m=calc(r[0],r[1]),an=r[0].split("").map(function(x){return INAME[x];}).join(", "),
+          cn=r[1].split("").map(function(x){return INAME[x];}).join(", ");
+      out.push({k:i,m:m,
+        msg:"<b>{"+an+"} → {"+cn+"}</b>: support "+m.s.toFixed(3)+", confidence <b>"+
+          m.conf.toFixed(3)+"</b>, lift <b>"+m.lift.toFixed(3)+"</b>, conviction "+
+          (m.conv===Infinity?"∞":m.conv.toFixed(3))+". "+
+          (i===0?"Confidence 1.00 and lift 2.33 — whenever bread is bought, jam and butter are too, and that is 2.3× what chance would give. Conviction is infinite because the rule never once fails."
+           :i===1?"Confidence 0.60, lift 1.40 — a real but weaker pattern. Bread appears in only 3 of 7 baskets, so jam genuinely raises its odds."
+           :"Confidence is <b>also 0.60</b> — identical to the rule above — but lift is <b>0.84</b>. Butter already appears in 5 of 7 baskets, so knowing about jam makes butter <i>less</i> likely than it was. Conviction 0.714 agrees: below 1.")});});
+    out.push({k:9,done:1,
+      msg:"<b>The lesson.</b> Rules 2 and 3 have exactly the same confidence and opposite meanings. Sort an association-rule table by confidence and you will act on rule 3; sort it by <b>lift</b> and you will not."});
+    return out;}
+  function render(svg,s){
+    clr(svg);var W=560;
+    txt(svg,W/2,20,"the seven baskets",C.grey,11);
+    BASKETS.forEach(function(t,i){
+      var x=38+i*74;
+      box(svg,x,30,66,46,"#F7FAFC",C.rule,5);
+      txt(svg,x+33,46,"T"+(i+1),C.grey,9.5);
+      t.slice().sort().forEach(function(it,j){
+        txt(svg,x+33,58+j*0,"",C.navy,8);});
+      txt(svg,x+33,62,t.slice().sort().join(" "),C.navy,11);});
+    var hdr=["rule","supp","conf","lift","conv"],xs=[150,250,320,392,470];
+    hdr.forEach(function(h,i){txt(svg,xs[i],108,h,C.grey,10.5,i?"middle":"end","700");});
+    R.forEach(function(r,i){
+      var y=134+i*42,on=s.k>=i||s.done,m=calc(r[0],r[1]);
+      box(svg,32,y-16,500,36,s.k===i?"#FFF6E9":(i%2?"#F7FAFC":"#fff"),C.rule,4);
+      var an=r[0].split("").map(function(x){return INAME[x];}).join(", "),
+          cn=r[1].split("").map(function(x){return INAME[x];}).join(", ");
+      txt(svg,xs[0],y+4,"{"+an+"} → {"+cn+"}",on?C.navy:"#C3CDD8",10.5,"end","600");
+      if(!on){[1,2,3,4].forEach(function(q){txt(svg,xs[q],y+4,"·","#C3CDD8",11);});return;}
+      txt(svg,xs[1],y+4,m.s.toFixed(3),C.navy,11.5,"middle","600");
+      txt(svg,xs[2],y+4,m.conf.toFixed(3),
+          Math.abs(m.conf-0.6)<0.001?C.orange:C.navy,12.5,"middle","700");
+      txt(svg,xs[3],y+4,m.lift.toFixed(3),m.lift>1.05?C.green:C.red,12.5,"middle","700");
+      txt(svg,xs[4],y+4,m.conv===Infinity?"∞":m.conv.toFixed(3),
+          m.conv>1.05?C.green:C.red,11.5,"middle","700");});
+    if(s.done){
+      box(svg,80,260,400,38,"#FDEEEC",C.orange,5);
+      txt(svg,280,278,"same confidence (0.600), opposite verdicts — only lift separates them",
+          C.orange,11,"middle","700");
+      line(svg,{x:xs[2]-26,y:176},{x:xs[2]-26,y:218},C.orange,2);
+      line(svg,{x:xs[2]+26,y:176},{x:xs[2]+26,y:218},C.orange,2);}}
+  register("rules",build,render);
+})();
+/* ---------- Apriori ---------- */
+(function(){
+  var MIN=3,N=BASKETS.length,ITEMS="BEJMU".split("");
+  function cnt(s){return Math.round(bsup(s)*N);}
+  function build(){
+    var out=[{lv:[],cand:[],k:0,
+      msg:"Minimum support <b>3 of 7</b>. Apriori counts one level at a time and uses each level's survivors to build the next."}];
+    var Lk=ITEMS.map(function(i){return[i];}),k=1,all=[];
+    while(Lk.length){
+      var counted=Lk.map(function(s){return{s:s,c:cnt(s)};});
+      var keep=counted.filter(function(o){return o.c>=MIN;});
+      out.push({lv:all.slice(),cand:counted,k:k,phase:"count",
+        msg:"<b>Level "+k+", count:</b> "+counted.map(function(o){
+          return "{"+bkey(o.s)+"} = "+o.c;}).join(", ")+"."});
+      var dead=counted.filter(function(o){return o.c<MIN;});
+      out.push({lv:all.slice(),cand:counted,keep:keep.map(function(o){return bkey(o.s);}),
+        k:k,phase:"prune",
+        msg:dead.length
+          ?("<b>Prune:</b> "+dead.map(function(o){return "{"+bkey(o.s)+"}";}).join(", ")+
+            " fall short. By downward closure every superset of them is infrequent too, so those are never counted — that is the saving.")
+          :"<b>Prune:</b> everything clears the threshold at this level."});
+      all=all.concat(keep.map(function(o){return{s:o.s,c:o.c,k:k};}));
+      var nxt=[],seen={},keys=keep.map(function(o){return bkey(o.s);});
+      for(var i=0;i<keep.length;i++)for(var j=i+1;j<keep.length;j++){
+        var u={},arr=[];
+        keep[i].s.concat(keep[j].s).forEach(function(x){if(!u[x]){u[x]=1;arr.push(x);}});
+        if(arr.length!==k+1)continue;
+        var kk=bkey(arr);if(seen[kk])continue;
+        var ok=true;
+        for(var q=0;q<arr.length;q++){
+          var sub=arr.slice();sub.splice(q,1);
+          if(keys.indexOf(bkey(sub))<0){ok=false;break;}}
+        if(!ok)continue;
+        seen[kk]=1;nxt.push(arr.sort());}
+      if(!nxt.length){
+        out.push({lv:all.slice(),cand:[],k:k,phase:"end",
+          msg:"<b>No level-"+(k+1)+" candidates survive the join, so the search stops.</b> The largest frequent itemset is <b>{Bread, Jam, Butter}</b> with support 3/7 — and that is where the useful rules come from."});
+        break;}
+      out.push({lv:all.slice(),cand:nxt.map(function(s){return{s:s,c:null};}),
+        k:k+1,phase:"join",
+        msg:"<b>Join → level "+(k+1)+":</b> "+nxt.map(function(s){
+          return "{"+bkey(s)+"}";}).join(", ")+". Only these need a database pass."});
+      Lk=nxt;k++;}
+    return out;}
+  function render(svg,s){
+    clr(svg);var W=560;
+    txt(svg,W/2,20,"frequent itemsets confirmed so far",C.grey,11);
+    var y=36;
+    for(var lev=1;lev<=3;lev++){
+      var row=s.lv.filter(function(o){return o.k===lev;});
+      if(!row.length)continue;
+      txt(svg,28,y+18,"L"+lev,C.grey,11,"start","700");
+      var x=60;
+      row.forEach(function(o){
+        var lbl=bkey(o.s),wd=Math.max(46,lbl.length*13+28);
+        box(svg,x,y,wd,26,"#E4F6EB",C.green,5);
+        txt(svg,x+wd/2,y+18,lbl+" :"+o.c,C.navy,11.5);x+=wd+8;});
+      y+=34;}
+    if(!s.lv.length)txt(svg,W/2,y+16,"(none yet)",C.grey,11,"middle","400");
+    y=Math.max(y+18,146);
+    txt(svg,W/2,y,s.phase==="join"?("level "+s.k+" candidates — generated, not yet counted")
+        :(s.phase==="prune"?("level "+s.k+" — pruning")
+        :(s.phase==="end"?"search complete":"level "+s.k+" — counting")),
+        s.phase==="join"?C.purple:(s.phase==="end"?C.green:C.orange),11.5);
+    y+=14;var x2=44,r2=0;
+    (s.cand||[]).forEach(function(o){
+      var lbl=bkey(o.s),wd=Math.max(50,lbl.length*13+34);
+      if(x2+wd>W-28){x2=44;r2++;}
+      var dead=s.phase==="prune"&&s.keep&&s.keep.indexOf(lbl)<0;
+      box(svg,x2,y+r2*32,wd,26,dead?"#FBE9E7":(o.c===null?"#F3EEFB":"#FDEBD9"),
+          dead?C.red:(o.c===null?C.purple:C.orange),5);
+      txt(svg,x2+wd/2,y+18+r2*32,lbl+(o.c===null?"":" :"+o.c),dead?C.red:C.navy,11.5);
+      if(dead)line(svg,{x:x2+5,y:y+13+r2*32},{x:x2+wd-5,y:y+13+r2*32},C.red,1.8);
+      x2+=wd+8;});
+    txt(svg,28,330,"baskets:",C.grey,10,"start","700");
+    BASKETS.forEach(function(t,q){
+      txt(svg,92+q*66,330,"T"+(q+1)+" "+t.slice().sort().join(""),C.navy,9.5,"start","600");});}
+  register("apri",build,render);
+})();
+/* ---------- FP-tree ---------- */
+(function(){
+  var MIN=3;
+  function build(){
+    var freq={};
+    BASKETS.forEach(function(t){t.forEach(function(i){freq[i]=(freq[i]||0)+1;});});
+    var order=Object.keys(freq).filter(function(i){return freq[i]>=MIN;})
+      .sort(function(a,b){return freq[b]-freq[a]||(a<b?-1:1);});
+    var out=[{tree:null,k:-1,freq:freq,order:order,
+      msg:"<b>Pass 1:</b> count every item. "+order.map(function(i){
+        return INAME[i]+" "+freq[i];}).join(", ")+". Items below support 3 are dropped now and never appear in the tree."}];
+    var root={c:"root",n:0,ch:{}};
+    BASKETS.forEach(function(t,ti){
+      var items=order.filter(function(i){return t.indexOf(i)>=0;});
+      var node=root;
+      items.forEach(function(i){
+        if(!node.ch[i])node.ch[i]={c:i,n:0,ch:{}};
+        node=node.ch[i];node.n++;});
+      out.push({tree:JSON.parse(JSON.stringify(root)),k:ti,path:items,order:order,freq:freq,
+        msg:"<b>T"+(ti+1)+"</b> = {"+t.slice().sort().map(function(x){return INAME[x];}).join(", ")+
+          "} → keep and sort by frequency → <b>"+
+          (items.length?items.map(function(x){return INAME[x];}).join(" → "):"(nothing frequent)")+
+          "</b>. "+(items.length?"Walk from the root, reusing any prefix that already exists and incrementing its count.":"Nothing to insert.")});});
+    out.push({tree:JSON.parse(JSON.stringify(root)),k:9,order:order,freq:freq,done:1,
+      msg:"<b>Tree complete after exactly two passes.</b> Every basket is now represented, shared prefixes are stored once, and mining proceeds by walking the tree — no candidate itemsets are ever generated."});
+    return out;}
+  function render(svg,s){
+    clr(svg);var W=560;
+    txt(svg,120,20,"header (by frequency)",C.grey,10.5);
+    (s.order||[]).forEach(function(i,q){
+      var y=36+q*24;
+      box(svg,36,y,166,20,"#F3EEFB",C.purple,4);
+      txt(svg,48,y+14,INAME[i],C.navy,10.5,"start","600");
+      txt(svg,192,y+14,String(s.freq[i]),C.purple,10.5,"end","700");});
+    if(!s.tree){txt(svg,380,140,"tree not started",C.grey,11);return;}
+    var lv=[];
+    (function walk(nd,d,lo,hi){
+      if(d>0){lv.push({nd:nd,d:d,x:(lo+hi)/2});}
+      var ks=Object.keys(nd.ch),wd=(hi-lo)/Math.max(1,ks.length);
+      ks.forEach(function(k,i){walk(nd.ch[k],d+1,lo+i*wd,lo+(i+1)*wd);});
+    })(s.tree,0,236,552);
+    var rx=394,ry=42;
+    el(svg,"circle",{cx:rx,cy:ry,r:17,fill:C.navy,stroke:"#fff","stroke-width":2});
+    txt(svg,rx,ry+4,"root","#fff",9);
+    lv.forEach(function(e){
+      var x=e.x,y=ry+e.d*58,on=s.path&&s.path.indexOf(e.nd.c)>=0;
+      var px=e.d===1?rx:(lv.filter(function(f){
+        return f.d===e.d-1&&Object.keys(f.nd.ch).indexOf(e.nd.c)>=0&&
+               Math.abs(f.x-e.x)<150;})[0]||{x:rx}).x;
+      var py=e.d===1?ry:ry+(e.d-1)*58;
+      line(svg,{x:px,y:py+17},{x:x,y:y-17},on?C.orange:"#D8DFE8",on?2.6:1.8);
+      el(svg,"circle",{cx:x,cy:y,r:17,fill:on?C.orange:"#E6F3FA",
+        stroke:on?C.orange:C.cyan,"stroke-width":2});
+      txt(svg,x,y+1,INAME[e.nd.c].slice(0,4),on?"#fff":C.navy,8.5);
+      txt(svg,x,y+12,":"+e.nd.n,on?"#fff":C.purple,9,"middle","700");});
+    txt(svg,394,330,"node label : how many baskets pass through it",C.grey,10,"middle","400");}
+  register("fptree",build,render);
+})();
+/* ---------- isolation forest ---------- */
+(function(){
+  var P=[[3.0,3.2],[3.4,2.8],[2.7,3.5],[3.2,3.0],[2.9,2.9],[3.5,3.4],[3.1,3.6],
+         [2.8,3.1],[8.4,8.1]];
+  var L="ABCDEFGHO",OUT=8,NORM=3;
+  /* a fixed, honest sequence of random splits for each target */
+  var SEQ={8:[["x",5.8],["y",6.2]],
+           3:[["x",5.8],["y",2.4],["x",2.75],["y",3.35],["x",3.3],["y",2.95],["x",3.05]]};
+  function build(){
+    var out=[{t:null,box:[2.4,8.8,2.4,8.6],cuts:[],
+      msg:"Nine points: eight in a cluster and one, <b>O</b>, well away from them. Isolation Forest splits on a random feature at a random value and counts how many splits it takes to leave a point alone."}];
+    [8,3].forEach(function(tgt){
+      var bx=[2.4,8.8,2.4,8.6],cuts=[],seq=SEQ[tgt];
+      out.push({t:tgt,box:bx.slice(),cuts:[],
+        msg:"Now isolating <b>"+L[tgt]+"</b>"+(tgt===8?" (the far-away point)":" (a point in the middle of the crowd)")+". The shaded box is the region still containing it."});
+      seq.forEach(function(c,si){
+        var inside=P.map(function(p,i){
+          return p[0]>=bx[0]&&p[0]<=bx[1]&&p[1]>=bx[2]&&p[1]<=bx[3];});
+        cuts=cuts.concat([[c[0],c[1],bx.slice()]]);
+        if(c[0]==="x"){ if(P[tgt][0]<c[1])bx[1]=c[1]; else bx[0]=c[1]; }
+        else { if(P[tgt][1]<c[1])bx[3]=c[1]; else bx[2]=c[1]; }
+        var left=P.filter(function(p){
+          return p[0]>=bx[0]&&p[0]<=bx[1]&&p[1]>=bx[2]&&p[1]<=bx[3];}).length;
+        out.push({t:tgt,box:bx.slice(),cuts:cuts.slice(),depth:si+1,alone:left===1,
+          msg:"Split "+(si+1)+": cut "+c[0]+" at "+c[1]+". "+
+            (left===1?("<b>"+L[tgt]+" is now alone</b> — isolated after <b>"+(si+1)+
+                       "</b> split"+(si?"s":"")+".")
+                    :(left+" points still share the box, so keep splitting."))});});});
+    out.push({t:null,box:[2.4,8.8,2.4,8.6],cuts:[],done:1,
+      msg:"<b>O took 2 splits; D took 7.</b> That gap is the entire signal. Averaged over many random trees, a short path means <i>easy to separate</i> means <i>anomalous</i> — and no distance was ever computed."});
+    return out;}
+  function render(svg,s){
+    clr(svg);var W=560,L0=120,R=440,T0=26,B=250;
+    function X(x){return L0+(x-2.2)/6.8*(R-L0);}
+    function Y(y){return B-(y-2.2)/6.8*(B-T0);}
+    box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
+    if(s.t!==null&&s.box)
+      box(svg,X(s.box[0]),Y(s.box[3]),X(s.box[1])-X(s.box[0]),Y(s.box[2])-Y(s.box[3]),
+          "rgba(237,119,31,.13)",C.orange,2);
+    (s.cuts||[]).forEach(function(c){
+      if(c[0]==="x")line(svg,{x:X(c[1]),y:Y(c[2][2])},{x:X(c[1]),y:Y(c[2][3])},"#C9B8E0",1.8);
+      else line(svg,{x:X(c[2][0]),y:Y(c[1])},{x:X(c[2][1]),y:Y(c[1])},"#C9B8E0",1.8);});
+    P.forEach(function(p,i){
+      var tgt=s.t===i;
+      dot(svg,{x:X(p[0]),y:Y(p[1])},tgt?9:6.5,
+          tgt?C.orange:(i===OUT?C.red:C.cyan));
+      if(tgt||i===OUT)txt(svg,X(p[0]),Y(p[1])-12,L[i],tgt?C.orange:C.red,11.5);});
+    txt(svg,(L0+R)/2,B+22,"random axis-aligned splits",C.grey,10.5,"middle","400");
+    var px=R+22;
+    txt(svg,px,T0+16,"splits used",C.grey,10.5,"start","600");
+    txt(svg,px,T0+54,s.depth===undefined?"—":String(s.depth),
+        s.alone?C.green:C.navy,24,"start","700");
+    if(s.alone)txt(svg,px,T0+72,"isolated",C.green,10.5,"start","700");
+    if(s.done){
+      txt(svg,px,T0+100,"O  →  2",C.red,12.5,"start","700");
+      txt(svg,px,T0+122,"D  →  7",C.cyan,12.5,"start","700");
+      txt(svg,px,T0+148,"short path",C.grey,10,"start","400");
+      txt(svg,px,T0+162,"= anomaly",C.grey,10,"start","400");}}
+  register("iso",build,render);
+})();
+/* ---------- LOF ---------- */
+(function(){
+  var P=[[1.0,1.0],[1.2,1.4],[0.8,1.3],[1.4,1.0],[4.0,4.0]],L="ABCDO",K=2;
+  function d(a,b){return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));}
+  function build(){
+    var N=P.length,kd=[],knn=[];
+    for(var i=0;i<N;i++){
+      var ds=[];for(var j=0;j<N;j++)if(j!==i)ds.push([d(P[i],P[j]),j]);
+      ds.sort(function(a,b){return a[0]-b[0];});
+      kd.push(ds[K-1][0]);knn.push(ds.slice(0,K).map(function(e){return e[1];}));}
+    var out=[{k:-1,kd:kd,knn:knn,
+      msg:"Four points in a tight cluster plus <b>O</b> on its own, with k = 2. First find each point's 2 nearest neighbours and its <b>k-distance</b> — the distance to the 2nd nearest."}];
+    for(i=0;i<N;i++)out.push({k:i,stage:"kd",kd:kd,knn:knn,
+      msg:"<b>"+L[i]+"</b>: nearest two are "+knn[i].map(function(j){return L[j];}).join(" and ")+
+        ", so k-dist("+L[i]+") = <b>"+kd[i].toFixed(4)+"</b>."});
+    function rd(i,o){return Math.max(kd[o],d(P[i],P[o]));}
+    var lrd=[];
+    for(i=0;i<N;i++){
+      var s=0;knn[i].forEach(function(o){s+=rd(i,o);});
+      lrd.push(1/(s/K));}
+    out.push({k:9,stage:"lrd",kd:kd,knn:knn,lrd:lrd,
+      msg:"<b>Local reachability density</b> = 1 / (average reachability distance to those 2 neighbours). "+
+        L.split("").map(function(c,i){return c+" = "+lrd[i].toFixed(3);}).join(", ")+
+        ". O's density is an order of magnitude lower."});
+    var lof=[];
+    for(i=0;i<N;i++){var s2=0;knn[i].forEach(function(o){s2+=lrd[o];});
+      lof.push(s2/K/lrd[i]);}
+    out.push({k:9,stage:"lof",kd:kd,knn:knn,lrd:lrd,lof:lof,
+      msg:"<b>LOF</b> = average neighbour density ÷ my own density. "+
+        L.split("").map(function(c,i){return c+" = "+lof[i].toFixed(3);}).join(", ")+"."});
+    out.push({k:9,stage:"done",kd:kd,knn:knn,lrd:lrd,lof:lof,
+      msg:"<b>A, B, C and D all sit at about 1.0</b> — each is as dense as its neighbours, which is what normal looks like. <b>O scores "+
+        lof[4].toFixed(2)+"</b>: its neighbours are roughly "+lof[4].toFixed(0)+
+        "× denser than it is. The threshold is usually set a little above 1, not at some absolute distance — which is exactly what makes LOF <i>local</i>."});
+    return out;}
+  function render(svg,s){
+    clr(svg);var W=560,L0=56,R=300,T0=28,B=232;
+    function X(x){return L0+(x-0.4)/4.2*(R-L0);}
+    function Y(y){return B-(y-0.4)/4.2*(B-T0);}
+    box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
+    if(s.k>=0&&s.k<5&&s.stage==="kd"){
+      el(svg,"circle",{cx:X(P[s.k][0]),cy:Y(P[s.k][1]),
+        r:s.kd[s.k]/4.2*(R-L0),fill:"rgba(0,150,199,.10)",stroke:C.cyan,
+        "stroke-width":1.6,"stroke-dasharray":"4 3"});
+      s.knn[s.k].forEach(function(j){
+        line(svg,{x:X(P[s.k][0]),y:Y(P[s.k][1])},{x:X(P[j][0]),y:Y(P[j][1])},C.cyan,2);});}
+    P.forEach(function(p,i){
+      var hot=s.k===i,anom=s.lof&&s.lof[i]>1.5;
+      dot(svg,{x:X(p[0]),y:Y(p[1])},hot?9:7,hot?C.orange:(anom?C.red:C.cyan));
+      txt(svg,X(p[0]),Y(p[1])-13,L[i],hot?C.orange:(anom?C.red:C.navy),11);});
+    var cx=R+28,hdr=["pt","k-dist","lrd","LOF"],xs=[cx,cx+58,cx+120,cx+188];
+    hdr.forEach(function(h,i){txt(svg,xs[i],T0+6,h,C.grey,10,"middle","700");});
+    L.split("").forEach(function(c,i){
+      var y=T0+28+i*26,anom=s.lof&&s.lof[i]>1.5;
+      txt(svg,xs[0],y,c,anom?C.red:C.navy,11,"middle","700");
+      txt(svg,xs[1],y,s.kd?s.kd[i].toFixed(3):"·",
+          (s.stage==="kd"&&s.k>=i)||s.lrd?C.navy:"#C8D2DC",10.5,"middle","500");
+      txt(svg,xs[2],y,s.lrd?s.lrd[i].toFixed(3):"·",s.lrd?C.navy:"#C8D2DC",10.5,"middle","500");
+      txt(svg,xs[3],y,s.lof?s.lof[i].toFixed(3):"·",
+          s.lof?(anom?C.red:C.green):"#C8D2DC",11.5,"middle","700");});
+    if(s.stage==="done"){
+      line(svg,{x:xs[3]-24,y:T0+120},{x:xs[3]+24,y:T0+120},C.rule,1.4);
+      txt(svg,xs[3],T0+160,"≈ 1 → normal",C.green,10,"middle","600");
+      txt(svg,xs[3],T0+176,"≫ 1 → outlier",C.red,10,"middle","600");}
+    txt(svg,(L0+R)/2,B+22,"k = 2",C.grey,10.5,"middle","400");}
+  register("lofviz",build,render);
+})();
+/* ---------- alert budget ---------- */
+(function(){
+  var svg=document.getElementById("svg-alerts"),st=document.getElementById("st-alerts");
+  var W=560,x0=196,bw=252,DAY=1000000;
+  var R=[[0.05,"5%",C.red],[0.01,"1%",C.orange],[0.001,"0.1%",C.cyan],[0.0002,"0.02%",C.green]];
+  txt(svg,W/2,20,"1 million transactions a day — how many alerts does the threshold produce?",
+      C.grey,10.5);
+  var cap=200;
+  R.forEach(function(r,i){
+    var y=40+i*52,nAlert=DAY*r[0];
+    txt(svg,x0-12,y+16,"flag the top "+r[1],C.navy,11,"end","600");
+    var lw=Math.log10(nAlert)/Math.log10(DAY*0.05)*bw;
+    box(svg,x0,y+4,Math.max(4,lw),24,r[2],null,4);
+    txt(svg,x0+Math.max(4,lw)+8,y+21,nAlert.toLocaleString()+" alerts",r[2],11,"start","700");
+    txt(svg,x0+Math.max(4,lw)+8,y+34,
+        nAlert>cap?("needs "+Math.ceil(nAlert/cap)+"× the review team"):"reviewable",
+        nAlert>cap?C.red:C.green,9.5,"start","600");});
+  var capx=x0+Math.log10(cap)/Math.log10(DAY*0.05)*bw;
+  line(svg,{x:capx,y:36},{x:capx,y:252},C.navy,2,"4 3");
+  txt(svg,capx,268,"what one team of analysts can actually review in a day (≈ 200)",
+      C.navy,10,"middle","600");
+  st.innerHTML="Every threshold to the right of the dashed line produces more alerts than "+
+    "anyone will read — and an alert queue nobody reads catches <b>zero</b> fraud, however "+
+    "good the model's AUC is. In practice the threshold is set by <b>review capacity first</b>, "+
+    "and the model is then judged on how much real fraud it can catch inside that budget.";
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INT396 &middot; Unsupervised Learning Unit VI &mdash; Evaluation and Applications of Unsupervised Learning &mdash; Visual Walkthrough</title>
+<style>
+:root{--navy:#182B49;--navy2:#253E64;--cyan:#0096C7;--ice:#7EC5E2;--purple:#5C2D91;
+      --orange:#ED771F;--green:#107C41;--red:#B42318;--grey:#586476;--rule:#D8DFE8;
+      --bg:#F6F9FC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);
+     font:15px/1.65 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{background:var(--navy);color:#fff;padding:28px 0 24px;border-bottom:4px solid var(--cyan)}
+header .eyebrow{color:var(--ice);font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+header h1{margin:7px 0 6px;font-size:32px;font-weight:600;line-height:1.2}
+header p{margin:0;color:#C9D8E6;font-size:15.5px;max-width:860px}
+nav{background:var(--navy2);position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(24,43,73,.2)}
+nav ul{display:flex;flex-wrap:wrap;gap:2px;list-style:none;margin:0;padding:0}
+nav a{display:block;padding:11px 14px;color:#D8E6F2;text-decoration:none;font-size:13.5px;font-weight:600}
+nav a:hover{background:rgba(255,255,255,.13);color:#fff}
+section{padding:34px 0 12px;border-bottom:1px solid var(--rule)}
+h2{font-size:24px;margin:0 0 6px;font-weight:600}
+h2 .num{display:inline-block;background:var(--cyan);color:#fff;font-size:13px;
+        padding:3px 9px;border-radius:4px;margin-right:10px;vertical-align:3px}
+h3{font-size:17.5px;margin:24px 0 8px;font-weight:600;color:var(--navy)}
+.lede{color:var(--grey);font-size:15.5px;margin:0 0 16px;max-width:920px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+/* ---- formula sheet ---- */
+.fsheet{border:1px solid var(--rule);border-top:3px solid var(--navy);border-radius:4px;
+        background:var(--card);margin:18px 0;padding:15px 20px 8px}
+.fshd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:8px}
+.fst{width:100%;border-collapse:collapse;margin:0;font-size:14px;box-shadow:none}
+.fst td{border:0;border-top:1px solid #E1EAF3;padding:9px 8px;vertical-align:middle;
+        background:none}
+.fst tr:first-child td{border-top:0}
+.fst tbody tr:nth-child(even){background:none}
+td.fsn{width:23%;font-weight:600;color:var(--navy);font-size:13.5px}
+td.fsf{width:42%}
+td.fsf .math{font-size:16.5px;line-height:1.9;white-space:normal}
+td.fsw{color:var(--grey);font-size:13px}
+/* ---- the method ---- */
+.meth{border:1px solid var(--rule);border-left:3px solid var(--navy);border-radius:4px;
+      background:var(--card);margin:18px 0;padding:15px 20px 16px}
+.methd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);margin-bottom:9px}
+.meth ol{margin:0;padding-left:22px}
+.meth li{font-size:14.8px;line-height:1.68;padding:4px 0;color:var(--navy)}
+.meth li::marker{color:var(--grey);font-weight:700}
+/* ---- practice ---- */
+.prac{border:1px solid var(--rule);border-radius:4px;background:var(--card);
+      margin:18px 0;padding:15px 20px 16px}
+.prhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.pall{margin-left:auto;font-size:12px;padding:5px 11px}
+.prac ol{margin:0;padding-left:22px}
+.prac>ol>li{padding:11px 0;border-top:1px solid #EEF2F6}
+.prac>ol>li:first-child{border-top:0}
+.prac li::marker{color:var(--grey);font-weight:700}
+/* Numericals pages run quiet: panels are white with a thin rule, and colour is
+   reserved for meaning (a revealed answer, a caution) rather than decoration. */
+body.quiet .formula{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--navy);border-radius:4px}
+body.quiet .formula .flabel{color:var(--navy)}
+body.quiet .ex{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .exgiven{background:#F7FAFC;border-color:var(--rule)}
+body.quiet .why{background:var(--card)}
+body.quiet .whygrid{background:var(--rule)}
+body.quiet .wq.w3{background:var(--card)}
+body.quiet .take{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--green);border-radius:4px}
+body.quiet .warn{background:var(--card);border:1px solid var(--rule);
+      border-left:3px solid var(--orange);border-radius:4px}
+.pq{font-size:14.8px;line-height:1.68;color:var(--navy);margin-bottom:7px}
+.pbtn{font-size:12px;padding:4px 10px}
+.pa{display:none;margin-top:9px;background:#E4F6EB;border-left:3px solid var(--green);
+    border-radius:5px;padding:9px 13px;font-size:14.5px;line-height:1.7;color:var(--navy)}
+.pa.on{display:block}
+.pa b{color:var(--green)}
+.ex{border:1.5px solid #BFD9CB;border-left:5px solid var(--green);border-radius:9px;
+    background:#FBFEFC;margin:18px 0;padding:14px 18px 16px}
+.exhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+      color:var(--green);margin-bottom:9px}
+.exgiven{font-size:14.5px;background:#fff;border:1px solid #DCE9E1;border-radius:6px;
+         padding:9px 13px;margin-bottom:12px}
+.exsteps{list-style:none;counter-reset:exs;margin:0;padding:0}
+.exsteps li{counter-increment:exs;display:grid;grid-template-columns:26px 1fr;gap:11px;
+            padding:7px 0;border-top:1px solid #E7F0EA;align-items:baseline}
+.exsteps li:first-child{border-top:0}
+.exsteps li::before{content:counter(exs);display:block;width:21px;height:21px;
+                    border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;
+                    font-weight:700;text-align:center;line-height:21px}
+.exb{min-width:0}
+.exl{font-size:13.5px;color:var(--grey);display:block;margin-bottom:3px}
+.exw{font-size:15.5px;color:var(--navy);font-family:"Cambria Math",Cambria,Georgia,serif;
+     display:block;line-height:1.8}
+.exans{margin-top:12px;background:#E4F6EB;border-radius:6px;padding:10px 14px;
+       font-size:15px;color:var(--navy);font-weight:600}
+.exans b{color:var(--green)}
+@media(max-width:700px){.exsteps li{grid-template-columns:22px 1fr;gap:8px}}
+.why{border:1.5px solid #CBD9E6;border-radius:9px;margin:18px 0;overflow:hidden;
+     background:linear-gradient(180deg,#F4F9FD 0,#fff 54px)}
+.whyhd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+       color:var(--navy);padding:13px 18px 0}
+.whygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E3EAF1;
+         margin-top:12px;border-top:1px solid #E3EAF1}
+.wq{background:var(--card);padding:14px 17px 16px}
+.wq h5{margin:0 0 7px;font-size:12px;font-weight:700;letter-spacing:.03em}
+.wq p{margin:0;font-size:14px;line-height:1.62}
+.wq.w1 h5{color:var(--cyan)}
+.wq.w2 h5{color:var(--purple)}
+.wq.w3 h5{color:var(--orange)}
+.wq.w3{background:#FFFBF7}
+@media(max-width:900px){.whygrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:15px 17px}
+.card h4{margin:0 0 7px;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan)}
+.card p{margin:0;font-size:14.5px}
+.take{background:#E4F6EB;border-left:5px solid var(--green);border-radius:6px;padding:12px 16px;margin:14px 0}
+.take b.hd{color:var(--green);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.take b{color:var(--navy)}
+.warn{background:#FDEEEC;border-left:5px solid var(--orange);border-radius:6px;padding:12px 16px;margin:14px 0}
+.warn b.hd{color:var(--orange);text-transform:uppercase;font-size:12.5px;letter-spacing:.05em}
+.warn b{color:var(--navy)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600;font-size:13px}
+tbody tr:nth-child(even){background:#F2F7FB}
+td.hi{background:#FFF3E0;font-weight:700}
+code{background:#EEF3F8;padding:1px 5px;border-radius:4px;font-size:13.5px}
+footer{background:var(--navy);color:#9FB4CA;padding:22px 0;font-size:13.5px}
+
+/* ---------------- formula block ---------------- */
+.formula{background:#F3EEFB;border-left:5px solid var(--purple);border-radius:6px;
+         padding:14px 18px;margin:14px 0;overflow-x:auto}
+.formula .flabel{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;
+                 text-transform:uppercase;color:var(--purple);margin-bottom:9px}
+.formula small{display:block;font:13.5px/1.55 "Segoe UI",sans-serif;color:var(--grey);margin-top:10px}
+
+/* ---------------- real maths ---------------- */
+.math{font-family:"Cambria Math",Cambria,"Times New Roman",Georgia,serif;
+      font-size:20px;line-height:2.1;color:var(--navy);white-space:nowrap}
+.math i,.math .var{font-style:italic;font-family:inherit}
+.math .op{font-style:normal;padding:0 .22em}
+.math b.vecb{font-weight:700;font-style:normal}
+.math sub{font-size:.62em;vertical-align:-.3em}
+.math sup{font-size:.62em;vertical-align:.45em}
+.cases{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .2em}
+.cases .cb{font-size:2.5em;font-weight:300;line-height:.86;margin-right:.14em}
+.cases table{border-collapse:collapse;margin:0;width:auto;box-shadow:none;font-size:.86em}
+.cases tbody tr,.cases tbody tr:nth-child(even){border:0;background:none}
+.cases td{border:0;padding:.14em .2em;background:none;white-space:nowrap;
+          line-height:1.5;vertical-align:middle}
+.cases td.cc{font-size:.8em;font-style:normal;color:var(--grey);padding-left:1.5em;
+             font-family:"Segoe UI",system-ui,sans-serif}
+.frac{display:inline-block;vertical-align:-.52em;text-align:center;margin:0 .26em}
+.frac .num{display:block;padding:0 .4em .12em;border-bottom:1.7px solid currentColor;line-height:1.22}
+.frac .den{display:block;padding:.12em .4em 0;line-height:1.22}
+.sqrt{display:inline-block;position:relative;margin:0 .15em}
+.sqrt .rad{font-size:1.12em;vertical-align:-.06em}
+.sqrt .rand{border-top:1.6px solid currentColor;padding:.1em .22em 0 .12em;margin-left:-.12em}
+.bigop{display:inline-block;text-align:center;vertical-align:-.5em;margin:0 .2em;line-height:1}
+.bigop .glyph{display:block;font-size:1.5em;line-height:.88}
+.bigop.int .glyph{font-size:1.75em}
+.bigop .lim{display:block;font-size:.5em;line-height:1.25;font-style:italic}
+.paren{font-size:1.18em;padding:0 .06em}
+.paren.big{font-size:1.5em;vertical-align:-.16em}
+.bar{padding:0 .09em}
+.hat{position:relative;display:inline-block;font-style:italic}
+.hat::after{content:"\0302";position:absolute;left:0;right:0;top:-.46em;
+            text-align:center;font-size:.72em;font-style:normal;line-height:1;
+            font-family:"Cambria Math",Cambria,serif}
+.matrix{display:inline-block;vertical-align:middle;margin:0 .18em}
+.matrix .mb{display:inline-block;font-size:2.1em;vertical-align:middle;font-weight:300}
+.matrix table{display:inline-table;width:auto;border:0;margin:0 .1em;vertical-align:middle}
+.matrix td{border:0;padding:.08em .38em;text-align:center;font-size:.86em;background:none}
+
+/* ---------------- visualisation ---------------- */
+.viz{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:16px 0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:600 13.5px "Segoe UI",sans-serif;padding:8px 14px;border-radius:6px;
+       border:1px solid var(--cyan);background:var(--cyan);color:#fff;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:#fff;color:var(--cyan)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select{font:14px "Segoe UI";padding:7px 9px;border-radius:6px;border:1px solid var(--rule);background:#fff}
+svg{width:100%;height:auto;display:block;background:#fff;border-radius:6px;max-width:1040px;margin:0 auto}
+.status{font-size:15.5px;line-height:1.6;background:#EAF4FA;border-left:4px solid var(--cyan);
+        border-radius:6px;padding:12px 16px;margin-top:12px;min-height:48px;color:var(--navy)}
+.status b{color:var(--cyan)}
+.stepcount{font-size:12.5px;font-weight:700;color:var(--grey);letter-spacing:.03em;
+           margin-left:auto;padding-right:4px;white-space:nowrap}
+.stepcount em{font-style:normal;color:var(--cyan);font-size:14.5px}
+.viz.done .stepcount em{color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--grey);margin-top:9px;justify-content:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body class="">
+<header><div class="wrap">
+  <div class="eyebrow">INT396 &middot; Unsupervised Learning &middot; Unit VI</div>
+  <h1>Evaluation and Applications of Unsupervised Learning &mdash; Visual Walkthrough</h1>
+  <p>A clustering algorithm always returns clusters. This unit is about deciding whether they mean anything — and what you owe the people who end up inside them.</p>
+</div></header>
+<nav><div class="wrap"><ul><li><a href="#internal">1 &middot; Internal vs external</a></li><li><a href="#cohesion">2 &middot; Cohesion &amp; separation</a></li><li><a href="#silhouette">3 &middot; Silhouette</a></li><li><a href="#indices">4 &middot; DB &amp; Dunn</a></li><li><a href="#external">5 &middot; Rand &amp; ARI</a></li><li><a href="#stability">6 &middot; Stability</a></li><li><a href="#interpret">7 &middot; Interpretation &amp; ethics</a></li></ul></div></nav>
+<section id="internal"><div class="wrap"><h2><span class="num">1</span>Internal and external validation</h2><p class="lede">A clustering algorithm always returns clusters. The hard part &mdash; the part this whole unit is about &mdash; is deciding whether those clusters mean anything.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A clustering algorithm always returns clusters, including on data with no structure at all. Validation is the only thing standing between “the algorithm produced five groups” and “there are five groups” &mdash; which are completely different claims.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just look at the plot?&rdquo;</b> Works in two dimensions, and most data is not two-dimensional &mdash; and a t-SNE plot of it will show convincing blobs even on noise. <b>&ldquo;Why not use external validation, it is more trustworthy?&rdquo;</b> Because it needs labels, and if you had labels you would probably not be clustering. Internal metrics are what you can actually compute.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You trust an internal metric that is secretly measuring its own assumption. Silhouette, Davies&ndash;Bouldin and Dunn all reward <b>compact, round, well-separated</b> clusters &mdash; so a perfect DBSCAN clustering of two interleaved crescents scores badly. The clustering is right; the metric is measuring the wrong thing.</p></div></div></div><div class="grid"><div><div class="grid"><div class="card"><h4>Internal validation</h4><p>Uses <b>only the data and the clustering</b>. Asks whether points inside a cluster are close together and clusters are far apart. Silhouette, Davies&ndash;Bouldin, Dunn, cohesion and separation. Available always &mdash; which is why it is what you normally use.</p></div></div></div><div><div class="grid"><div class="card"><h4>External validation</h4><p>Compares the clustering against <b>known labels</b>. Rand index, Adjusted Rand Index, normalised mutual information. More trustworthy, but it needs labels &mdash; and if you had labels you probably would not be clustering.</p></div></div></div></div><table><thead><tr><th></th><th>Internal</th><th>External</th><th>Relative</th></tr></thead><tbody><tr><td><b>Needs labels?</b></td><td>no</td><td>yes</td><td>no</td></tr><tr><td><b>Answers</b></td><td>is this geometrically tidy?</td><td>does this match the truth?</td><td>which of these runs is better?</td></tr><tr><td><b>Used for</b></td><td>choosing <i>k</i>, comparing algorithms</td><td>benchmarking on datasets where truth is known</td><td>stability and parameter sweeps</td></tr><tr><td><b>Main risk</b></td><td>rewards the shape the metric assumes</td><td>rarely available in practice</td><td>says nothing about correctness</td></tr></tbody></table><div class="warn"><b class="hd">Internal metrics have opinions about shape</b><br>Silhouette, Davies&ndash;Bouldin and Dunn all reward <b>compact, well-separated, roughly spherical</b> clusters. Run them on two interleaved crescents that DBSCAN has clustered perfectly and they will report a poor score &mdash; because the clusters are correct but not round. The metric is measuring its own assumption, not your answer. Always look at the data as well.</div><div class="ex"><div class="exhd">Worked example &mdash; choosing a validation strategy for three situations</div><div class="exgiven">Three clustering problems. The right check follows from what is available, not from which metric is most sophisticated.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Segmenting 2 million customers; no labels exist anywhere</span><span class="exw">nothing to compare against &#8594; <b>internal</b> (silhouette) for choosing <i>k</i>, plus <b>stability</b> across resamples to confirm it is real</span></div></li><li><div class="exb"><span class="exl">Benchmarking a new algorithm on the Iris dataset, where true species are known</span><span class="exw">ground truth available &#8594; <b>external</b> (ARI), which is far more trustworthy</span></div></li><li><div class="exb"><span class="exl">Clustering two interleaved crescent shapes with DBSCAN</span><span class="exw">DBSCAN separates them perfectly, but silhouette scores it <b>poorly</b> because the clusters are not round</span></div></li><li><div class="exb"><span class="exl">What that third case means in practice</span><span class="exw">the low silhouette is a fact about the <b>metric's assumption</b>, not about the clustering &mdash; reporting it as evidence of a bad clustering would be wrong</span></div></li><li><div class="exb"><span class="exl">So what do you do there?</span><span class="exw">use a density-aware check, or external labels if any exist, and <b>look at the data</b></span></div></li><li><div class="exb"><span class="exl">The rule</span><span class="exw">internal metrics answer <i>is this geometrically tidy?</i> &mdash; which is only the same question as <i>is this correct?</i> when the clusters happen to be round</span></div></li></ol><div class="exans"><b>The metric encodes a shape assumption.</b> Reading a low silhouette as “bad clustering” without asking whether the clusters are supposed to be spherical is the most common misuse of internal validation.</div></div></div></section>
+<section id="cohesion"><div class="wrap"><h2><span class="num">2</span>Cohesion and separation</h2><p class="lede">The two quantities every other internal measure is built from: how tight is a cluster, and how far is it from the others?</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Cohesion and separation are the two raw ingredients every other internal measure is built from. Understanding that they are two views of <b>one</b> quantity &mdash; not two competing goals &mdash; explains why k-Means minimising SSE is simultaneously maximising the separation between clusters.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just minimise SSE and be done?&rdquo;</b> Because SSE falls monotonically as <i>k</i> grows and reaches <b>zero</b> when every point is its own cluster &mdash; so minimising it alone always tells you to use <i>k</i> = <i>n</i>. It measures tightness, not correctness.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You compare SSE across different values of <i>k</i> and conclude the largest <i>k</i> is best. It always will be. SSE can only be compared <b>at fixed <i>k</i></b> &mdash; between two initialisations, say &mdash; which is exactly what k-Means restarts use it for.</p></div></div></div><div class="formula"><span class="flabel">Cohesion</span><div class="math"><span class="op">SSE</span> = <span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>k</i></span></span>&nbsp;<span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>x</i> &#8712; <i>C</i><sub><i>k</i></sub></span></span>&nbsp;<span class="bar">&#8214;</span><i>x</i> &#8722; <i>&mu;</i><sub><i>k</i></sub><span class="bar">&#8214;</span><sup>2</sup>&nbsp;&nbsp;&nbsp;<span class="op">(cohesion, within-cluster)</span></div><small>How far points sit from their own cluster's centre, squared and summed. <b>Lower is tighter.</b></small></div><div class="formula"><span class="flabel">Separation</span><div class="math"><span class="op">SSB</span> = <span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>k</i></span></span>&nbsp;<span class="bar">|</span><i>C</i><sub><i>k</i></sub><span class="bar">|</span> <span class="bar">&#8214;</span><i>&mu;</i><sub><i>k</i></sub> &#8722; <i>&mu;</i><span class="bar">&#8214;</span><sup>2</sup>&nbsp;&nbsp;&nbsp;<span class="op">(separation, between-cluster)</span></div><small>How far each cluster centre sits from the overall mean, weighted by cluster size. <b>Higher is better separated.</b></small></div><div class="formula"><span class="flabel">They are two sides of one quantity</span><div class="math"><span class="op">SSE</span> + <span class="op">SSB</span> = <span class="op">SST</span>&nbsp;&nbsp;&nbsp;<span class="op">(a constant, whatever the clustering)</span></div><small><b>The decomposition identity.</b> Total spread is fixed by the data alone, so cohesion and separation are not two independent goals &mdash; improving one <i>necessarily</i> improves the other. This is why minimising SSE and maximising separation are the same objective, and why SSE alone keeps falling as <i>k</i> grows.</small></div><h3>Seven points, two clusters, every term computed</h3><div class="viz" id="wrap-coh"><div class="controls"><button class="ghost" data-act="back" data-viz="coh">&#9664; Back</button><button data-act="step" data-viz="coh">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="coh">Auto-play</button><button class="ghost" data-act="reset" data-viz="coh">Reset</button><span class="stepcount" id="sc-coh">step <em>0</em> of 0</span></div><svg id="svg-coh" viewBox="0 0 560 288"></svg><div class="status" id="st-coh"></div></div><div class="take"><b class="hd">Why SSE cannot choose <i>k</i> for you</b><br>Adding a cluster can only ever lower SSE, and at <i>k</i> = <i>n</i> it reaches zero with every point its own cluster. So you cannot simply minimise it. The elbow method looks for where the <i>improvement</i> stops being worth it, which is a judgement call &mdash; and that is precisely the gap silhouette was designed to fill.</div><div class="ex"><div class="exhd">Worked example &mdash; cohesion, separation, and the identity linking them</div><div class="exgiven">Seven points: A(1,1) B(1.5,2) C(2,1.5) D(7,7) E(7.5,8) F(8,7) G(4.5,4.5), clustered as {A, B, C, G} and {D, E, F}.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Centroid of cluster 1</span><span class="exw"><i>&mu;</i><sub>1</sub> = <span class="paren">(</span><span class="frac"><span class="num">1+1.5+2+4.5</span><span class="den">4</span></span>, <span class="frac"><span class="num">1+2+1.5+4.5</span><span class="den">4</span></span><span class="paren">)</span> = <b>(2.25, 2.25)</b></span></div></li><li><div class="exb"><span class="exl">Cohesion of cluster 1 &mdash; squared distances to that centroid</span><span class="exw">A: 3.125, B: 0.625, C: 0.625, G: <b>10.125</b> &nbsp;&#8594;&nbsp; SSE<sub>1</sub> = <b>14.500</b></span></div></li><li><div class="exb"><span class="exl">Cluster 2 is far tighter</span><span class="exw"><i>&mu;</i><sub>2</sub> = (7.5, 7.333), SSE<sub>2</sub> = <b>1.167</b></span></div></li><li><div class="exb"><span class="exl">Total cohesion</span><span class="exw">SSE = 14.500 + 1.167 = <b>15.667</b></span></div></li><li><div class="exb"><span class="exl">Separation &mdash; centroids against the overall mean <i>&mu;</i> = (4.5, 4.43)</span><span class="exw">SSB = 4&#183;<i>d</i><sup>2</sup>(<i>&mu;</i><sub>1</sub>, <i>&mu;</i>) + 3&#183;<i>d</i><sup>2</sup>(<i>&mu;</i><sub>2</sub>, <i>&mu;</i>) = <b>91.548</b></span></div></li><li><div class="exb"><span class="exl">Now check the identity</span><span class="exw">SSE + SSB = 15.667 + 91.548 = <b>107.214</b>, and SST computed directly = <b>107.214</b> &nbsp;&#10003;</span></div></li></ol><div class="exans">The total is <b>fixed by the data alone</b>. So tightening the clusters must, automatically, separate them further &mdash; they are one objective seen from two sides. Note also that <b>G alone contributes 10.1 of cluster 1's 14.5</b>, which is the first hint that G is in the wrong place.</div></div></div></section>
+<section id="silhouette"><div class="wrap"><h2><span class="num">3</span>Silhouette score</h2><p class="lede">For each point separately: am I closer to my own cluster than to the nearest other one? Its real value is that it gives a verdict <b>per point</b>, so it can tell you which points are misassigned.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Cohesion and separation give one number for the whole clustering. Silhouette gives a number <b>per point</b> &mdash; so instead of “this clustering scores 0.68” you get “these six points are fine and this one is misassigned”, which is something you can act on.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use SSE?&rdquo;</b> SSE measures only tightness, keeps falling as <i>k</i> grows, and cannot be compared across different <i>k</i>. Silhouette is bounded in [&#8722;1, 1], accounts for separation as well, and <i>can</i> be compared across <i>k</i> &mdash; which is why it is the usual tool for choosing it.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You report only the <b>average</b>. A mean of 0.68 can hide one cluster scoring 0.85 and another scoring 0.2, or individual points sitting at &#8722;0.3 in entirely the wrong cluster. The average is the least informative thing silhouette produces.</p></div></div></div><div class="formula"><span class="flabel">The two distances</span><div class="math"><i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span> = <span class="op">mean dist to my own cluster</span>,&nbsp;&nbsp;&nbsp;<i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span> = <span class="op">mean dist to the nearest other cluster</span></div><small>Compute both for every point. <i>a</i> measures cohesion for that one point; <i>b</i> measures separation for it.</small></div><div class="formula"><span class="flabel">The silhouette of one point</span><div class="math"><i>s</i><span class="paren">(</span><i>i</i><span class="paren">)</span> = <span class="frac"><span class="num"><i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span> &#8722; <i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span></span><span class="den"><span class="op">max</span> <span class="paren">[</span><i>a</i><span class="paren">(</span><i>i</i><span class="paren">)</span>, <i>b</i><span class="paren">(</span><i>i</i><span class="paren">)</span><span class="paren">]</span></span></span></div><small>Ranges from &#8722;1 to +1. Near <b>+1</b>: comfortably inside the right cluster. Near <b>0</b>: on the boundary between two. <b>Negative</b>: closer on average to another cluster than to its own &mdash; it is in the wrong one.</small></div><h3>Seven points, one of which is in the wrong cluster</h3><p class="lede">Six points form two obvious groups. Point <b>G</b> sits between them and has been assigned to the left cluster. Step through and watch silhouette find it.</p><div class="viz" id="wrap-sil"><div class="controls"><button class="ghost" data-act="back" data-viz="sil">&#9664; Back</button><button data-act="step" data-viz="sil">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="sil">Auto-play</button><button class="ghost" data-act="reset" data-viz="sil">Reset</button><span class="stepcount" id="sc-sil">step <em>0</em> of 0</span></div><svg id="svg-sil" viewBox="0 0 560 300"></svg><div class="status" id="st-sil"></div></div><table><thead><tr><th>Overall silhouette</th><th>Usual reading</th></tr></thead><tbody><tr><td>0.71 &ndash; 1.00</td><td>strong, well-separated structure</td></tr><tr><td>0.51 &ndash; 0.70</td><td>reasonable structure</td></tr><tr><td>0.26 &ndash; 0.50</td><td>weak &mdash; could easily be artificial</td></tr><tr><td>&le; 0.25</td><td>no substantial structure found</td></tr></tbody></table><div class="take"><b class="hd">Use the per-point plot, not just the average</b><br>The average hides everything interesting. A silhouette <b>plot</b> &mdash; every point's <i>s</i>(<i>i</i>) sorted within its cluster &mdash; shows you a cluster that is much worse than the others, and shows you individual negative bars that mark genuinely misassigned points. That is actionable in a way that a single number never is.</div><div class="ex"><div class="exhd">Worked example &mdash; silhouette for the one point that is in the wrong cluster</div><div class="exgiven">The same seven points. G(4.5, 4.5) has been assigned to the left cluster {A, B, C, G}, but it sits between the two groups. Compute <i>s</i>(G).</div><ol class="exsteps"><li><div class="exb"><span class="exl">Find <i>a</i>(G) &mdash; mean distance to its <b>own</b> cluster</span><span class="exw"><i>d</i>(G,A) = 4.950, &nbsp;<i>d</i>(G,B) = 3.905, &nbsp;<i>d</i>(G,C) = 3.905 &#8594; <i>a</i> = <span class="frac"><span class="num">12.760</span><span class="den">3</span></span> = <b>4.2533</b></span></div></li><li><div class="exb"><span class="exl">Find <i>b</i>(G) &mdash; mean distance to the <b>nearest other</b> cluster</span><span class="exw"><i>d</i>(G,D) = 3.536, &nbsp;<i>d</i>(G,E) = 4.610, &nbsp;<i>d</i>(G,F) = 4.301 &#8594; <i>b</i> = <span class="frac"><span class="num">12.446</span><span class="den">3</span></span> = <b>4.1488</b></span></div></li><li><div class="exb"><span class="exl">Apply the formula</span><span class="exw"><i>s</i>(G) = <span class="frac"><span class="num"><i>b</i> &#8722; <i>a</i></span><span class="den">max(<i>a</i>, <i>b</i>)</span></span> = <span class="frac"><span class="num">4.1488 &#8722; 4.2533</span><span class="den">4.2533</span></span> = <b>&#8722;0.0246</b></span></div></li><li><div class="exb"><span class="exl">Read the sign &mdash; this is the whole point</span><span class="exw"><b>negative</b> means G is on average <i>closer to the other cluster than to its own</i>, so it is in the wrong one</span></div></li><li><div class="exb"><span class="exl">Compare with a well-placed point</span><span class="exw"><i>s</i>(F) = <b>0.858</b>, and every other point scores above 0.73</span></div></li><li><div class="exb"><span class="exl">The overall average</span><span class="exw"><span class="frac"><span class="num">0.736+0.762+0.762+0.842+0.857+0.858 &#8722; 0.025</span><span class="den">7</span></span> = <b>0.6848</b> &mdash; “reasonable structure”</span></div></li></ol><div class="exans">The average of <b>0.685</b> sounds acceptable and tells you nothing. The <b>single negative value</b> tells you exactly which point to move &mdash; which is why the per-point plot is worth far more than the mean.</div></div></div></section>
+<section id="indices"><div class="wrap"><h2><span class="num">4</span>Davies&ndash;Bouldin and Dunn</h2><p class="lede">Two more internal indices, built from the same cohesion and separation ingredients but aggregated differently &mdash; and they disagree with silhouette often enough to be worth knowing.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Silhouette is not the only internal index, and the others aggregate the same ingredients differently &mdash; Davies&ndash;Bouldin averages each cluster's worst pairing, Dunn uses only the two extremes. Knowing more than one matters because they react differently to the same defect.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use silhouette for everything?&rdquo;</b> It costs O(<i>n</i><sup>2</sup>) because it needs every pairwise distance; Davies&ndash;Bouldin needs only centroids and is far cheaper on large data. <b>&ldquo;Why not Dunn, it is the simplest?&rdquo;</b> It uses only the minimum gap and the maximum diameter, so a <b>single outlier</b> inflates the denominator and destroys the score.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You pick whichever index flatters your result. When the three disagree, that disagreement is <b>information</b> &mdash; usually that the clusters are not the compact spheres all three assume &mdash; and choosing the kindest number throws that information away.</p></div></div></div><div class="formula"><span class="flabel">Davies&ndash;Bouldin index</span><div class="math"><span class="op">DB</span> = <span class="frac"><span class="num">1</span><span class="den"><i>K</i></span></span><span class="bigop"><span class="lim"><i>K</i></span><span class="glyph">&#8721;</span><span class="lim"><i>i</i>=1</span></span>&nbsp;<span class="op">max</span><sub><i>j</i>&#8800;<i>i</i></sub> <span class="frac"><span class="num"><i>S</i><sub><i>i</i></sub> + <i>S</i><sub><i>j</i></sub></span><span class="den"><i>M</i><sub><i>i</i><i>j</i></sub></span></span></div><small>For each cluster find its <b>worst</b> partner &mdash; the one whose combined scatter relative to their centroid separation is largest &mdash; then average those worst cases. <b>Lower is better</b>, and 0 is perfect.</small></div><div class="formula"><span class="flabel">Dunn index</span><div class="math"><span class="op">Dunn</span> = <span class="frac"><span class="num"><span class="op">min</span> <span class="op">distance between any two clusters</span></span><span class="den"><span class="op">max</span> <span class="op">diameter of any cluster</span></span></span></div><small>The closest pair of clusters divided by the widest cluster. <b>Higher is better.</b> Because it uses only the two extremes it is very sensitive to a single outlier &mdash; one stray point inflates the denominator and wrecks the score.</small></div><h3>All four indices on the same clustering</h3><div class="viz" id="wrap-idx"><svg id="svg-idx" viewBox="0 0 560 300"></svg><div class="status" id="st-idx"></div></div><div class="warn"><b class="hd">They do not always agree, and that is informative</b><br>When silhouette, Davies&ndash;Bouldin and Dunn disagree, it usually means the clusters are not the compact spheres these indices assume &mdash; different aggregation rules react differently to elongated shapes, unequal sizes and outliers. Disagreement is a signal to look at the data, not to pick whichever index flatters your result.</div><div class="ex"><div class="exhd">Worked example &mdash; three indices on the same clustering</div><div class="exgiven">The same seven points and the same two clusters, with G misplaced. Scatter <i>S</i><sub>1</sub> = 1.633 (dragged up by G), <i>S</i><sub>2</sub> = 0.623, centroid separation <i>M</i><sub>12</sub> = 7.308.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Davies&ndash;Bouldin &mdash; for <i>k</i> = 2 there is only one pairing</span><span class="exw">DB = <span class="frac"><span class="num"><i>S</i><sub>1</sub> + <i>S</i><sub>2</sub></span><span class="den"><i>M</i><sub>12</sub></span></span> = <span class="frac"><span class="num">1.633 + 0.623</span><span class="den">7.308</span></span> = <span class="frac"><span class="num">2.256</span><span class="den">7.308</span></span> = <b>0.3087</b></span></div></li><li><div class="exb"><span class="exl">Read it</span><span class="exw"><b>lower is better</b>, 0 is perfect &mdash; 0.31 is good, but G's contribution to <i>S</i><sub>1</sub> is what keeps it from being better</span></div></li><li><div class="exb"><span class="exl">Dunn &mdash; find the closest pair of points in different clusters</span><span class="exw"><i>d</i>(G, D) = <b>3.536</b>, the smallest inter-cluster distance</span></div></li><li><div class="exb"><span class="exl">Find the largest distance within any one cluster</span><span class="exw"><i>d</i>(A, G) = <b>4.950</b> &mdash; again G, now inflating the diameter</span></div></li><li><div class="exb"><span class="exl">Divide</span><span class="exw">Dunn = <span class="frac"><span class="num">3.536</span><span class="den">4.950</span></span> = <b>0.7143</b>; <b>higher is better</b>, and anything below 1 means some cluster is wider than the gap between clusters</span></div></li><li><div class="exb"><span class="exl">Silhouette, for comparison</span><span class="exw"><b>0.6848</b></span></div></li></ol><div class="exans">All three are reporting the <b>same defect in three different units</b>: G inflates cluster 1's scatter (hurting DB), its diameter (hurting Dunn), and scores negative itself (hurting silhouette). Here they agree &mdash; on elongated clusters they would not, and that would be the signal to look at the data.</div></div></div></section>
+<section id="external"><div class="wrap"><h2><span class="num">5</span>External validation: Rand index and ARI</h2><p class="lede">When you do have ground-truth labels, compare the <b>partitions</b> &mdash; not the cluster names, which are arbitrary.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>When ground-truth labels do exist &mdash; on a benchmark, or on a labelled subset &mdash; you can ask the much stronger question: does this clustering match reality? Comparing <b>pairs</b> of points rather than labels sidesteps the fact that cluster numbering is arbitrary.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just count how many points got the right label?&rdquo;</b> Because there is no “right label” &mdash; the algorithm's cluster 1 might correspond to the truth's cluster 3, and renumbering is not an error. Pair-counting is invariant to that. <b>&ldquo;Why not stop at the Rand index?&rdquo;</b> Because it is inflated by chance agreement.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You report a raw Rand index of 0.71 and call it good. Most pairs of points belong to <b>different</b> clusters under any partition, so they agree for free &mdash; two random partitions already score well above zero. Without the chance correction the number is not interpretable.</p></div></div></div><div class="formula"><span class="flabel">Rand index</span><div class="math"><span class="op">RI</span> = <span class="frac"><span class="num"><i>a</i> + <i>b</i></span><span class="den"><span class="op">all pairs</span> = <span class="frac"><span class="num"><i>n</i><span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den">2</span></span></span></span></div><small>Look at every <b>pair</b> of points. <i>a</i> counts pairs the two partitions agree belong together; <i>b</i> counts pairs they agree belong apart. Comparing pairs sidesteps the fact that cluster labels are arbitrary.</small></div><div class="formula"><span class="flabel">Adjusted Rand Index</span><div class="math"><span class="op">ARI</span> = <span class="frac"><span class="num"><span class="op">RI</span> &#8722; <i>E</i><span class="paren">[</span><span class="op">RI</span><span class="paren">]</span></span><span class="den"><span class="op">max</span><span class="paren">(</span><span class="op">RI</span><span class="paren">)</span> &#8722; <i>E</i><span class="paren">[</span><span class="op">RI</span><span class="paren">]</span></span></span></div><small><b>Adjusted for chance.</b> Two random partitions already agree on a lot of pairs, so a raw Rand index of 0.7 may mean nothing. ARI subtracts the expected agreement: <b>0</b> is chance level and <b>1</b> is a perfect match. Negative is possible and means worse than random.</small></div><h3>Why the adjustment matters</h3><div class="viz" id="wrap-ari"><div class="controls"><button class="ghost" data-act="back" data-viz="ari">&#9664; Back</button><button data-act="step" data-viz="ari">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="ari">Auto-play</button><button class="ghost" data-act="reset" data-viz="ari">Reset</button><span class="stepcount" id="sc-ari">step <em>0</em> of 0</span></div><svg id="svg-ari" viewBox="0 0 560 320"></svg><div class="status" id="st-ari"></div></div><div class="take"><b class="hd">Always report the adjusted version</b><br>On the clustering below, the raw Rand index is <b>0.714</b> &mdash; which sounds respectable &mdash; while the ARI is <b>0.417</b>. The raw figure is inflated because most pairs of points belong to different clusters under <i>any</i> partition, so they agree for free. The same applies to mutual information, which is why NMI and AMI exist alongside it.</div><div class="ex"><div class="exhd">Worked example &mdash; Rand index and ARI on the same clustering</div><div class="exgiven">Seven points. Our clustering: {A, B, C, G} and {D, E, F}. The truth: {A, B, C} and {D, E, F, G} &mdash; so <b>G is the single error</b>.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Count all the pairs</span><span class="exw"><span class="frac"><span class="num">7 &#215; 6</span><span class="den">2</span></span> = <b>21</b> pairs to classify</span></div></li><li><div class="exb"><span class="exl">Count <i>a</i> &mdash; pairs both partitions put <b>together</b></span><span class="exw">{AB, AC, BC} from cluster 1 and {DE, DF, EF} from cluster 2 &#8594; <b>6</b></span></div></li><li><div class="exb"><span class="exl">Count <i>b</i> &mdash; pairs both partitions put <b>apart</b></span><span class="exw"><b>9</b> pairs (every A/B/C against D/E/F)</span></div></li><li><div class="exb"><span class="exl">The disagreements</span><span class="exw">G is grouped with A, B, C by us and with D, E, F by the truth &#8594; <b>6</b> pairs disagree</span></div></li><li><div class="exb"><span class="exl">Rand index</span><span class="exw">RI = <span class="frac"><span class="num"><i>a</i> + <i>b</i></span><span class="den">21</span></span> = <span class="frac"><span class="num">6 + 9</span><span class="den">21</span></span> = <span class="frac"><span class="num">15</span><span class="den">21</span></span> = <b>0.7143</b> &mdash; which sounds respectable</span></div></li><li><div class="exb"><span class="exl">Adjusted Rand index &mdash; subtract the agreement expected by chance</span><span class="exw">ARI = <span class="frac"><span class="num">RI &#8722; E[RI]</span><span class="den">max(RI) &#8722; E[RI]</span></span> = <b>0.4167</b></span></div></li></ol><div class="exans"><b>One misplaced point out of seven drops ARI to 0.417</b> while the raw Rand index still reads 0.714. The raw figure was inflated by the 9 “apart” agreements that any partition gets for nothing. <b>Always report the adjusted version.</b></div></div></div></section>
+<section id="stability"><div class="wrap"><h2><span class="num">6</span>Stability-based evaluation</h2><p class="lede">A different idea entirely: forget geometry and ask whether the <b>same clusters keep appearing</b> when the data is perturbed. Real structure is reproducible; an artefact of one particular sample is not.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Every method so far judges the <b>geometry</b> of one clustering. Stability asks a completely different question: if I perturb the data, do the same groups keep appearing? Real structure is reproducible; an artefact of one particular sample is not.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just trust silhouette to pick <i>k</i>?&rdquo;</b> Silhouette rewards roundness, so on non-spherical clusters it points at the wrong <i>k</i>. Stability makes no shape assumption at all &mdash; it only asks whether the answer survives resampling, which is a genuinely independent line of evidence.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You take the <b>global maximum</b> of the stability curve. <i>k</i> = 2 is the most stable choice on almost any dataset, because cutting something in half is robust whether or not two groups exist. Stability is necessary, not sufficient &mdash; a clustering can be perfectly stable and perfectly wrong.</p></div></div></div><h3>The procedure</h3><div class="grid"><div class="card"><h4>1. Resample</h4><p>Draw many subsamples of the data &mdash; typically 80% without replacement, or a bootstrap.</p></div><div class="card"><h4>2. Cluster each</h4><p>Run the same algorithm with the same <i>k</i> on every subsample.</p></div><div class="card"><h4>3. Compare</h4><p>For each pair of runs, measure agreement (ARI) on the points they share.</p></div><div class="card"><h4>4. Choose <i>k</i></h4><p>The <i>k</i> whose clusterings agree most across resamples is the one the data actually supports.</p></div></div><h3>Stability across <i>k</i> &mdash; and what it picks</h3><div class="viz" id="wrap-stab"><svg id="svg-stab" viewBox="0 0 560 310"></svg><div class="status" id="st-stab"></div></div><div class="warn"><b class="hd">Stability is necessary, not sufficient</b><br>A clustering can be perfectly stable and perfectly wrong. <i>k</i> = 2 is often the most stable choice on almost any dataset simply because splitting in half is robust &mdash; which is why you read the stability curve for a <b>local</b> peak at a sensible <i>k</i>, rather than taking the global maximum. Use it together with silhouette and a look at the data, never alone.</div><div class="ex"><div class="exhd">Worked example &mdash; choosing <i>k</i> from a stability sweep</div><div class="exgiven">For each <i>k</i> from 2 to 8: draw 50 subsamples of 80% of the data, cluster each, and measure the mean ARI between every pair of runs on the points they share.</div><ol class="exsteps"><li><div class="exb"><span class="exl">The procedure for one value of <i>k</i></span><span class="exw">50 runs &#8594; <span class="frac"><span class="num">50 &#215; 49</span><span class="den">2</span></span> = 1 225 pairwise ARI comparisons &#8594; take the mean</span></div></li><li><div class="exb"><span class="exl">Results across <i>k</i></span><span class="exw"><i>k</i>=2: <b>0.94</b> &nbsp;&middot;&nbsp; 3: <b>0.91</b> &nbsp;&middot;&nbsp; 4: 0.72 &nbsp;&middot;&nbsp; 5: 0.58 &nbsp;&middot;&nbsp; 6: 0.49 &nbsp;&middot;&nbsp; 7: 0.44 &nbsp;&middot;&nbsp; 8: 0.38</span></div></li><li><div class="exb"><span class="exl">The naive reading</span><span class="exw">highest stability is at <i>k</i> = 2 &#8594; choose 2</span></div></li><li><div class="exb"><span class="exl">Why that is a trap</span><span class="exw">splitting any dataset in half is robust almost regardless of structure &mdash; <i>k</i> = 2 is nearly always the most stable</span></div></li><li><div class="exb"><span class="exl">Bring in the second criterion</span><span class="exw">silhouette over the same range peaks at <i>k</i> = <b>3</b> (0.68), against 0.52 at <i>k</i> = 2</span></div></li><li><div class="exb"><span class="exl">Combine them</span><span class="exw"><i>k</i> = 3 has <b>high stability (0.91) and the best silhouette</b> &mdash; two independent criteria agreeing is far stronger evidence than either alone</span></div></li></ol><div class="exans"><b>Choose <i>k</i> = 3.</b> Read the stability curve for a <i>local</i> peak where another criterion also agrees, never for the global maximum &mdash; which would hand you <i>k</i> = 2 on essentially any dataset you ever run this on.</div></div></div></section>
+<section id="interpret"><div class="wrap"><h2><span class="num">7</span>Interpretability, case studies and ethics</h2><p class="lede">You have found five clusters. Nobody will act on “cluster 3” until somebody can say what cluster 3 <i>is</i> &mdash; and that step is where unsupervised learning usually succeeds or fails.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A clustering that nobody can describe will not be used. “Cluster 3” is not a finding; “high-value customers who return frequently” is. Interpretation is the step that turns a partition into something a person can act on &mdash; and it is where unsupervised projects most often stall.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just hand over the cluster assignments?&rdquo;</b> Because whoever receives them has to decide what to <i>do</i>, and cannot without knowing what distinguishes the groups. <b>&ldquo;Why not report the cluster means for every feature?&rdquo;</b> That is the right idea but the wrong emphasis &mdash; what matters is which features are <b>discriminative</b>, not which are large.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You name a cluster, and the name becomes the reality. A segment invented for convenience starts being treated as a real kind of person, and then gets different prices, different offers or different scrutiny &mdash; which is how a modelling convenience turns into a decision about someone's life.</p></div></div></div><h3>Why unsupervised results are hard to interpret</h3><div class="grid"><div class="card"><h4>No ground truth</h4><p>There is nothing to check the answer against, so “is this right?” has no direct answer &mdash; only “is this useful?”</p></div><div class="card"><h4>The clusters have no names</h4><p>The algorithm returns indices. Naming them is human work, and the name you choose shapes every decision made afterwards.</p></div><div class="card"><h4>Unstable to small changes</h4><p>Change <i>k</i>, the random seed, the distance metric or the scaling and the clusters move. Which of those versions is the real one?</p></div><div class="card"><h4>Easy to over-read</h4><p>People see meaning in any partition. Run k-Means on pure noise and you will get clusters, and someone will explain them convincingly.</p></div></div><h3>Making a clustering interpretable</h3><div class="viz" id="wrap-profile"><svg id="svg-profile" viewBox="0 0 560 300"></svg><div class="status" id="st-profile"></div></div><table><thead><tr><th>Technique</th><th>What it gives you</th></tr></thead><tbody><tr><td><b>Cluster profiling</b></td><td>mean of each feature per cluster, against the overall mean &mdash; the single most useful thing you can do</td></tr><tr><td><b>Representative examples</b></td><td>the points nearest each centroid: real, concrete cases people can look at</td></tr><tr><td><b>Discriminative features</b></td><td>which features separate this cluster from the rest, rather than which are merely large</td></tr><tr><td><b>Low-dimensional plot</b></td><td>PCA or UMAP coloured by cluster &mdash; to check the clusters are visibly separated and not an artefact</td></tr><tr><td><b>A surrogate tree</b></td><td>fit a shallow decision tree predicting the cluster label; its rules are a readable description</td></tr></tbody></table><div class="warn"><b class="hd">Ethical considerations in pattern discovery</b><br><b>Proxy discrimination:</b> you may exclude protected attributes and still reconstruct them &mdash; postcode, name and purchase history together can identify ethnicity or religion, so a segment can be discriminatory without anyone intending it. <b>Re-identification:</b> small clusters in anonymised data can single people out. <b>Reification:</b> a segment invented for convenience starts being treated as a real kind of person, and then gets different prices or offers. <b>Consent:</b> people who agreed to a service rarely agreed to be profiled by it.</div><div class="take"><b class="hd">The question to ask before acting on any clustering</b><br>Not “is the silhouette good?” but <b>“what happens to someone who ends up in this cluster, and would I be able to justify it to them?”</b> Everything in this unit &mdash; validation, stability, interpretation &mdash; exists to make that question answerable. The metrics are the means; being able to defend the decision is the end.</div><div class="ex"><div class="exhd">Worked example &mdash; turning three anonymous clusters into something actionable</div><div class="exgiven">A retailer's customers, clustered into three groups. Feature means are given in standard deviations from the overall mean, so 0 means typical.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Cluster 1's profile</span><span class="exw">recency &#8722;0.9, frequency <b>+1.4</b>, basket size <b>+1.1</b>, discount use &#8722;0.7, returns &#8722;0.3</span></div></li><li><div class="exb"><span class="exl">Name it from the features that are extreme</span><span class="exw">buys often, spends more, rarely waits for a sale &#8594; <b>“frequent full-price buyers”</b></span></div></li><li><div class="exb"><span class="exl">Cluster 2</span><span class="exw">recency <b>+1.3</b>, frequency &#8722;0.8, discount use <b>+0.9</b> &#8594; <b>“lapsed discount hunters”</b></span></div></li><li><div class="exb"><span class="exl">Cluster 3 &mdash; and this is the instructive one</span><span class="exw">four features within &plusmn;0.6 of the mean, and returns at <b>+1.9</b> &#8594; <b>“high returners”</b></span></div></li><li><div class="exb"><span class="exl">Why cluster 3 matters more than its size suggests</span><span class="exw">it is unremarkable on everything <i>except</i> one feature, so an average over all features would have hidden it entirely</span></div></li><li><div class="exb"><span class="exl">The ethical check before acting</span><span class="exw">does “high returners” correlate with disability, or with a postcode that stands in for income? If so, charging them differently is <b>proxy discrimination</b> even though no protected attribute was used</span></div></li></ol><div class="exans">The useful features are the <b>discriminative</b> ones, not the largest. And the last step is not optional: before acting on a segment, ask <b>what happens to someone who lands in it, and could you justify it to them?</b></div></div></div></section>
+<footer><div class="wrap">INT396 &middot; Unsupervised Learning &middot; Unit VI &mdash; Evaluation and Applications of Unsupervised Learning &mdash; Visual Walkthrough &middot;
+School of Computer Science &amp; Engineering &middot; Session 2026&ndash;27</div></footer>
+<script>
+
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var C={navy:"#182B49",cyan:"#0096C7",purple:"#5C2D91",orange:"#ED771F",
+       green:"#107C41",red:"#B42318",grey:"#9AA7B5",rule:"#D8DFE8",ice:"#7EC5E2"};
+function el(p,n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);
+  p.appendChild(e);return e;}
+function clr(s){while(s.firstChild)s.removeChild(s.firstChild);}
+function line(s,A,B,col,w,dash){var l=el(s,"line",{x1:A.x,y1:A.y,x2:B.x,y2:B.y,
+  stroke:col,"stroke-width":w,"stroke-linecap":"round"});
+  if(dash)l.setAttribute("stroke-dasharray",dash);return l;}
+function dot(s,p,r,fill){return el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill});}
+function nodeC(s,p,label,fill,r){r=r||17;
+  el(s,"circle",{cx:p.x,cy:p.y,r:r,fill:fill,stroke:"#fff","stroke-width":2.5});
+  var t=el(s,"text",{x:p.x,y:p.y+5,"text-anchor":"middle",fill:"#fff","font-size":"14",
+    "font-weight":"600","font-family":"Segoe UI,sans-serif"});t.textContent=label;}
+function txt(s,x,y,str,col,size,anchor,weight){
+  var t=el(s,"text",{x:x,y:y,"text-anchor":anchor||"middle",fill:col||C.navy,
+    "font-size":size||12,"font-weight":weight||"600","font-family":"Segoe UI,sans-serif"});
+  t.textContent=str;return t;}
+function box(s,x,y,w,h,fill,stroke,rx){return el(s,"rect",{x:x,y:y,width:w,height:h,
+  rx:rx===undefined?6:rx,fill:fill,stroke:stroke||"none","stroke-width":1.6});}
+function badge(s,A,B,str){var mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+  el(s,"circle",{cx:mx,cy:my,r:11,fill:"#fff",stroke:C.rule});
+  txt(s,mx,my+4,str,C.navy,12);}
+function arrow(s,A,B,col,w){
+  var dx=B.x-A.x,dy=B.y-A.y,L=Math.sqrt(dx*dx+dy*dy);if(!L)return;
+  var ux=dx/L,uy=dy/L,ex=B.x-ux*20,ey=B.y-uy*20;
+  el(s,"line",{x1:A.x+ux*20,y1:A.y+uy*20,x2:ex,y2:ey,stroke:col,"stroke-width":w||2.6,
+    "stroke-linecap":"round"});
+  var a=8;
+  el(s,"polygon",{points:[ex+","+ey,(ex-ux*a-uy*a*0.6)+","+(ey-uy*a+ux*a*0.6),
+    (ex-ux*a+uy*a*0.6)+","+(ey-uy*a-ux*a*0.6)].join(" "),fill:col});}
+
+/* ---- generic step player, wired to data-viz buttons ---- */
+var VIZ={};
+function register(id,build,render){
+  VIZ[id]={build:build,render:render,steps:[],i:0,timer:null};
+  resetViz(id);
+}
+function resetViz(id){var m=VIZ[id];if(!m)return;
+  m.steps=m.build();m.i=0;stopViz(id);drawViz(id);}
+function drawViz(id){var m=VIZ[id];
+  m.render(document.getElementById("svg-"+id),m.steps[m.i],m.i,m.steps);
+  var st=document.getElementById("st-"+id);
+  if(st)st.innerHTML=m.steps[m.i].msg||"";
+  syncViz(id);}
+/* keep the counter and the buttons honest about where we are */
+function syncViz(id){var m=VIZ[id],last=m.steps.length-1;
+  function btn(a){return document.querySelector(
+    'button[data-act="'+a+'"][data-viz="'+id+'"]');}
+  var b;
+  if((b=btn("step")))b.disabled=m.i>=last;
+  if((b=btn("back")))b.disabled=m.i<=0;
+  var sc=document.getElementById("sc-"+id);
+  if(sc)sc.innerHTML="step <em>"+m.i+"</em> of "+last;
+  var wrap=document.getElementById("wrap-"+id);
+  if(wrap){if(m.i>=last&&last>0)wrap.classList.add("done");
+           else wrap.classList.remove("done");}}
+function stepViz(id){var m=VIZ[id];
+  if(m.i<m.steps.length-1){m.i++;drawViz(id);}
+  if(m.i>=m.steps.length-1)stopViz(id);}
+/* step backwards, so a student can flip between before and after */
+function stepBackViz(id){var m=VIZ[id];
+  if(m.i>0){stopViz(id);m.i--;drawViz(id);}}
+function stopViz(id){var m=VIZ[id];if(m.timer){clearInterval(m.timer);m.timer=null;}
+  var b=document.querySelector('button[data-act="auto"][data-viz="'+id+'"]');
+  if(b)b.textContent="Auto-play";}
+/* ---- practice answers: reveal one, or all of a block ---- */
+document.addEventListener("click",function(e){
+  if(!e.target.closest)return;
+  var one=e.target.closest("button[data-ans]");
+  if(one){var p=document.getElementById(one.getAttribute("data-ans"));
+    if(p){var on=p.classList.toggle("on");
+      one.textContent=on?"Hide answer":"Show answer";}
+    return;}
+  var all=e.target.closest("button[data-all]");
+  if(all){var g=all.getAttribute("data-all"),
+      blk=all.closest(".prac"),show=all.textContent.indexOf("Show")===0;
+    blk.querySelectorAll(".pa").forEach(function(p){
+      p.classList.toggle("on",show);});
+    blk.querySelectorAll("button[data-ans]").forEach(function(b2){
+      b2.textContent=show?"Hide answer":"Show answer";});
+    all.textContent=show?"Hide all answers":"Show all answers";}
+});
+document.addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("button[data-viz]"):null;if(!b)return;
+  var id=b.getAttribute("data-viz"),act=b.getAttribute("data-act"),m=VIZ[id];if(!m)return;
+  if(act==="step")stepViz(id);
+  else if(act==="back")stepBackViz(id);
+  else if(act==="reset")resetViz(id);
+  else if(act==="auto"){
+    if(m.timer){stopViz(id);return;}
+    if(m.i>=m.steps.length-1)resetViz(id);
+    b.textContent="Pause";
+    m.timer=setInterval(function(){if(m.i>=m.steps.length-1)stopViz(id);else stepViz(id);},950);
+  }});
+
+
+var SP=[[1,1],[1.5,2],[2,1.5],[7,7],[7.5,8],[8,7],[4.5,4.5]],
+    SL="ABCDEFG",SLAB=[0,0,0,1,1,1,0],STRUE=[0,0,0,1,1,1,1];
+function sdist(a,b){return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));}
+function centroid(idx){var x=0,y=0;idx.forEach(function(i){x+=SP[i][0];y+=SP[i][1];});
+  return[x/idx.length,y/idx.length];}
+function members(c){var r=[];SLAB.forEach(function(l,i){if(l===c)r.push(i);});return r;}
+/* ---------- cohesion / separation ---------- */
+(function(){
+  function build(){
+    var m0=members(0),m1=members(1),c0=centroid(m0),c1=centroid(m1),
+        g=centroid([0,1,2,3,4,5,6]);
+    var sse0=0,sse1=0;
+    m0.forEach(function(i){sse0+=Math.pow(sdist(SP[i],c0),2);});
+    m1.forEach(function(i){sse1+=Math.pow(sdist(SP[i],c1),2);});
+    var ssb=m0.length*Math.pow(sdist(c0,g),2)+m1.length*Math.pow(sdist(c1,g),2);
+    var sst=0;for(var i=0;i<7;i++)sst+=Math.pow(sdist(SP[i],g),2);
+    return[
+     {k:0,c0:c0,c1:c1,g:g,msg:"Seven points, split into a left cluster {A, B, C, G} and a right cluster {D, E, F}. The two crosses are the cluster centroids; the ring is the overall mean."},
+     {k:1,c0:c0,c1:c1,g:g,sse0:sse0,msg:"<b>Cohesion of cluster 1</b> = sum of squared distances from A, B, C and G to their centroid ("+c0[0].toFixed(2)+", "+c0[1].toFixed(2)+") = <b>"+sse0.toFixed(4)+"</b>. G alone contributes most of it."},
+     {k:2,c0:c0,c1:c1,g:g,sse0:sse0,sse1:sse1,msg:"<b>Cohesion of cluster 2</b> = <b>"+sse1.toFixed(4)+"</b> — far tighter, because D, E and F genuinely sit together."},
+     {k:3,c0:c0,c1:c1,g:g,sse0:sse0,sse1:sse1,ssb:ssb,msg:"<b>Separation (SSB)</b> = 4·d(μ₁, μ)² + 3·d(μ₂, μ)² = <b>"+ssb.toFixed(4)+"</b> — how far the two centroids sit from the overall mean, weighted by size."},
+     {k:4,c0:c0,c1:c1,g:g,sse0:sse0,sse1:sse1,ssb:ssb,sst:sst,done:1,
+      msg:"<b>Check the identity:</b> SSE = "+(sse0+sse1).toFixed(4)+", SSB = "+ssb.toFixed(4)+", and their sum is <b>"+(sse0+sse1+ssb).toFixed(4)+"</b> = SST = "+sst.toFixed(4)+". The total is fixed by the data, so any clustering that tightens the clusters <i>must</i> separate them further — they are one objective, not two."}];}
+  function render(svg,s){
+    clr(svg);var L0=56,R=320,T0=26,B=252;
+    function X(x){return L0+(x-0.2)/8.4*(R-L0);}
+    function Y(y){return B-(y-0.2)/8.4*(B-T0);}
+    box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
+    var cols=[C.cyan,C.purple];
+    if(s.k>=1)members(0).forEach(function(i){
+      line(svg,{x:X(SP[i][0]),y:Y(SP[i][1])},{x:X(s.c0[0]),y:Y(s.c0[1])},"#CFE7F3",1.6);});
+    if(s.k>=2)members(1).forEach(function(i){
+      line(svg,{x:X(SP[i][0]),y:Y(SP[i][1])},{x:X(s.c1[0]),y:Y(s.c1[1])},"#DDD0EE",1.6);});
+    if(s.k>=3){
+      line(svg,{x:X(s.c0[0]),y:Y(s.c0[1])},{x:X(s.g[0]),y:Y(s.g[1])},C.orange,2.2,"4 3");
+      line(svg,{x:X(s.c1[0]),y:Y(s.c1[1])},{x:X(s.g[0]),y:Y(s.g[1])},C.orange,2.2,"4 3");}
+    SP.forEach(function(p,i){
+      dot(svg,{x:X(p[0]),y:Y(p[1])},7,cols[SLAB[i]]);
+      txt(svg,X(p[0]),Y(p[1])-12,SL[i],cols[SLAB[i]],11);});
+    [[s.c0,cols[0]],[s.c1,cols[1]]].forEach(function(e){
+      var cx=X(e[0][0]),cy=Y(e[0][1]);
+      line(svg,{x:cx-8,y:cy},{x:cx+8,y:cy},e[1],3);
+      line(svg,{x:cx,y:cy-8},{x:cx,y:cy+8},e[1],3);});
+    el(svg,"circle",{cx:X(s.g[0]),cy:Y(s.g[1]),r:8,fill:"none",stroke:C.orange,
+      "stroke-width":2.4});
+    txt(svg,X(s.g[0])+16,Y(s.g[1])+4,"μ",C.orange,11,"start","700");
+    var px=R+28;
+    function row(lbl,val,col,y){
+      txt(svg,px,y,lbl,C.grey,10.5,"start","600");
+      txt(svg,px,y+19,val===undefined?"·":val.toFixed(4),
+          val===undefined?"#C8D2DC":(col||C.navy),15,"start","700");}
+    row("cohesion C₁",s.sse0,C.cyan,T0+16);
+    row("cohesion C₂",s.sse1,C.purple,T0+66);
+    row("separation SSB",s.ssb,C.orange,T0+116);
+    if(s.done){
+      line(svg,{x:px,y:T0+178},{x:px+170,y:T0+178},C.rule,1.4);
+      txt(svg,px,T0+196,"SSE + SSB",C.grey,10.5,"start","600");
+      txt(svg,px,T0+215,(s.sse0+s.sse1+s.ssb).toFixed(4),C.green,15,"start","700");
+      txt(svg,px,T0+233,"= SST, a constant",C.green,10,"start","600");}}
+  register("coh",build,render);
+})();
+/* ---------- silhouette ---------- */
+(function(){
+  function ab(i){
+    var same=[],oth=[];
+    for(var j=0;j<7;j++){ if(j===i)continue;
+      (SLAB[j]===SLAB[i]?same:oth).push(sdist(SP[i],SP[j]));}
+    var a=same.reduce(function(x,y){return x+y;},0)/same.length,
+        b=oth.reduce(function(x,y){return x+y;},0)/oth.length;
+    return{a:a,b:b,s:(b-a)/Math.max(a,b)};}
+  function build(){
+    var out=[{k:-1,msg:"Two clusters: {A, B, C, G} on the left and {D, E, F} on the right. G has been put in the left cluster, but look where it sits. Silhouette is computed one point at a time."}];
+    var S=[];
+    for(var i=0;i<7;i++){
+      var r=ab(i);S.push(r.s);
+      out.push({k:i,S:S.slice(),r:r,
+        msg:"<b>"+SL[i]+"</b>: a = "+r.a.toFixed(4)+" (mean distance to its own cluster), b = "+
+          r.b.toFixed(4)+" (to the other) → s = ("+r.b.toFixed(3)+" − "+r.a.toFixed(3)+
+          ") / "+Math.max(r.a,r.b).toFixed(3)+" = <b>"+r.s.toFixed(4)+"</b>. "+
+          (r.s<0?"<b>Negative</b> — G is on average closer to the other cluster than to its own, so it is in the wrong one."
+                :(r.s>0.7?"Comfortably inside the right cluster.":"Reasonably placed."))});}
+    var mean=S.reduce(function(a,b){return a+b;},0)/7;
+    out.push({k:9,S:S.slice(),mean:mean,done:1,
+      msg:"<b>Overall silhouette = "+mean.toFixed(4)+"</b> — “reasonable structure”. But the average hides the point: six values sit above 0.73 and <b>G alone is at "+
+        S[6].toFixed(4)+"</b>. Reading the per-point values tells you exactly which point to move; the average alone never would."});
+    return out;}
+  function render(svg,s){
+    clr(svg);var L0=50,R=276,T0=26,B=246;
+    function X(x){return L0+(x-0.2)/8.4*(R-L0);}
+    function Y(y){return B-(y-0.2)/8.4*(B-T0);}
+    box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
+    var cols=[C.cyan,C.purple];
+    if(s.k>=0&&s.k<7){
+      for(var j=0;j<7;j++){ if(j===s.k)continue;
+        line(svg,{x:X(SP[s.k][0]),y:Y(SP[s.k][1])},{x:X(SP[j][0]),y:Y(SP[j][1])},
+             SLAB[j]===SLAB[s.k]?C.green:"#F0C8C4",SLAB[j]===SLAB[s.k]?2:1.4);}}
+    SP.forEach(function(p,i){
+      var hot=s.k===i;
+      dot(svg,{x:X(p[0]),y:Y(p[1])},hot?9:7,hot?C.orange:cols[SLAB[i]]);
+      txt(svg,X(p[0]),Y(p[1])-13,SL[i],hot?C.orange:cols[SLAB[i]],11);});
+    txt(svg,(L0+R)/2,B+20,"green = own cluster     pink = other cluster",
+        C.grey,10,"middle","400");
+    /* silhouette bars */
+    var bx=R+56,bw=180,zero=bx+28;
+    txt(svg,bx+bw/2,T0-4,"silhouette per point",C.grey,10.5);
+    line(svg,{x:zero,y:T0+6},{x:zero,y:T0+6+7*26},C.rule,1.6);
+    txt(svg,zero,T0+6+7*26+14,"0",C.grey,9.5,"middle","400");
+    txt(svg,zero+(bw-28),T0+6+7*26+14,"+1",C.grey,9.5,"middle","400");
+    for(var i=0;i<7;i++){
+      var y=T0+12+i*26,val=(s.S&&s.S[i]!==undefined)?s.S[i]:null;
+      txt(svg,bx-6,y+11,SL[i],val===null?"#C8D2DC":C.navy,10.5,"end","700");
+      if(val===null)continue;
+      var w=val*(bw-28);
+      box(svg,val>=0?zero:zero+w,y,Math.max(2,Math.abs(w)),17,
+          val<0?C.red:(s.k===i?C.orange:C.green),null,3);
+      txt(svg,zero+Math.max(w,0)+7,y+13,val.toFixed(3),
+          val<0?C.red:C.navy,10,"start","700");}
+    if(s.done){
+      txt(svg,bx+bw/2,T0+6+7*26+34,"mean = "+s.mean.toFixed(4),C.navy,13);
+      txt(svg,bx+bw/2,T0+6+7*26+52,"one negative bar → one misassigned point",
+          C.red,10,"middle","600");}}
+  register("sil",build,render);
+})();
+/* ---------- the four indices ---------- */
+(function(){
+  var svg=document.getElementById("svg-idx"),st=document.getElementById("st-idx");
+  var m0=members(0),m1=members(1),c0=centroid(m0),c1=centroid(m1);
+  var S0=m0.reduce(function(a,i){return a+sdist(SP[i],c0);},0)/m0.length,
+      S1=m1.reduce(function(a,i){return a+sdist(SP[i],c1);},0)/m1.length,
+      M=sdist(c0,c1),DB=(S0+S1)/M;
+  var inter=1e9,intra=0;
+  for(var i=0;i<7;i++)for(var j=0;j<7;j++){ if(i===j)continue;
+    var d=sdist(SP[i],SP[j]);
+    if(SLAB[i]!==SLAB[j])inter=Math.min(inter,d); else intra=Math.max(intra,d);}
+  var DUNN=inter/intra;
+  var sil=0;
+  for(i=0;i<7;i++){var sa=[],so=[];
+    for(j=0;j<7;j++){ if(j===i)continue;(SLAB[j]===SLAB[i]?sa:so).push(sdist(SP[i],SP[j]));}
+    var a=sa.reduce(function(x,y){return x+y;},0)/sa.length,
+        b=so.reduce(function(x,y){return x+y;},0)/so.length;
+    sil+=(b-a)/Math.max(a,b);}
+  sil/=7;
+  var R=[["Silhouette",sil,"higher","0.6848 — reasonable, dragged down by G",C.cyan,sil,1],
+         ["Davies–Bouldin",DB,"lower",
+          "S₁ = "+S0.toFixed(3)+", S₂ = "+S1.toFixed(3)+", M = "+M.toFixed(3),
+          C.purple,1-Math.min(1,DB),1],
+         ["Dunn",DUNN,"higher",
+          "min gap "+inter.toFixed(3)+" ÷ widest cluster "+intra.toFixed(3),C.orange,DUNN,1],
+         ["Cohesion (SSE)",
+          m0.reduce(function(a,i){return a+Math.pow(sdist(SP[i],c0),2);},0)+
+          m1.reduce(function(a,i){return a+Math.pow(sdist(SP[i],c1),2);},0),
+          "lower","14.500 + 1.167, almost all of it from G",C.green,0.4,0]];
+  var W=560,x0=168,bw=200;
+  txt(svg,W/2,20,"the same clustering, judged four ways",C.grey,11);
+  R.forEach(function(r,i){
+    var y=36+i*62;
+    txt(svg,x0-12,y+16,r[0],r[4],11.5,"end","700");
+    txt(svg,x0-12,y+31,r[2]+" is better",C.grey,9.5,"end","400");
+    box(svg,x0,y+4,bw,22,"#F0F2F5",null,5);
+    box(svg,x0,y+4,Math.max(4,bw*Math.max(0,Math.min(1,r[5]))),22,r[4],null,5);
+    txt(svg,x0+bw+10,y+21,r[1].toFixed(4),r[4],13,"start","700");
+    txt(svg,x0,y+42,r[3],C.grey,9.5,"start","400");});
+  txt(svg,W/2,286,"all four are telling you the same thing about G, in different units",
+      C.navy,11,"middle","600");
+  st.innerHTML="Silhouette <b>"+sil.toFixed(4)+"</b> (higher better), Davies–Bouldin <b>"+
+    DB.toFixed(4)+"</b> (lower better), Dunn <b>"+DUNN.toFixed(4)+
+    "</b> (higher better). Here they agree, because the problem — one point sitting "+
+    "between two otherwise tidy clusters — is the kind all three are built to detect. "+
+    "On elongated or unequal clusters they would not agree, and that disagreement would be "+
+    "the useful signal.";
+})();
+/* ---------- Rand / ARI ---------- */
+(function(){
+  function pairsAgree(){
+    var a=0,b=0,c=0,d=0,P=[];
+    for(var i=0;i<7;i++)for(var j=i+1;j<7;j++){
+      var sameP=SLAB[i]===SLAB[j],sameT=STRUE[i]===STRUE[j];
+      if(sameP&&sameT)a++; else if(!sameP&&!sameT)b++;
+      else if(sameP&&!sameT)c++; else d++;
+      P.push({i:i,j:j,sameP:sameP,sameT:sameT,ok:sameP===sameT});}
+    return{a:a,b:b,c:c,d:d,P:P};}
+  function build(){
+    var R=pairsAgree(),tot=21,RI=(R.a+R.b)/tot;
+    /* ARI from the contingency table */
+    var cont=[[0,0],[0,0]];
+    for(var i=0;i<7;i++)cont[SLAB[i]][STRUE[i]]++;
+    function ch2(x){return x*(x-1)/2;}
+    var sumij=0;cont.forEach(function(r){r.forEach(function(x){sumij+=ch2(x);});});
+    var ai=cont.map(function(r){return r[0]+r[1];}),
+        bj=[cont[0][0]+cont[1][0],cont[0][1]+cont[1][1]];
+    var sa=ai.reduce(function(s,x){return s+ch2(x);},0),
+        sb=bj.reduce(function(s,x){return s+ch2(x);},0),
+        exp=sa*sb/ch2(7),mx=(sa+sb)/2;
+    var ARI=(sumij-exp)/(mx-exp);
+    return[
+     {k:0,R:R,msg:"The truth is {A, B, C} and {D, E, F, G} — G really belongs on the right. Our clustering put G on the left. Cluster <i>names</i> are arbitrary, so we compare <b>pairs</b> of points instead."},
+     {k:1,R:R,msg:"<b>a = "+R.a+"</b> pairs that both partitions place <b>together</b>, and <b>b = "+R.b+"</b> pairs that both place <b>apart</b>. Those "+(R.a+R.b)+" pairs are agreements."},
+     {k:2,R:R,RI:RI,msg:"<b>Rand index</b> = ("+R.a+" + "+R.b+") / 21 = <b>"+RI.toFixed(4)+"</b>. That sounds respectable — but notice that "+R.b+" of the "+(R.a+R.b)+" agreements are just pairs placed apart, which happens easily by chance."},
+     {k:3,R:R,RI:RI,ARI:ARI,done:1,
+      msg:"<b>ARI = "+ARI.toFixed(4)+"</b>. Subtracting the agreement you would expect from two random partitions cuts "+RI.toFixed(3)+" down to "+ARI.toFixed(3)+". One misplaced point out of seven costs far more than the raw index suggested — which is why ARI is the one to report."}];}
+  function render(svg,s){
+    clr(svg);var W=560;
+    txt(svg,150,20,"our clustering",C.cyan,11.5);
+    txt(svg,410,20,"ground truth",C.green,11.5);
+    [[SLAB,30,C.cyan],[STRUE,290,C.green]].forEach(function(e){
+      var lab=e[0],ox=e[1];
+      box(svg,ox,30,240,66,"#FAFCFE",C.rule,5);
+      for(var c=0;c<2;c++){
+        var mem=[];lab.forEach(function(l,i){if(l===c)mem.push(i);});
+        txt(svg,ox+16,52+c*28,"{"+mem.map(function(i){return SL[i];}).join(", ")+"}",
+            C.navy,12,"start","600");}});
+    txt(svg,W/2,116,"all 21 pairs",C.grey,10.5);
+    var px=46,py=128;
+    s.R.P.forEach(function(p,q){
+      var x=px+(q%7)*72,y=py+Math.floor(q/7)*34;
+      var show=s.k>=1;
+      box(svg,x,y,66,26,!show?"#F7FAFC":(p.ok?"#E4F6EB":"#FBE9E7"),
+          !show?C.rule:(p.ok?C.green:C.red),4);
+      txt(svg,x+22,y+17,SL[p.i]+SL[p.j],show?C.navy:"#C3CDD8",10.5);
+      if(show)txt(svg,x+48,y+17,p.ok?(p.sameP?"a":"b"):"✗",
+        p.ok?C.green:C.red,10.5,"middle","700");});
+    if(s.k>=2){
+      box(svg,100,236,160,46,"#E6F3FA",C.cyan,5);
+      txt(svg,180,254,"Rand index",C.cyan,10.5);
+      txt(svg,180,274,s.RI.toFixed(4),C.navy,17);}
+    if(s.k>=3){
+      box(svg,300,236,160,46,"#E4F6EB",C.green,5);
+      txt(svg,380,254,"Adjusted Rand",C.green,10.5);
+      txt(svg,380,274,s.ARI.toFixed(4),C.navy,17);
+      txt(svg,280,300,"same clustering — the adjustment removes chance agreement",
+          C.grey,10,"middle","500");}}
+  register("ari",build,render);
+})();
+/* ---------- stability curve ---------- */
+(function(){
+  var svg=document.getElementById("svg-stab"),st=document.getElementById("st-stab");
+  var K=[2,3,4,5,6,7,8],ARI=[0.94,0.91,0.72,0.58,0.49,0.44,0.38],
+      SIL=[0.52,0.68,0.55,0.44,0.38,0.33,0.29];
+  var W=560,L0=62,R=W-120,T0=36,B=228;
+  function X(i){return L0+i/(K.length-1)*(R-L0);}
+  function Y(v){return B-v*(B-T0);}
+  box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
+  for(var g=0.25;g<1;g+=0.25){
+    line(svg,{x:L0,y:Y(g)},{x:R,y:Y(g)},"#F0F4F8",1);
+    txt(svg,L0-8,Y(g)+4,g.toFixed(2),C.grey,9,"end","400");}
+  [[ARI,C.purple,"stability (mean ARI across resamples)"],
+   [SIL,C.cyan,"silhouette"]].forEach(function(e,q){
+    var d="";e[0].forEach(function(v,i){d+=(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1);});
+    el(svg,"path",{d:d,fill:"none",stroke:e[1],"stroke-width":2.8});
+    e[0].forEach(function(v,i){dot(svg,{x:X(i),y:Y(v)},4.2,e[1]);});
+    txt(svg,R+10,T0+14+q*18,e[2].split(" ")[0],e[1],10.5,"start","700");});
+  K.forEach(function(k,i){txt(svg,X(i),B+16,"k="+k,C.grey,9.5,"middle","400");});
+  var best=1;
+  line(svg,{x:X(best),y:T0},{x:X(best),y:B},C.green,2,"4 3");
+  txt(svg,X(best),T0-8,"k = 3",C.green,11);
+  txt(svg,R+10,T0+62,"k=2 is the most",C.grey,9.5,"start","400");
+  txt(svg,R+10,T0+76,"stable — splitting",C.grey,9.5,"start","400");
+  txt(svg,R+10,T0+90,"in half nearly",C.grey,9.5,"start","400");
+  txt(svg,R+10,T0+104,"always is.",C.grey,9.5,"start","400");
+  txt(svg,R+10,T0+126,"k=3 is where",C.green,9.5,"start","700");
+  txt(svg,R+10,T0+140,"both agree.",C.green,9.5,"start","700");
+  txt(svg,(L0+R)/2,B+40,"illustrative curves — the shape is the lesson, not the values",
+      C.grey,10,"middle","400");
+  st.innerHTML="Stability alone would choose <b>k = 2</b>, because cutting a dataset in half "+
+    "is robust almost regardless of whether two groups exist. Silhouette peaks at <b>k = 3</b>, "+
+    "and stability is still high there. <b>Read the stability curve for a local peak where "+
+    "another criterion also agrees</b> — taking the global maximum will hand you k = 2 on "+
+    "nearly any dataset you ever run this on.";
+})();
+/* ---------- cluster profiling ---------- */
+(function(){
+  var svg=document.getElementById("svg-profile"),st=document.getElementById("st-profile");
+  var F=["recency","frequency","basket size","discount use","returns"];
+  var CL=[["Cluster 1",[-0.9,1.4,1.1,-0.7,-0.3],C.cyan,"frequent full-price buyers"],
+          ["Cluster 2",[1.3,-0.8,-0.5,0.9,-0.2],C.purple,"lapsed discount hunters"],
+          ["Cluster 3",[-0.4,0.2,-0.6,0.1,1.9],C.orange,"high returners"]];
+  var W=560,x0=200,half=104,zero=x0+half;
+  txt(svg,W/2,18,"feature means per cluster, in standard deviations from the overall mean",
+      C.grey,10);
+  line(svg,{x:zero,y:30},{x:zero,y:250},C.rule,1.6);
+  txt(svg,zero,264,"overall mean",C.grey,9.5,"middle","400");
+  CL.forEach(function(c,ci){
+    var y0=34+ci*74;
+    txt(svg,22,y0+12,c[0],c[2],11,"start","700");
+    txt(svg,22,y0+26,c[3],C.grey,8.5,"start","400");
+    c[1].forEach(function(v,fi){
+      var y=y0+fi*12,w=v/2*half;
+      box(svg,v>=0?zero:zero+w,y,Math.max(2,Math.abs(w)),9,
+          Math.abs(v)>1?c[2]:"#C9D6E0",null,2);
+      txt(svg,x0-6,y+8,F[fi],Math.abs(v)>1?C.navy:C.grey,8,"end",
+          Math.abs(v)>1?"700":"400");});});
+  txt(svg,W/2,282,"a cluster is only interpretable once you can name what makes it different",
+      C.navy,10.5,"middle","600");
+  st.innerHTML="This single chart does more for interpretability than any metric. "+
+    "<b>Cluster 3</b> is unremarkable on four features and extreme on one — returns — "+
+    "which makes it immediately nameable and immediately actionable. Note that the useful "+
+    "features are the <b>discriminative</b> ones, not the largest ones: a feature that is high "+
+    "in every cluster tells you nothing about any of them.";
+})();
+
+</script>
+</body>
+</html>
