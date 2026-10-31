@@ -76,6 +76,7 @@ body.quiet .take{background:var(--card);border:1px solid var(--rule);
 body.quiet .warn{background:var(--card);border:1px solid var(--rule);
       border-left:3px solid var(--orange);border-radius:4px}
 .pq{font-size:14.8px;line-height:1.68;color:var(--navy);margin-bottom:7px}
+.ptask{display:block;font-size:12.5px;font-weight:700;color:var(--purple);letter-spacing:.02em;margin-bottom:2px}
 .pbtn{font-size:12px;padding:4px 10px}
 .pa{display:none;margin-top:9px;background:#E4F6EB;border-left:3px solid var(--green);
     border-radius:5px;padding:9px 13px;font-size:14.5px;line-height:1.7;color:var(--navy)}
@@ -203,15 +204,15 @@ svg{width:100%;height:auto;display:block;background:#fff;border-radius:6px;max-w
 <header><div class="wrap">
   <div class="eyebrow">INT396 &middot; Unsupervised Learning &middot; Unit V</div>
   <h1>Association Rule Mining and Anomaly Detection &mdash; Visual Walkthrough</h1>
-  <p>Finding what goes together, and finding what does not belong. Step through Apriori's pruning, watch an FP-tree compress seven baskets, and see why two rules with identical confidence can mean opposite things.</p>
+  <p>Finding what goes together, and finding what does not belong. Work Apriori's C and L tables through to the rules, build and mine an FP-tree from the same seven baskets, watch the two run side by side, and see why two rules with identical confidence can mean opposite things.</p>
 </div></header>
 <nav><div class="wrap"><ul><li><a href="#metrics">1 &middot; The four metrics</a></li><li><a href="#apriori">2 &middot; Apriori</a></li><li><a href="#fp">3 &middot; FP-Growth</a></li><li><a href="#anomtypes">4 &middot; Anomaly vs novelty</a></li><li><a href="#iforest">5 &middot; Isolation Forest</a></li><li><a href="#lof">6 &middot; LOF</a></li><li><a href="#apps">7 &middot; Applications</a></li></ul></div></nav>
-<section id="metrics"><div class="wrap"><h2><span class="num">1</span>Support, confidence, lift and conviction</h2><p class="lede">Four numbers that describe one rule <i>A</i> &#8594; <i>B</i>. They are not interchangeable, and reading only the first two is how people end up acting on rules that are worthless.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A transaction database contains millions of co-occurrences, nearly all of them coincidence. These four numbers are how you separate a pattern worth acting on from two popular items that simply happen to be popular at the same time.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just count the commonest pairs?&rdquo;</b> Because the commonest pairs are simply the commonest <i>items</i> &mdash; bread and milk appear together because both appear in almost every basket, which you already knew. <b>&ldquo;Why not stop at confidence?&rdquo;</b> Because confidence is inflated for free by any consequent that is common anyway.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You sort your rules by <b>confidence</b> and act on the top of the list. On the seven baskets below, two rules have <b>identical</b> confidence of 0.600 and opposite meanings &mdash; one is a genuine pattern, the other is negatively associated. Confidence cannot tell them apart; lift can.</p></div></div></div><div class="grid"><div><div class="formula"><span class="flabel">Support</span><div class="math"><span class="op">supp</span><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">baskets with</span> <i>A</i></span><span class="den"><span class="op">all baskets</span></span></span></div><small>How often the itemset occurs at all. A rule with tiny support may be real but is rarely worth acting on.</small></div></div><div><div class="formula"><span class="flabel">Confidence</span><div class="math"><span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">supp</span><span class="paren">(</span><i>A</i> &#8746; <i>B</i><span class="paren">)</span></span><span class="den"><span class="op">supp</span><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></div><small>Of the baskets containing <i>A</i>, what fraction also contain <i>B</i>? This is <i>P</i>(<i>B</i> | <i>A</i>).</small></div></div></div><div class="grid"><div><div class="formula"><span class="flabel">Lift</span><div class="math"><span class="op">lift</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span></span><span class="den"><span class="op">supp</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span></span></div><small>Confidence compared against chance. <b>&gt; 1</b> real, <b>= 1</b> independent, <b>&lt; 1</b> negatively associated.</small></div></div><div><div class="formula"><span class="flabel">Conviction</span><div class="math"><span class="op">conv</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num">1 &#8722; <span class="op">supp</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span><span class="den">1 &#8722; <span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span></span></span></div><small>How often the rule <i>would</i> be wrong by chance, divided by how often it is actually wrong. &#8734; means it never fails.</small></div></div></div><h3>Seven baskets, four numbers, three very different rules</h3><div class="viz" id="wrap-rules"><div class="controls"><button class="ghost" data-act="back" data-viz="rules">&#9664; Back</button><button data-act="step" data-viz="rules">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="rules">Auto-play</button><button class="ghost" data-act="reset" data-viz="rules">Reset</button><span class="stepcount" id="sc-rules">step <em>0</em> of 0</span></div><svg id="svg-rules" viewBox="0 0 560 330"></svg><div class="status" id="st-rules"></div></div><div class="warn"><b class="hd">Confidence is the one that lies</b><br>Two of the rules below have <b>exactly the same confidence of 0.60</b>. One is a genuine pattern and the other is worse than useless. Confidence cannot distinguish them because a consequent that is common anyway earns high confidence for free &mdash; which is precisely what lift corrects for.</div><div class="ex"><div class="exhd">Worked example &mdash; all four metrics for one rule, then the trap</div><div class="exgiven">Seven baskets: {E,J} {B,J,M,U} {E,U} {E,M,U} {B,J,M,U} {B,J,U} {J,M}. B=Bread, J=Jam, U=Butter, M=Milk, E=Eggs.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Rule <b>{Bread} &#8594; {Jam, Butter}</b> &mdash; support</span><span class="exw">all three appear together in baskets 2, 5, 6 &#8594; <span class="frac"><span class="num">3</span><span class="den">7</span></span> = <b>0.4286</b></span></div></li><li><div class="exb"><span class="exl">Confidence &mdash; divide by the support of the antecedent</span><span class="exw">Bread appears in 3 baskets, so conf = <span class="frac"><span class="num">3/7</span><span class="den">3/7</span></span> = <b>1.000</b></span></div></li><li><div class="exb"><span class="exl">Lift &mdash; divide confidence by the consequent's own frequency</span><span class="exw">{Jam, Butter} appears in 3 of 7 &#8594; lift = <span class="frac"><span class="num">1.000</span><span class="den">3/7</span></span> = <b>2.333</b></span></div></li><li><div class="exb"><span class="exl">Conviction &mdash; how often it would fail by chance, over how often it does</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.4286</span><span class="den">1 &#8722; 1.000</span></span> = <span class="frac"><span class="num">0.5714</span><span class="den">0</span></span> = <b>&#8734;</b>, because the rule never fails once</span></div></li><li><div class="exb"><span class="exl">Now the trap: <b>{Jam} &#8594; {Butter}</b></span><span class="exw">support <span class="frac"><span class="num">3</span><span class="den">7</span></span> = 0.4286, conf = <span class="frac"><span class="num">3/7</span><span class="den">5/7</span></span> = <b>0.600</b></span></div></li><li><div class="exb"><span class="exl">Its lift</span><span class="exw">Butter appears in 5 of 7 baskets anyway &#8594; lift = <span class="frac"><span class="num">0.600</span><span class="den">5/7</span></span> = <b>0.840</b>, which is <b>below 1</b></span></div></li><li><div class="exb"><span class="exl">And its conviction</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.714</span><span class="den">1 &#8722; 0.600</span></span> = <span class="frac"><span class="num">0.286</span><span class="den">0.400</span></span> = <b>0.714</b>, also below 1</span></div></li></ol><div class="exans"><b>{Jam} &#8594; {Bread}</b> has the <i>same</i> confidence of 0.600 but a lift of <b>1.40</b>. Identical confidence, opposite conclusions &mdash; which is the entire reason lift and conviction exist.</div></div></div></section>
-<section id="apriori"><div class="wrap"><h2><span class="num">2</span>The Apriori algorithm</h2><p class="lede">Checking every possible itemset is hopeless &mdash; <i>d</i> items give 2<sup><i>d</i></sup> subsets. Apriori makes it tractable with one observation.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>With <i>d</i> items there are 2<sup><i>d</i></sup> possible itemsets &mdash; for a supermarket's 10 000 products that is a number with 3000 digits. Apriori makes the search finite by never counting an itemset that <b>cannot</b> be frequent.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not count everything and filter?&rdquo;</b> Because you cannot even enumerate the candidates, let alone scan the database for each. <b>&ldquo;Why not sample the transactions?&rdquo;</b> You lose exactly the rare-but-real rules that are usually the interesting ones &mdash; the obvious patterns survive sampling, the surprising ones do not.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Set the support threshold too <b>low</b> and the candidate sets explode until the algorithm will not finish; too <b>high</b> and you are left with only the rules you could have guessed. Neither failure announces itself &mdash; one just runs forever and the other returns nothing useful.</p></div></div></div><div class="formula"><span class="flabel">The pruning rule</span><div class="math"><i>X</i> &#8838; <i>Y</i>&nbsp;&nbsp;&#8658;&nbsp;&nbsp;<span class="op">supp</span><span class="paren">(</span><i>X</i><span class="paren">)</span> &#8805; <span class="op">supp</span><span class="paren">(</span><i>Y</i><span class="paren">)</span>&nbsp;&nbsp;&nbsp;&#8658;&nbsp;&nbsp;&nbsp;<span class="op">X infrequent</span> &#8658; <span class="op">every superset infrequent</span></div><small><b>The Apriori principle (downward closure).</b> Adding an item to a set can only ever reduce how many baskets contain it. So the moment an itemset falls below the threshold, every set containing it can be discarded without being counted.</small></div><h3>Level by level, with the pruning visible</h3><div class="viz" id="wrap-apri"><div class="controls"><button class="ghost" data-act="back" data-viz="apri">&#9664; Back</button><button data-act="step" data-viz="apri">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="apri">Auto-play</button><button class="ghost" data-act="reset" data-viz="apri">Reset</button><span class="stepcount" id="sc-apri">step <em>0</em> of 0</span></div><svg id="svg-apri" viewBox="0 0 560 350"></svg><div class="status" id="st-apri"></div></div><div class="take"><b class="hd">Why it is still expensive</b><br>Apriori needs one <b>full pass over the database per level</b>, and the join step can still generate a great many candidates. On dense data with a low support threshold that cost becomes the bottleneck &mdash; which is the problem FP-Growth was invented to solve.</div><div class="ex"><div class="exhd">Worked example &mdash; two levels of Apriori, with the pruning made explicit</div><div class="exgiven">The same seven baskets, minimum support <b>3 of 7</b>.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Level 1 &mdash; count every single item</span><span class="exw">J=5, U=5, M=4, B=3, E=3 &nbsp;&#8594;&nbsp; all five clear the threshold</span></div></li><li><div class="exb"><span class="exl">Level 2 &mdash; join the survivors into pairs</span><span class="exw"><span class="frac"><span class="num">5 &#215; 4</span><span class="den">2</span></span> = <b>10</b> candidate pairs to count</span></div></li><li><div class="exb"><span class="exl">Count them</span><span class="exw">{J,U}=3, {J,M}=3, {J,B}=3, {U,M}=3, {U,B}=3, {M,B}=2, {E,U}=2, {E,M}=1, {E,J}=1, {M,B}&hellip;</span></div></li><li><div class="exb"><span class="exl">Prune &mdash; this is where the saving happens</span><span class="exw">{E,J}, {E,M}, {E,U} and {M,B} all fall below 3 and are <b>dropped</b></span></div></li><li><div class="exb"><span class="exl">Apply downward closure</span><span class="exw">because {E,J} is infrequent, <b>every</b> superset of it &mdash; {E,J,U}, {E,J,M}, {E,J,B}, {E,J,M,U}&hellip; &mdash; is infrequent too, and none is ever counted</span></div></li><li><div class="exb"><span class="exl">Level 3 &mdash; only sets whose every pair survived may be generated</span><span class="exw">{J,U,B} qualifies (all of {J,U}, {J,B}, {U,B} are frequent) &#8594; count it &#8594; <b>3</b> &nbsp;&#10003;</span></div></li><li><div class="exb"><span class="exl">Total work</span><span class="exw"><b>17</b> candidate itemsets counted, over <b>3</b> database passes</span></div></li></ol><div class="exans">Without pruning, level 3 alone would have had <span class="frac"><span class="num">5 &#215; 4 &#215; 3</span><span class="den">6</span></span> = 10 candidates instead of a handful. <b>The largest frequent itemset is {Bread, Jam, Butter} at 3/7</b> &mdash; and that is where the lift-2.33 rule came from.</div></div></div></section>
-<section id="fp"><div class="wrap"><h2><span class="num">3</span>FP-Growth</h2><p class="lede">Compress the whole database into a tree <b>once</b>, then mine the tree. Two passes over the data instead of one per level, and no candidate generation at all.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Apriori's cost is one full database pass <b>per level</b> plus a candidate explosion. FP-Growth compresses the entire database into a tree in two passes and then mines the tree &mdash; no candidates are ever generated at all.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use Apriori, it is simpler to explain?&rdquo;</b> On sparse data with a high threshold it is perfectly adequate. On dense data or a low threshold the candidate generation dominates everything, and FP-Growth wins by a wide margin. <b>&ldquo;Why not always FP-Growth then?&rdquo;</b> The tree must fit in <b>memory</b>; Apriori's working set is much smaller.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Insert the items in the wrong order and the compression disappears. Sorting by <b>descending frequency</b> is what makes transactions share prefixes near the root; insert alphabetically and you get a wide, shallow tree with almost no sharing &mdash; all the cost, none of the benefit.</p></div></div></div><h3>Building the FP-tree</h3><div class="viz" id="wrap-fptree"><div class="controls"><button class="ghost" data-act="back" data-viz="fptree">&#9664; Back</button><button data-act="step" data-viz="fptree">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="fptree">Auto-play</button><button class="ghost" data-act="reset" data-viz="fptree">Reset</button><span class="stepcount" id="sc-fptree">step <em>0</em> of 0</span></div><svg id="svg-fptree" viewBox="0 0 560 340"></svg><div class="status" id="st-fptree"></div></div><table><thead><tr><th></th><th>Apriori</th><th>FP-Growth</th></tr></thead><tbody><tr><td><b>Database passes</b></td><td>one per level</td><td>exactly two</td></tr><tr><td><b>Candidate generation</b></td><td>yes &mdash; the expensive part</td><td>none</td></tr><tr><td><b>Data structure</b></td><td>candidate lists</td><td>a prefix tree plus a header table</td></tr><tr><td><b>Memory</b></td><td>modest</td><td>the tree must fit in memory</td></tr><tr><td><b>Faster when</b></td><td>data is sparse and support is high</td><td>data is dense or support is low &mdash; usually, by a wide margin</td></tr></tbody></table><div class="take"><b class="hd">Why the ordering by frequency matters</b><br>Items are sorted by descending frequency <i>before</i> being inserted, so the most common items sit near the root and the maximum number of transactions share a prefix. Insert in a different order and the tree becomes wide and shallow, the compression disappears, and the algorithm loses its advantage entirely.</div><div class="ex"><div class="exhd">Worked example &mdash; building the FP-tree, and counting what it saved</div><div class="exgiven">The same seven baskets, minimum support 3.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Pass 1 &mdash; count items and discard the infrequent</span><span class="exw">J=5, U=5, M=4, B=3, E=3 &mdash; all five are frequent here, so none is dropped</span></div></li><li><div class="exb"><span class="exl">Fix the global order, descending by count</span><span class="exw"><b>J &#8594; U &#8594; M &#8594; B &#8594; E</b> (ties broken alphabetically)</span></div></li><li><div class="exb"><span class="exl">Pass 2 &mdash; rewrite each basket in that order</span><span class="exw">{E,J}&#8594;JE &nbsp;&middot;&nbsp; {B,J,M,U}&#8594;JUMB &nbsp;&middot;&nbsp; {E,U}&#8594;UE &nbsp;&middot;&nbsp; {E,M,U}&#8594;UME &nbsp;&middot;&nbsp; {B,J,M,U}&#8594;JUMB &nbsp;&middot;&nbsp; {B,J,U}&#8594;JUB &nbsp;&middot;&nbsp; {J,M}&#8594;JM</span></div></li><li><div class="exb"><span class="exl">Insert each path from the root, reusing prefixes</span><span class="exw">JUMB appears <b>twice</b>, so the second insertion creates <b>no new nodes</b> &mdash; it just increments four counters</span></div></li><li><div class="exb"><span class="exl">Count the tree</span><span class="exw"><b>11</b> distinct nodes represent all 7 transactions</span></div></li><li><div class="exb"><span class="exl">Compare the two algorithms on this data</span><span class="exw">Apriori: <b>17</b> candidates counted over <b>3</b> passes. FP-Growth: <b>0</b> candidates, <b>2</b> passes</span></div></li></ol><div class="exans">The saving comes entirely from the <b>frequency ordering</b>: because J and U are commonest they sit nearest the root, so the maximum number of baskets share a prefix. Order the items any other way and the tree stops compressing.</div></div></div></section>
-<section id="anomtypes"><div class="wrap"><h2><span class="num">4</span>Anomaly detection, and how it differs from novelty</h2><p class="lede">The same mathematics, two genuinely different situations &mdash; and mixing them up is the usual cause of a detector that works in testing and fails in production.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Anomaly detection and novelty detection use the same mathematics on two genuinely different situations, and confusing them is the usual reason a detector works in testing and fails in production. The difference is whether your training data is already contaminated with the thing you are hunting.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just train a classifier on fraud versus not-fraud?&rdquo;</b> Because you have almost no positive examples &mdash; often fewer than 1 in 1000 &mdash; and because the frauds that matter most are the ones <b>nobody has seen yet</b>, which by definition are not in your labels. Unsupervised methods can flag a pattern that has never occurred before; a classifier cannot.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You fit a novelty detector on <b>contaminated</b> data. It learns that the anomalies are part of normal, and then obligingly fails to flag them &mdash; a detector that is silent for exactly the reason you built it.</p></div></div></div><div class="grid"><div><div class="grid"><div class="card"><h4>Anomaly detection</h4><p>The training data is <b>contaminated</b> &mdash; it already contains the odd cases you are hunting for. You are asking which of <i>these</i> points are unusual. Isolation Forest and LOF are used this way.</p></div></div></div><div><div class="grid"><div class="card"><h4>Novelty detection</h4><p>The training data is known to be <b>clean</b>. You fit what normal looks like, then ask whether a <i>new</i> point belongs. One-class SVM and autoencoder reconstruction error are used this way.</p></div></div></div></div><table><thead><tr><th>Type</th><th>What it means</th><th>Example</th></tr></thead><tbody><tr><td><b>Point anomaly</b></td><td>a single value unlike the rest</td><td>one transaction of ₹12 lakh on a card that averages ₹3 000</td></tr><tr><td><b>Contextual anomaly</b></td><td>normal in general, abnormal in this context</td><td>₹50 000 of spending is normal &mdash; at 3 a.m. in another country it is not</td></tr><tr><td><b>Collective anomaly</b></td><td>each point is fine; the pattern is not</td><td>a hundred successful logins, each ordinary, all within one minute</td></tr></tbody></table><div class="warn"><b class="hd">The problem that makes this hard</b><br>Anomalies are rare, so the classes are extremely imbalanced; you usually have no labels; what counts as normal <b>drifts</b>; and the cost of a miss and the cost of a false alarm are wildly different and rarely written down. A detector that flags 1% of a million daily transactions produces ten thousand alerts a day &mdash; which no team can review, so in practice it produces none.</div><div class="ex"><div class="exhd">Worked example &mdash; classifying three real alerts by type</div><div class="exgiven">A bank's monitoring system raises three flags on one customer's account in a week.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Flag 1: a single transaction of &#8377;12 lakh on a card averaging &#8377;3 000</span><span class="exw">the value alone is unlike anything else &#8594; <b>point anomaly</b></span></div></li><li><div class="exb"><span class="exl">Flag 2: &#8377;50 000 of spending, at 03:00, in another country</span><span class="exw">&#8377;50 000 is entirely normal for this customer <i>during the day, at home</i> &#8594; <b>contextual anomaly</b></span></div></li><li><div class="exb"><span class="exl">Why flag 2 is harder</span><span class="exw">no single feature is unusual &mdash; only the <b>combination</b> of amount, time and location is, so a per-feature threshold would miss it</span></div></li><li><div class="exb"><span class="exl">Flag 3: 100 successful logins, each ordinary, all inside one minute</span><span class="exw">every individual event is unremarkable; the <b>pattern</b> is not &#8594; <b>collective anomaly</b></span></div></li><li><div class="exb"><span class="exl">Which setting is this?</span><span class="exw">the training data is historical transactions, which certainly contain past fraud &#8594; <b>anomaly detection</b> (contaminated), not novelty detection</span></div></li><li><div class="exb"><span class="exl">So which methods apply?</span><span class="exw">Isolation Forest and LOF, which tolerate contamination &mdash; <b>not</b> one-class SVM, which assumes a clean training set</span></div></li></ol><div class="exans">Three flags, three different kinds of anomaly, and only one of them &mdash; the point anomaly &mdash; would be caught by a simple threshold. <b>Naming the type tells you which method can possibly work.</b></div></div></div></section>
-<section id="iforest"><div class="wrap"><h2><span class="num">5</span>Isolation Forest</h2><p class="lede">Every other method models what normal looks like and measures distance from it. Isolation Forest inverts the question: anomalies are <b>easy to separate</b>, so just see how quickly a random split isolates each point.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Every distance-based detector has to compute distances, which collapses in high dimensions and costs O(<i>n</i><sup>2</sup>). Isolation Forest never computes a distance at all &mdash; it asks how many random cuts it takes to separate a point from the rest, which is cheap, parallel and dimension-tolerant.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not model what normal looks like and measure deviation?&rdquo;</b> That requires estimating a density in high dimensions, which needs far more data than you have. Isolation Forest inverts the question: instead of modelling the many, it looks for the <b>few that are easy to separate</b>. <b>&ldquo;Why random splits rather than good ones?&rdquo;</b> Because averaging over many random trees is what makes the estimate stable, and random is far cheaper.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Use the raw path length instead of the <b>normalised score</b> and the numbers mean nothing across datasets &mdash; a path of 8 is short for <i>n</i> = 10 000 and long for <i>n</i> = 100. The division by <i>c</i>(<i>n</i>) is what makes scores comparable at all.</p></div></div></div><h3>Watch two points get isolated</h3><p class="lede">Split on a random feature at a random value, repeatedly, until a point is alone. Count the splits. An outlier falls out almost immediately; a point in the crowd takes many.</p><div class="viz" id="wrap-iso"><div class="controls"><button class="ghost" data-act="back" data-viz="iso">&#9664; Back</button><button data-act="step" data-viz="iso">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="iso">Auto-play</button><button class="ghost" data-act="reset" data-viz="iso">Reset</button><span class="stepcount" id="sc-iso">step <em>0</em> of 0</span></div><svg id="svg-iso" viewBox="0 0 560 300"></svg><div class="status" id="st-iso"></div></div><div class="formula"><span class="flabel">Turning path length into a score</span><div class="math"><i>s</i><span class="paren">(</span><i>x</i>, <i>n</i><span class="paren">)</span> = 2<sup>&#8722;<span class="frac"><span class="num"><i>E</i><span class="paren">[</span><i>h</i><span class="paren">(</span><i>x</i><span class="paren">)</span><span class="paren">]</span></span><span class="den"><i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span></span></span></sup>,&nbsp;&nbsp;&nbsp;<i>c</i><span class="paren">(</span><i>n</i><span class="paren">)</span> = 2<i>H</i><span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span> &#8722; <span class="frac"><span class="num">2<span class="paren">(</span><i>n</i>&#8722;1<span class="paren">)</span></span><span class="den"><i>n</i></span></span></div><small><b>The score.</b> <i>E</i>[<i>h</i>(<i>x</i>)] is the average number of splits needed across all the trees; <i>c</i>(<i>n</i>) normalises it by what you would expect for a random point. Scores near <b>1</b> are anomalies, near <b>0.5</b> are normal.</small></div><table><thead><tr><th>Average path length (out of <i>n</i> = 256)</th><th>Score <i>s</i></th><th>Reading</th></tr></thead><tbody><tr><td>2</td><td>0.873</td><td>isolated almost at once &mdash; a clear anomaly</td></tr><tr><td>4</td><td>0.763</td><td>suspicious</td></tr><tr><td>8</td><td>0.582</td><td>unremarkable</td></tr><tr><td>12</td><td>0.444</td><td>deep in a dense region &mdash; very normal</td></tr></tbody></table><div class="take"><b class="hd">Why it scales so well</b><br>No distances are ever computed, so there is no <i>O</i><sup></sup>(<i>n</i><sup>2</sup>) distance matrix and no curse of dimensionality through the distance metric. Each tree is built from a small subsample &mdash; 256 points is the usual default &mdash; which makes it linear in <i>n</i> and trivially parallel. It is normally the first thing to try on a large unlabelled dataset.</div><div class="ex"><div class="exhd">Worked example &mdash; turning path length into an anomaly score</div><div class="exgiven">A forest built on subsamples of <i>n</i> = 256. Two points: an outlier isolated after an average of 2 splits, and a crowded point needing 12.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Compute the normaliser <i>c</i>(<i>n</i>)</span><span class="exw"><i>c</i>(<i>n</i>) = 2<i>H</i>(<i>n</i>&#8722;1) &#8722; <span class="frac"><span class="num">2(<i>n</i>&#8722;1)</span><span class="den"><i>n</i></span></span> where <i>H</i> is the harmonic number</span></div></li><li><div class="exb"><span class="exl">Evaluate it for <i>n</i> = 256</span><span class="exw">2(ln 255 + 0.5772) &#8722; <span class="frac"><span class="num">2 &#215; 255</span><span class="den">256</span></span> = 2(6.118) &#8722; 1.992 = <b>10.24</b></span></div></li><li><div class="exb"><span class="exl">Score the outlier, <i>E</i>[<i>h</i>] = 2</span><span class="exw"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num">2</span><span class="den">10.24</span></span></sup> = 2<sup>&#8722;0.195</sup> = <b>0.873</b></span></div></li><li><div class="exb"><span class="exl">Score the crowded point, <i>E</i>[<i>h</i>] = 12</span><span class="exw"><i>s</i> = 2<sup>&#8722;<span class="frac"><span class="num">12</span><span class="den">10.24</span></span></sup> = 2<sup>&#8722;1.172</sup> = <b>0.444</b></span></div></li><li><div class="exb"><span class="exl">Read the scale</span><span class="exw"><i>s</i> near <b>1</b> = isolated almost at once = anomaly; &nbsp;<i>s</i> near <b>0.5</b> = unremarkable; &nbsp;<i>s</i> well below 0.5 = deep inside a dense region</span></div></li><li><div class="exb"><span class="exl">Why this scales</span><span class="exw">no distances, trees built from 256-point subsamples, and every tree independent &#8594; <b>linear in <i>n</i> and trivially parallel</b></span></div></li></ol><div class="exans"><b>0.873 versus 0.444</b> from nothing but a count of random cuts. That is why Isolation Forest is usually the first thing to try on a large unlabelled dataset.</div></div></div></section>
-<section id="lof"><div class="wrap"><h2><span class="num">6</span>Local Outlier Factor</h2><p class="lede">A point can be perfectly normal for its own neighbourhood and look like an outlier globally. LOF compares each point's density against the density of its neighbours, so “unusual” is judged <b>locally</b>.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A point can be perfectly normal for its own neighbourhood and look like an outlier globally &mdash; or the reverse. LOF judges every point against <b>its own local density</b> rather than against the dataset as a whole, which is the only way to handle data with regions of genuinely different density.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use a global distance threshold?&rdquo;</b> Because with one tight cluster and one loose one, any single threshold is wrong for at least one of them: it either floods you with false alarms from the loose cluster or misses real outliers around the tight one. <b>&ldquo;Why not Isolation Forest, it is faster?&rdquo;</b> It is &mdash; but it looks at global separability and will miss a point that is anomalous only <i>relative to its immediate neighbours</i>.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Pick <i>k</i> badly and the score becomes meaningless. Too small and LOF reacts to single-point noise; too large and it stops being local at all, which was the whole point. There is no default that is right for every dataset.</p></div></div></div><div class="formula"><span class="flabel">Step 1: reachability distance</span><div class="math"><span class="op">reach-dist</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span> = <span class="op">max</span> <span class="paren">[</span><span class="op">k-dist</span><span class="paren">(</span><i>B</i><span class="paren">)</span>,&nbsp; <i>d</i><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span><span class="paren">]</span></div><small>Reachability distance from <i>A</i> to <i>B</i>, floored at <i>B</i>'s own k-distance. The floor stops a very close pair producing an explosively large density estimate.</small></div><div class="formula"><span class="flabel">Step 2: local density</span><div class="math"><span class="op">lrd</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num">1</span><span class="den"><span class="frac"><span class="num"><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>B</i> &#8712; <i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></span><span class="den"><span class="bar">|</span><i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span><span class="bar">|</span></span></span>&nbsp;<span class="op">reach-dist</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i>, <i>B</i><span class="paren">)</span></span></span></div><small><b>Local reachability density</b> &mdash; the reciprocal of the average reachability distance to <i>A</i>'s <i>k</i> nearest neighbours. High means tightly packed.</small></div><div class="formula"><span class="flabel">Step 3: the LOF score</span><div class="math"><span class="op">LOF</span><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="bigop"><span class="lim">&nbsp;</span><span class="glyph">&#8721;</span><span class="lim"><i>B</i> &#8712; <i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span>&nbsp;<span class="frac"><span class="num"><span class="op">lrd</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span><span class="den"><span class="op">lrd</span><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></span><span class="den"><span class="bar">|</span><i>N</i><sub><i>k</i></sub><span class="paren">(</span><i>A</i><span class="paren">)</span><span class="bar">|</span></span></span></div><small><b>The ratio that matters.</b> How dense are my neighbours compared with me? &#8776; <b>1</b> means I am as dense as they are &mdash; normal. <b>&gt; 1</b> means they are much denser than me &mdash; I am in a sparse pocket they are not, so I am an outlier.</small></div><h3>Five points, worked through completely</h3><div class="viz" id="wrap-lofviz"><div class="controls"><button class="ghost" data-act="back" data-viz="lofviz">&#9664; Back</button><button data-act="step" data-viz="lofviz">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="lofviz">Auto-play</button><button class="ghost" data-act="reset" data-viz="lofviz">Reset</button><span class="stepcount" id="sc-lofviz">step <em>0</em> of 0</span></div><svg id="svg-lofviz" viewBox="0 0 560 302"></svg><div class="status" id="st-lofviz"></div></div><div class="take"><b class="hd">The case only LOF gets right</b><br>Put a tight cluster next to a loose one, and place a point just outside the tight cluster. Globally it is nowhere near the edge of the data, and a distance-threshold method will not flag it &mdash; but relative to the tight cluster it belongs to, it is clearly sparse. LOF catches it precisely because every comparison is made against the local neighbourhood rather than the dataset as a whole.</div><div class="ex"><div class="exhd">Worked example &mdash; LOF computed in full for five points</div><div class="exgiven">Four points in a tight cluster &mdash; A(1.0, 1.0) B(1.2, 1.4) C(0.8, 1.3) D(1.4, 1.0) &mdash; plus O(4.0, 4.0) on its own. Take <i>k</i> = 2.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Find each point's 2 nearest neighbours and its <i>k</i>-distance</span><span class="exw">A: {C, D}, <i>k</i>-dist <b>0.400</b>; &nbsp;B: {C, A}, <b>0.447</b>; &nbsp;C: {A, B}, <b>0.412</b>; &nbsp;D: {A, B}, <b>0.447</b>; &nbsp;O: {B, D}, <b>3.970</b></span></div></li><li><div class="exb"><span class="exl">Reachability distance floors the true distance at the neighbour's <i>k</i>-distance</span><span class="exw">reach(<i>A</i>,<i>B</i>) = max(<i>k</i>-dist(<i>B</i>), <i>d</i>(<i>A</i>,<i>B</i>))</span></div></li><li><div class="exb"><span class="exl">Local reachability density = 1 / mean reachability to those neighbours</span><span class="exw">lrd(A) = <b>2.327</b>, lrd(B) = <b>2.327</b>, lrd(C) = <b>2.361</b>, lrd(D) = <b>2.361</b>, lrd(O) = <b>0.257</b></span></div></li><li><div class="exb"><span class="exl">LOF = mean neighbour density &#247; my own density</span><span class="exw">LOF(A) = <span class="frac"><span class="num">(2.361 + 2.361)/2</span><span class="den">2.327</span></span> = <b>1.015</b></span></div></li><li><div class="exb"><span class="exl">The rest of the cluster</span><span class="exw">LOF(B) = <b>1.007</b>, LOF(C) = <b>0.986</b>, LOF(D) = <b>0.986</b> &mdash; all essentially 1</span></div></li><li><div class="exb"><span class="exl">And the outlier</span><span class="exw">O's neighbours are about nine times denser than O is &#8594; LOF(O) = <b>9.130</b></span></div></li></ol><div class="exans"><b>&#8776;1.0 for the cluster, 9.13 for O.</b> The threshold is set just above 1, not at any absolute distance &mdash; which is exactly what makes LOF <i>local</i>, and what lets it work when one region of the data is naturally sparser than another.</div></div></div></section>
+<section id="metrics"><div class="wrap"><h2><span class="num">1</span>Support, confidence, lift and conviction</h2><p class="lede">Four numbers that describe one rule <i>A</i> &#8594; <i>B</i>. They are not interchangeable, and reading only the first two is how people end up acting on rules that are worthless.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>A transaction database contains millions of co-occurrences, nearly all of them coincidence. These four numbers are how you separate a pattern worth acting on from two popular items that simply happen to be popular at the same time.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just count the commonest pairs?&rdquo;</b> Because the commonest pairs are simply the commonest <i>items</i> &mdash; bread and milk appear together because both appear in almost every basket, which you already knew. <b>&ldquo;Why not stop at confidence?&rdquo;</b> Because confidence is inflated for free by any consequent that is common anyway.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You sort your rules by <b>confidence</b> and act on the top of the list. On the seven baskets below, two rules have <b>identical</b> confidence of 0.600 and opposite meanings &mdash; one is a genuine pattern, the other is negatively associated. Confidence cannot tell them apart; lift can.</p></div></div></div><div class="grid"><div><div class="formula"><span class="flabel">Support</span><div class="math"><span class="op">supp</span><span class="paren">(</span><i>A</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">baskets with</span> <i>A</i></span><span class="den"><span class="op">all baskets</span></span></span></div><small>How often the itemset occurs at all. A rule with tiny support may be real but is rarely worth acting on.</small></div></div><div><div class="formula"><span class="flabel">Confidence</span><div class="math"><span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">supp</span><span class="paren">(</span><i>A</i> &#8746; <i>B</i><span class="paren">)</span></span><span class="den"><span class="op">supp</span><span class="paren">(</span><i>A</i><span class="paren">)</span></span></span></div><small>Of the baskets containing <i>A</i>, what fraction also contain <i>B</i>? This is <i>P</i>(<i>B</i> | <i>A</i>).</small></div></div></div><div class="grid"><div><div class="formula"><span class="flabel">Lift</span><div class="math"><span class="op">lift</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num"><span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span></span><span class="den"><span class="op">supp</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span></span></div><small>Confidence compared against chance. <b>&gt; 1</b> real, <b>= 1</b> independent, <b>&lt; 1</b> negatively associated.</small></div></div><div><div class="formula"><span class="flabel">Conviction</span><div class="math"><span class="op">conv</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span> = <span class="frac"><span class="num">1 &#8722; <span class="op">supp</span><span class="paren">(</span><i>B</i><span class="paren">)</span></span><span class="den">1 &#8722; <span class="op">conf</span><span class="paren">(</span><i>A</i>&#8594;<i>B</i><span class="paren">)</span></span></span></div><small>How often the rule <i>would</i> be wrong by chance, divided by how often it is actually wrong. &#8734; means it never fails.</small></div></div></div><div class="take"><b class="hd">Why some books write supp(<i>A</i> &#8745; <i>B</i>) instead</b><br>Both are right &mdash; they describe <b>different objects</b>. Here <i>A</i> and <i>B</i> are <b>itemsets</b>, so the rule covers baskets holding every item of <i>A</i> <i>and</i> every item of <i>B</i> &mdash; that is the itemset <i>A</i> &#8746; <i>B</i>, and we count its support. Now write <i>A</i> and <i>B</i> for the <b>events</b> &ldquo;this basket contains <i>A</i>&rdquo; &mdash; equivalently the sets of transactions <i>T</i>(<i>A</i>) and <i>T</i>(<i>B</i>) &mdash; and the very same baskets are the <b>intersection</b> <i>T</i>(<i>A</i>) &#8745; <i>T</i>(<i>B</i>), giving <i>P</i>(<i>A</i> &#8745; <i>B</i>). <b>Adding items to a set can only shrink the baskets that match</b>, which is exactly why union on itemsets equals intersection on transactions: supp(<i>A</i> &#8746; <i>B</i>) = <i>P</i>(<i>A</i> &#8745; <i>B</i>). On the seven baskets below both give <b>3/7</b> for {Jam} &#8594; {Butter}. The one reading that is genuinely wrong is applying &#8745; to the <i>itemsets</i>: {Jam} &#8745; {Butter} = &#8709;, whose support is 1.</div><h3>Seven baskets, four numbers, three very different rules</h3><div class="viz" id="wrap-rules"><div class="controls"><button class="ghost" data-act="back" data-viz="rules">&#9664; Back</button><button data-act="step" data-viz="rules">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="rules">Auto-play</button><button class="ghost" data-act="reset" data-viz="rules">Reset</button><span class="stepcount" id="sc-rules">step <em>0</em> of 0</span></div><svg id="svg-rules" viewBox="0 0 560 330"></svg><div class="status" id="st-rules"></div></div><div class="warn"><b class="hd">Confidence is the one that lies</b><br>Two of the rules below have <b>exactly the same confidence of 0.60</b>. One is a genuine pattern and the other is worse than useless. Confidence cannot distinguish them because a consequent that is common anyway earns high confidence for free &mdash; which is precisely what lift corrects for.</div><div class="ex"><div class="exhd">Worked example &mdash; all four metrics for one rule, then the trap</div><div class="exgiven">Seven baskets: {E,J} {B,J,M,U} {E,U} {E,M,U} {B,J,M,U} {B,J,U} {J,M}. B=Bread, J=Jam, U=Butter, M=Milk, E=Eggs.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Rule <b>{Bread} &#8594; {Jam, Butter}</b> &mdash; support</span><span class="exw">all three appear together in baskets 2, 5, 6 &#8594; <span class="frac"><span class="num">3</span><span class="den">7</span></span> = <b>0.4286</b></span></div></li><li><div class="exb"><span class="exl">Confidence &mdash; divide by the support of the antecedent</span><span class="exw">Bread appears in 3 baskets, so conf = <span class="frac"><span class="num">3/7</span><span class="den">3/7</span></span> = <b>1.000</b></span></div></li><li><div class="exb"><span class="exl">Lift &mdash; divide confidence by the consequent's own frequency</span><span class="exw">{Jam, Butter} appears in 3 of 7 &#8594; lift = <span class="frac"><span class="num">1.000</span><span class="den">3/7</span></span> = <b>2.333</b></span></div></li><li><div class="exb"><span class="exl">Conviction &mdash; how often it would fail by chance, over how often it does</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 0.4286</span><span class="den">1 &#8722; 1.000</span></span> = <span class="frac"><span class="num">0.5714</span><span class="den">0</span></span> = <b>&#8734;</b>, because the rule never fails once</span></div></li><li><div class="exb"><span class="exl">Now the trap: <b>{Jam} &#8594; {Butter}</b></span><span class="exw">support <span class="frac"><span class="num">3</span><span class="den">7</span></span> = 0.4286, conf = <span class="frac"><span class="num">3/7</span><span class="den">5/7</span></span> = <b>0.600</b></span></div></li><li><div class="exb"><span class="exl">Its lift</span><span class="exw">Butter appears in 5 of 7 baskets anyway &#8594; lift = <span class="frac"><span class="num">0.600</span><span class="den">5/7</span></span> = <b>0.840</b>, which is <b>below 1</b></span></div></li><li><div class="exb"><span class="exl">And its conviction</span><span class="exw"><span class="frac"><span class="num">1 &#8722; 5/7</span><span class="den">1 &#8722; 3/5</span></span> = <span class="frac"><span class="num">2/7</span><span class="den">2/5</span></span> = <span class="frac"><span class="num">5</span><span class="den">7</span></span> = <b>0.714</b>, also below 1</span></div></li></ol><div class="exans"><b>{Jam} &#8594; {Bread}</b> has the <i>same</i> confidence of 0.600 but a lift of <b>1.40</b>. Identical confidence, opposite conclusions &mdash; which is the entire reason lift and conviction exist.</div></div></div></section>
+<section id="apriori"><div class="wrap"><h2><span class="num">2</span>The Apriori algorithm</h2><p class="lede">Checking every possible itemset is hopeless &mdash; <i>d</i> items give 2<sup><i>d</i></sup> subsets. Apriori makes it tractable with one observation.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>With <i>d</i> items there are 2<sup><i>d</i></sup> possible itemsets &mdash; for a supermarket's 10 000 products that is a number with 3000 digits. Apriori makes the search finite by never counting an itemset that <b>cannot</b> be frequent.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not count everything and filter?&rdquo;</b> Because you cannot even enumerate the candidates, let alone scan the database for each. <b>&ldquo;Why not sample the transactions?&rdquo;</b> You lose exactly the rare-but-real rules that are usually the interesting ones &mdash; the obvious patterns survive sampling, the surprising ones do not.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Set the support threshold too <b>low</b> and the candidate sets explode until the algorithm will not finish; too <b>high</b> and you are left with only the rules you could have guessed. Neither failure announces itself &mdash; one just runs forever and the other returns nothing useful.</p></div></div></div><div class="formula"><span class="flabel">The pruning rule</span><div class="math"><i>X</i> &#8838; <i>Y</i>&nbsp;&nbsp;&#8658;&nbsp;&nbsp;<span class="op">supp</span><span class="paren">(</span><i>X</i><span class="paren">)</span> &#8805; <span class="op">supp</span><span class="paren">(</span><i>Y</i><span class="paren">)</span>&nbsp;&nbsp;&nbsp;&#8658;&nbsp;&nbsp;&nbsp;<span class="op">X infrequent</span> &#8658; <span class="op">every superset infrequent</span></div><small><b>The Apriori principle (downward closure).</b> Adding an item to a set can only ever reduce how many baskets contain it. So the moment an itemset falls below the threshold, every set containing it can be discarded without being counted.</small></div><h3>Apriori step by step: C1 &#8594; L1 &#8594; C2 &#8594; L2 &#8594; C3 &#8594; L3, then the rules</h3><div class="meth"><div class="methd">The method, as it is done on paper</div><ol><li><b>Scan 1 &#8594; C1.</b> Count the support of every single item. The items that reach the minimum support form <b>L1</b>.</li><li><b>Join &#8594; C<sub>k</sub>.</b> Combine the itemsets of L<sub>k&#8722;1</sub> with each other to form the candidate k-itemsets.</li><li><b>Apriori check.</b> Delete every candidate that has a (k&#8722;1)-item subset missing from L<sub>k&#8722;1</sub>: it cannot be frequent, so it is never counted.</li><li><b>Scan k &#8594; L<sub>k</sub>.</b> Count the remaining candidates in the baskets and keep those that reach the minimum support.</li><li><b>Repeat</b> until a join produces no candidates.</li><li><b>Rules.</b> Split each frequent itemset into X &#8594; Y in every possible way, compute confidence = support(X &#8746; Y) / support(X), and keep the rules that reach the minimum confidence.</li></ol></div><div class="viz" id="wrap-apt"><div class="controls"><button class="ghost" data-act="back" data-viz="apt">&#9664; Back</button><button data-act="step" data-viz="apt">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="apt">Auto-play</button><button class="ghost" data-act="reset" data-viz="apt">Reset</button><span class="stepcount" id="sc-apt">step <em>0</em> of 0</span></div><svg id="svg-apt" viewBox="0 0 760 470"></svg><div class="status" id="st-apt"></div><div class="legend"><span><i style="background:#FBE9E7;border:1.5px solid #B42318"></i>pruned, or below the minimum support</span><span><i style="background:#E4F6EB;border:1.5px solid #107C41"></i>frequent (in L<sub>k</sub>)</span><span><i style="background:#EEF8F2;border:1.5px solid #107C41"></i>strong rule (confidence &#8805; 70%)</span></div></div><div class="take"><b class="hd">Why it is still expensive</b><br>Apriori needs one <b>full pass over the database per level</b>, and the join step can still generate a great many candidates. On dense data with a low support threshold that cost becomes the bottleneck &mdash; which is the problem FP-Growth was invented to solve.</div><div class="ex"><div class="exhd">Worked example &mdash; two levels of Apriori, with the pruning made explicit</div><div class="exgiven">The same seven baskets, minimum support <b>3 of 7</b>.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Level 1 &mdash; count every single item</span><span class="exw">J=5, U=5, M=4, B=3, E=3 &nbsp;&#8594;&nbsp; all five clear the threshold</span></div></li><li><div class="exb"><span class="exl">Level 2 &mdash; join the survivors into pairs</span><span class="exw"><span class="frac"><span class="num">5 &#215; 4</span><span class="den">2</span></span> = <b>10</b> candidate pairs to count</span></div></li><li><div class="exb"><span class="exl">Count them</span><span class="exw">{J,U}=3, {J,M}=3, {J,B}=3, {U,M}=3, {U,B}=3, {M,B}=2, {E,U}=2, {E,M}=1, {E,J}=1, {E,B}=0</span></div></li><li><div class="exb"><span class="exl">Prune &mdash; this is where the saving happens</span><span class="exw">{E,B}, {E,J}, {E,M}, {E,U} and {M,B} all fall below 3 and are <b>dropped</b></span></div></li><li><div class="exb"><span class="exl">Apply downward closure</span><span class="exw">because {E,J} is infrequent, <b>every</b> superset of it &mdash; {E,J,U}, {E,J,M}, {E,J,B}, {E,J,M,U}&hellip; &mdash; is infrequent too, and none is ever counted</span></div></li><li><div class="exb"><span class="exl">Level 3 &mdash; only sets whose every pair survived may be generated</span><span class="exw">{J,U,B} and {J,U,M} qualify (all their pairs are frequent); {J,M,B} and {U,M,B} are pruned because {M,B} is not &#8594; count the two survivors &#8594; {J,U,B} = <b>3</b> &#10003;, {J,U,M} = 2 &#10007;</span></div></li><li><div class="exb"><span class="exl">Total work</span><span class="exw"><b>17</b> candidate itemsets counted, over <b>3</b> database passes</span></div></li></ol><div class="exans">Without pruning, level 3 alone would have had <span class="frac"><span class="num">5 &#215; 4 &#215; 3</span><span class="den">6</span></span> = 10 candidates instead of a handful. <b>The largest frequent itemset is {Bread, Jam, Butter} at 3/7</b> &mdash; and that is where the lift-2.33 rule came from.</div></div></div></section>
+<section id="fp"><div class="wrap"><h2><span class="num">3</span>FP-Growth</h2><p class="lede">Compress the whole database into a tree <b>once</b>, then mine the tree. Two passes over the data instead of one per level, and no candidate generation at all.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Apriori's cost is one full database pass <b>per level</b> plus a candidate explosion. FP-Growth compresses the entire database into a tree in two passes and then mines the tree &mdash; no candidates are ever generated at all.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just use Apriori, it is simpler to explain?&rdquo;</b> On sparse data with a high threshold it is perfectly adequate. On dense data or a low threshold the candidate generation dominates everything, and FP-Growth wins by a wide margin. <b>&ldquo;Why not always FP-Growth then?&rdquo;</b> The tree must fit in <b>memory</b>; Apriori's working set is much smaller.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>Insert the items in the wrong order and the compression disappears. Sorting by <b>descending frequency</b> is what makes transactions share prefixes near the root; insert alphabetically and you get a wide, shallow tree with almost no sharing &mdash; all the cost, none of the benefit.</p></div></div></div><h3>FP-Growth step by step: count, order, build the tree, then mine it</h3><div class="meth"><div class="methd">The method, as it is done on paper</div><ol><li><b>Scan 1.</b> Count the support of every item and delete the items below the minimum support.</li><li><b>Order list L.</b> Sort the frequent items in descending support; break ties alphabetically.</li><li><b>Ordered items.</b> Rewrite every transaction with its frequent items in L order.</li><li><b>Scan 2: build the FP-tree.</b> Start from a <code>null</code> root and insert each ordered transaction as a path: where a matching child already exists, follow it and add 1 to its count; otherwise create a new node with count 1.</li><li><b>Header table and node-links.</b> Each item in L points to its first node, and the nodes of the same item are chained together.</li><li><b>Mine bottom-up</b>, starting from the least frequent item <i>x</i>: (a) its <b>conditional pattern base</b> is the set of prefix paths leading to the <i>x</i> nodes, each carrying that node's count; (b) its <b>conditional FP-tree</b> is those paths with every item whose total count is below the minimum removed; (c) its <b>frequent patterns</b> are <i>x</i> joined with the frequent combinations in that conditional tree.</li></ol></div><div class="viz" id="wrap-fpg"><div class="controls"><button class="ghost" data-act="back" data-viz="fpg">&#9664; Back</button><button data-act="step" data-viz="fpg">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="fpg">Auto-play</button><button class="ghost" data-act="reset" data-viz="fpg">Reset</button><span class="stepcount" id="sc-fpg">step <em>0</em> of 0</span></div><svg id="svg-fpg" viewBox="0 0 760 470"></svg><div class="status" id="st-fpg"></div><div class="legend"><span><i style="background:#107C41;border:1.5px solid #107C41"></i>new node</span><span><i style="background:#ED771F;border:1.5px solid #ED771F"></i>existing node, count + 1</span><span><i style="background:#5C2D91;border:1.5px solid #5C2D91"></i>item being mined</span><span><i style="background:#FDEBD9;border:1.5px solid #ED771F"></i>its prefix paths</span></div></div><div class="take"><b class="hd">Why the ordering by frequency matters</b><br>Items are sorted by descending frequency <i>before</i> being inserted, so the most common items sit near the root and the maximum number of transactions share a prefix. Insert in a different order and the tree becomes wide and shallow, the compression disappears, and the algorithm loses its advantage entirely.</div><div class="ex"><div class="exhd">Worked example &mdash; building the FP-tree, and counting what it saved</div><div class="exgiven">The same seven baskets, minimum support 3.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Pass 1 &mdash; count items and discard the infrequent</span><span class="exw">J=5, U=5, M=4, B=3, E=3 &mdash; all five are frequent here, so none is dropped</span></div></li><li><div class="exb"><span class="exl">Fix the global order, descending by count</span><span class="exw"><b>J &#8594; U &#8594; M &#8594; B &#8594; E</b> (ties broken alphabetically)</span></div></li><li><div class="exb"><span class="exl">Pass 2 &mdash; rewrite each basket in that order</span><span class="exw">{E,J}&#8594;JE &nbsp;&middot;&nbsp; {B,J,M,U}&#8594;JUMB &nbsp;&middot;&nbsp; {E,U}&#8594;UE &nbsp;&middot;&nbsp; {E,M,U}&#8594;UME &nbsp;&middot;&nbsp; {B,J,M,U}&#8594;JUMB &nbsp;&middot;&nbsp; {B,J,U}&#8594;JUB &nbsp;&middot;&nbsp; {J,M}&#8594;JM</span></div></li><li><div class="exb"><span class="exl">Insert each path from the root, reusing prefixes</span><span class="exw">JUMB appears <b>twice</b>, so the second insertion creates <b>no new nodes</b> &mdash; it just increments four counters</span></div></li><li><div class="exb"><span class="exl">Count the tree</span><span class="exw"><b>11</b> distinct nodes represent all 7 transactions</span></div></li><li><div class="exb"><span class="exl">Compare the two algorithms on this data</span><span class="exw">Apriori: <b>17</b> candidates counted over <b>3</b> passes. FP-Growth: <b>0</b> candidates, <b>2</b> passes</span></div></li></ol><div class="exans">The saving comes entirely from the <b>frequency ordering</b>: because J and U are commonest they sit nearest the root, so the maximum number of baskets share a prefix. Order the items any other way and the tree stops compressing.</div></div><div class="ex"><div class="exhd">Worked example &mdash; mining the FP-tree: the table you write in the exam</div><div class="exgiven">Order list L = J, U, M, B, E (J = Jam, U = Butter, M = Milk, B = Bread, E = Eggs), minimum support 3. Mine from the bottom of the header table: E first, then B, M, U and J.</div><table><thead><tr><th>Item</th><th>Conditional pattern base</th><th>Conditional FP-tree</th><th>Frequent patterns generated</th></tr></thead><tbody><tr><td><b>E</b></td><td>{J}:1, {U}:1, {U, M}:1</td><td>empty (J 1, U 2, M 1: all below 3)</td><td>none</td></tr><tr><td><b>B</b></td><td>{J, U, M}:2, {J, U}:1</td><td>J:3 &#8594; U:3 (M 2 dropped)</td><td>{J, B}:3, {U, B}:3, {J, U, B}:3</td></tr><tr><td><b>M</b></td><td>{J, U}:2, {U}:1, {J}:1</td><td>J:3 &#8594; U:2 and U:1</td><td>{J, M}:3, {U, M}:3</td></tr><tr><td><b>U</b></td><td>{J}:3</td><td>J:3</td><td>{J, U}:3</td></tr><tr><td><b>J</b></td><td>empty (J hangs from null)</td><td>&mdash;</td><td>none</td></tr></tbody></table><ol class="exsteps"><li><div class="exb"><span class="exl">Why B gives three patterns</span><span class="exw">its conditional FP-tree is a single path, J:3 &#8594; U:3, and every combination of a single path is frequent at the smallest count on it: {J}, {U} and {J, U} give {J, B}, {U, B} and {J, U, B}, all with support 3</span></div></li><li><div class="exb"><span class="exl">Why M does not give {J, U, M}</span><span class="exw">J and U are each frequent in M's base (3 each), but they lie on one path together only in J:3 &#8594; U:2, so support({J, U, M}) = 2 &lt; 3</span></div></li><li><div class="exb"><span class="exl">Add the single items from scan 1</span><span class="exw">{J}:5, {U}:5, {M}:4, {B}:3, {E}:3</span></div></li></ol><div class="exans"><b>11 frequent itemsets</b> in all: the same 11 that Apriori finds, from two scans and with no candidate generation. The largest, {J, U, B}, is Apriori's {B, J, U}.</div></div><h3>Apriori and FP-Growth side by side, on the same seven baskets</h3><p class="lede">Both algorithms return exactly the same frequent itemsets. What differs is the work: how many times the baskets are read, and how many candidate itemsets have to be generated and counted.</p><div class="viz" id="wrap-cmp"><div class="controls"><button class="ghost" data-act="back" data-viz="cmp">&#9664; Back</button><button data-act="step" data-viz="cmp">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="cmp">Auto-play</button><button class="ghost" data-act="reset" data-viz="cmp">Reset</button><span class="stepcount" id="sc-cmp">step <em>0</em> of 0</span></div><svg id="svg-cmp" viewBox="0 0 760 470"></svg><div class="status" id="st-cmp"></div></div><table><thead><tr><th></th><th>Apriori</th><th>FP-Growth</th></tr></thead><tbody><tr><td><b>On these seven baskets</b></td><td>3 scans, 17 candidates counted, 11 frequent itemsets</td><td>2 scans, 0 candidates, an 11-node tree, the same 11 itemsets</td></tr><tr><td><b>Database passes</b></td><td>one per level</td><td>exactly two</td></tr><tr><td><b>Candidate generation</b></td><td>yes &mdash; the expensive part</td><td>none</td></tr><tr><td><b>Data structure</b></td><td>candidate lists</td><td>a prefix tree plus a header table</td></tr><tr><td><b>Memory</b></td><td>modest</td><td>the tree must fit in memory</td></tr><tr><td><b>Faster when</b></td><td>data is sparse and support is high</td><td>data is dense or support is low &mdash; usually, by a wide margin</td></tr></tbody></table></div></section>
+<section id="anomtypes"><div class="wrap"><h2><span class="num">4</span>Anomaly detection, and how it differs from novelty</h2><p class="lede">The same mathematics, two genuinely different situations &mdash; and mixing them up is the usual cause of a detector that works in testing and fails in production.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>Anomaly detection and novelty detection use the same mathematics on two genuinely different situations, and confusing them is the usual reason a detector works in testing and fails in production. The difference is whether your training data is already contaminated with the thing you are hunting.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not just train a classifier on fraud versus not-fraud?&rdquo;</b> Because you have almost no positive examples &mdash; often fewer than 1 in 1000 &mdash; and because the frauds that matter most are the ones <b>nobody has seen yet</b>, which by definition are not in your labels. Unsupervised methods can flag a pattern that has never occurred before; a classifier cannot.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You fit a novelty detector on <b>contaminated</b> data. It learns that the anomalies are part of normal, and then obligingly fails to flag them &mdash; a detector that is silent for exactly the reason you built it.</p></div></div></div><div class="grid"><div><div class="grid"><div class="card"><h4>Anomaly detection</h4><p>The training data is <b>contaminated</b> &mdash; it already contains the odd cases you are hunting for. You are asking which of <i>these</i> points are unusual. Isolation Forest and LOF (sections 5 and 6) are used this way.</p></div></div></div><div><div class="grid"><div class="card"><h4>Novelty detection</h4><p>The training data is known to be <b>clean</b>. You fit what normal looks like, then ask whether a <i>new</i> point belongs. One-class SVM and autoencoder reconstruction error are used this way.</p></div></div></div></div><h3>Side by side: outlier detection versus novelty detection</h3><p class="lede">Same kind of data, two different jobs. Step through both, and see the mistake that happens when they are mixed up.</p><div class="viz" id="wrap-nov"><div class="controls"><button class="ghost" data-act="back" data-viz="nov">&#9664; Back</button><button data-act="step" data-viz="nov">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="nov">Auto-play</button><button class="ghost" data-act="reset" data-viz="nov">Reset</button><span class="stepcount" id="sc-nov">step <em>0</em> of 0</span></div><svg id="svg-nov" viewBox="0 0 760 470"></svg><div class="status" id="st-nov"></div><div class="legend"><span><i style="background:#ED771F;border:1.5px solid #ED771F"></i>colour = distance to the 3 nearest neighbours</span><span><i style="background:#B42318;border:1.5px solid #B42318"></i>flagged, or novel</span><span><i style="background:#107C41;border:1.5px solid #107C41"></i>new point judged normal</span><span><i style="background:#E8E0F2;border:1.5px solid #5C2D91"></i>learned region of normal</span></div></div><table><thead><tr><th></th><th>Outlier (anomaly) detection</th><th>Novelty detection</th></tr></thead><tbody><tr><td><b>Data you learn from</b></td><td>already contains the odd cases, unmarked</td><td>known to be clean: normal cases only</td></tr><tr><td><b>The question</b></td><td>which of <i>these</i> points are odd?</td><td>is this <i>new</i> point odd?</td></tr><tr><td><b>What gets checked</b></td><td>the same data you learned from</td><td>only new data that arrives later</td></tr><tr><td><b>Example</b></td><td>checking last year&rsquo;s card transactions for fraud</td><td>a new machine learns its healthy first month, then checks every new reading</td></tr><tr><td><b>Goes wrong when</b></td><td>you guess the wrong share of odd cases: too many or too few flags</td><td>the &ldquo;clean&rdquo; data was not clean, so the odd cases look normal</td></tr></tbody></table><div class="take"><b class="hd">The one-line test</b><br>Ask: <b>could the data I learn from already contain the odd cases?</b> If yes, or if you are not sure, it is outlier detection. Only if you are sure the data is clean is it novelty detection.</div><h3>Three kinds of anomaly</h3><table><thead><tr><th>Type</th><th>What it means</th><th>Example</th></tr></thead><tbody><tr><td><b>Point anomaly</b></td><td>a single value unlike the rest</td><td>one transaction of ₹12 lakh on a card that averages ₹3 000</td></tr><tr><td><b>Contextual anomaly</b></td><td>normal in general, abnormal in this context</td><td>₹50 000 of spending is normal &mdash; at 3 a.m. in another country it is not</td></tr><tr><td><b>Collective anomaly</b></td><td>each point is fine; the pattern is not</td><td>a hundred successful logins, each ordinary, all within one minute</td></tr></tbody></table><h3>Families of anomaly detectors</h3><table><thead><tr><th>Family</th><th>Idea</th><th>Examples</th><th>Needs clean data?</th></tr></thead><tbody><tr><td><b>Statistical</b></td><td>flag values far outside the usual range</td><td>z-score above 3; the IQR rule</td><td>no</td></tr><tr><td><b>Distance and density</b></td><td>an odd point is far from its neighbours</td><td>distance to the nearest neighbours; DBSCAN noise (Unit 3); LOF (section 6)</td><td>no</td></tr><tr><td><b>Isolation</b></td><td>an odd point is easy to cut off with random splits</td><td>Isolation Forest (section 5)</td><td>no</td></tr><tr><td><b>Boundary of normal</b></td><td>draw a boundary around normal data</td><td>one-class SVM</td><td>yes</td></tr><tr><td><b>Reconstruction</b></td><td>rebuild the data; what rebuilds badly is odd</td><td>autoencoder or PCA reconstruction error (Unit 4)</td><td>yes</td></tr></tbody></table><div class="warn"><b class="hd">The problem that makes this hard</b><br>Anomalies are rare, so the classes are extremely imbalanced; you usually have no labels; what counts as normal <b>drifts</b>; and the cost of a miss and the cost of a false alarm are wildly different and rarely written down. A detector that flags 1% of a million daily transactions produces ten thousand alerts a day &mdash; which no team can review, so in practice it produces none.</div><div class="ex"><div class="exhd">Worked example &mdash; classifying three real alerts by type</div><div class="exgiven">A bank's monitoring system raises three flags on one customer's account in a week.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Flag 1: a single transaction of &#8377;12 lakh on a card averaging &#8377;3 000</span><span class="exw">the value alone is unlike anything else &#8594; <b>point anomaly</b></span></div></li><li><div class="exb"><span class="exl">Flag 2: &#8377;50 000 of spending, at 03:00, in another country</span><span class="exw">&#8377;50 000 is entirely normal for this customer <i>during the day, at home</i> &#8594; <b>contextual anomaly</b></span></div></li><li><div class="exb"><span class="exl">Why flag 2 is harder</span><span class="exw">no single feature is unusual &mdash; only the <b>combination</b> of amount, time and location is, so a per-feature threshold would miss it</span></div></li><li><div class="exb"><span class="exl">Flag 3: 100 successful logins, each ordinary, all inside one minute</span><span class="exw">every individual event is unremarkable; the <b>pattern</b> is not &#8594; <b>collective anomaly</b></span></div></li><li><div class="exb"><span class="exl">Which setting is this?</span><span class="exw">the training data is historical transactions, which certainly contain past fraud &#8594; <b>anomaly detection</b> (contaminated), not novelty detection</span></div></li><li><div class="exb"><span class="exl">So which methods apply?</span><span class="exw">Isolation Forest and LOF (sections 5 and 6), which tolerate contamination &mdash; <b>not</b> one-class SVM, which assumes a clean training set</span></div></li></ol><div class="exans">Three flags, three different kinds of anomaly, and only one of them &mdash; the point anomaly &mdash; would be caught by a simple threshold. <b>Naming the type tells you which method can possibly work.</b></div></div><div class="prac"><div class="prhd">Practice: outlier or novelty detection, and which kind of anomaly?<button class="ghost pall" data-all="prn">Show all answers</button></div><ol><li><div class="pq"><span class="ptask">Answer: outlier detection or novelty detection? Give the reason.</span>A bank checks last year&rsquo;s 2 million card transactions, some of which it knows were fraud, to list the most suspicious ones.</div><button class="ghost pbtn" data-ans="prn-1">Show answer</button><div class="pa" id="prn-1"><b>Outlier detection.</b> The bank checks the same data it learns from, and that data already contains fraud.</div></li><li><div class="pq"><span class="ptask">Answer: outlier detection or novelty detection? Give the reason.</span>A wind-turbine maker records sensor readings during each turbine&rsquo;s first month, when it is known to run perfectly, and then checks every new reading against that record.</div><button class="ghost pbtn" data-ans="prn-2">Show answer</button><div class="pa" id="prn-2"><b>Novelty detection.</b> It learns from clean data and judges only the new readings.</div></li><li><div class="pq"><span class="ptask">Answer: outlier detection or novelty detection? Give the reason.</span>A phone&rsquo;s face unlock is trained only on its owner&rsquo;s face and must reject every other face.</div><button class="ghost pbtn" data-ans="prn-3">Show answer</button><div class="pa" id="prn-3"><b>Novelty detection.</b> It learns one known face from clean examples; any new face that does not match is novel.</div></li><li><div class="pq"><span class="ptask">Answer: outlier detection or novelty detection? Give the reason.</span>A university wants to spot unusual records among this year&rsquo;s exam results before publishing them.</div><button class="ghost pbtn" data-ans="prn-4">Show answer</button><div class="pa" id="prn-4"><b>Outlier detection.</b> Any odd records are inside the very data being checked, and nothing is marked.</div></li><li><div class="pq"><span class="ptask">Answer: why is the attack not flagged, and what should the team do?</span>A team learns what normal looks like from all of last month&rsquo;s network traffic, which included an attack. When the same attack happens again, it is not flagged.</div><button class="ghost pbtn" data-ans="prn-5">Show answer</button><div class="pa" id="prn-5">The training data was <b>not clean</b>: the attack was learned as normal. Clean the data first, or treat it as <b>outlier detection</b> and check last month&rsquo;s data itself.</div></li><li><div class="pq"><span class="ptask">Answer: which kind of anomaly is it: point, contextual or collective?</span>A room sensor that always reads between 20 and 30 &deg;C suddenly reports 900 &deg;C.</div><button class="ghost pbtn" data-ans="prn-6">Show answer</button><div class="pa" id="prn-6"><b>Point anomaly.</b> The value on its own is unlike every other reading.</div></li><li><div class="pq"><span class="ptask">Answer: which kind of anomaly is it: point, contextual or collective?</span>A temperature of 40 &deg;C is ordinary in Delhi in June. The same reading in Delhi in January is flagged.</div><button class="ghost pbtn" data-ans="prn-7">Show answer</button><div class="pa" id="prn-7"><b>Contextual anomaly.</b> The value is normal in general but odd in this context, the month.</div></li><li><div class="pq"><span class="ptask">Answer: which kind of anomaly is it: point, contextual or collective?</span>A shop&rsquo;s daily sales figures are each perfectly ordinary, but they are exactly the same amount for 30 days in a row.</div><button class="ghost pbtn" data-ans="prn-8">Show answer</button><div class="pa" id="prn-8"><b>Collective anomaly.</b> Each day on its own is fine; the pattern of 30 identical days is not.</div></li></ol></div></div></section>
+<section id="iforest"><div class="wrap"><h2><span class="num">5</span>Isolation Forest</h2><p class="lede">An odd point is easy to separate from the rest. Isolation Forest cuts the data at random and checks how quickly each point ends up on its own.</p><div class="why"><div class="whyhd">Isolation Forest in one minute</div><div class="whygrid"><div class="wq w1"><h5>What it is</h5><p>A method for finding anomalies. It builds many random trees; each tree keeps cutting the data at random until every point is on its own.</p></div><div class="wq w2"><h5>The key idea</h5><p>An odd point, far from the rest, is cut off after only a <b>few</b> cuts. A normal point inside a group needs <b>many</b> cuts.</p></div><div class="wq w3"><h5>The result</h5><p>Every point gets a score between 0 and 1. <b>Close to 1</b>: anomaly. <b>About 0.5 or less</b>: normal.</p></div></div></div><h3>Watch two points get isolated</h3><p class="lede">Split on a random feature at a random value, repeatedly, until a point is alone. Count the splits. An outlier falls out almost immediately; a point in the crowd takes many.</p><div class="viz" id="wrap-iso"><div class="controls"><button class="ghost" data-act="back" data-viz="iso">&#9664; Back</button><button data-act="step" data-viz="iso">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="iso">Auto-play</button><button class="ghost" data-act="reset" data-viz="iso">Reset</button><span class="stepcount" id="sc-iso">step <em>0</em> of 0</span></div><svg id="svg-iso" viewBox="0 0 560 300"></svg><div class="status" id="st-iso"></div></div><div class="meth"><div class="methd">How it works, in four steps</div><ol><li><b>Cut at random.</b> Pick a feature at random, then a random cut value between its smallest and largest value.</li><li><b>Keep cutting</b> until every point is on its own. The number of cuts a point needed is its <b>path length</b>.</li><li><b>Build many trees</b> (usually 100), each with different random cuts, and average each point&rsquo;s path length.</li><li><b>Score.</b> A short average path gives a score close to 1 (anomaly); an ordinary path gives about 0.5 (normal). <small style="color:var(--grey)">For reference: <i>s</i>(<i>x</i>) = 2<sup>&#8722;<i>E</i>[<i>h</i>(<i>x</i>)] / <i>c</i>(<i>n</i>)</sup>, where <i>E</i>[<i>h</i>(<i>x</i>)] is the average path length and <i>c</i>(<i>n</i>) the average path length expected for <i>n</i> points.</small></li></ol></div><table><thead><tr><th>How quickly the point is isolated</th><th>Score</th><th>Meaning</th></tr></thead><tbody><tr><td>after very few cuts</td><td>close to 1</td><td><b>anomaly</b></td></tr><tr><td>after an average number of cuts</td><td>about 0.5</td><td>normal</td></tr><tr><td>after many cuts (deep inside a group)</td><td>below 0.5</td><td>clearly normal</td></tr></tbody></table><div class="take"><b class="hd">Why it is popular</b><br>It never measures distances between points; it only counts cuts. That makes it fast, even on millions of rows, so it is often the first method to try.</div><div class="prac"><div class="prhd">Practice: Isolation Forest<button class="ghost pall" data-all="pri">Show all answers</button></div><ol><li><div class="pq"><span class="ptask">Answer: state the main idea in one or two lines.</span>Isolation Forest finds anomalies without measuring any distances between points. How does it do it?</div><button class="ghost pbtn" data-ans="pri-1">Show answer</button><div class="pa" id="pri-1">It cuts the data at random again and again. An odd point ends up on its own after only <b>a few cuts</b>; a normal point inside a group needs <b>many cuts</b>. Few cuts means anomaly.</div></li><li><div class="pq"><span class="ptask">Find: which point is more likely an anomaly? Give the reason.</span>In one isolation tree, point P is on its own after 2 cuts and point Q after 7 cuts.</div><button class="ghost pbtn" data-ans="pri-2">Show answer</button><div class="pa" id="pri-2"><b>P.</b> It needed fewer cuts, so it is easier to separate from the rest.</div></li><li><div class="pq"><span class="ptask">Answer: what does each score mean?</span>Isolation Forest gives point A a score of 0.92 and point B a score of 0.48.</div><button class="ghost pbtn" data-ans="pri-3">Show answer</button><div class="pa" id="pri-3"><b>A</b> (0.92, close to 1) is an <b>anomaly</b>. <b>B</b> (0.48, about 0.5) is <b>normal</b>.</div></li><li><div class="pq"><span class="ptask">Answer: give the reason.</span>Isolation Forest builds many trees, usually 100, instead of just one.</div><button class="ghost pbtn" data-ans="pri-4">Show answer</button><div class="pa" id="pri-4">The cuts are random, so one tree can be lucky or unlucky for a point. <b>Averaging many trees</b> gives a steady result.</div></li><li><div class="pq"><span class="ptask">Answer: true or false? Give the reason.</span>&ldquo;Isolation Forest is slow on big data because it measures the distance between every pair of points.&rdquo;</div><button class="ghost pbtn" data-ans="pri-5">Show answer</button><div class="pa" id="pri-5"><b>False.</b> It never measures distances; it only counts cuts. That is why it is fast, even on millions of rows.</div></li></ol></div></div></section>
+<section id="lof"><div class="wrap"><h2><span class="num">6</span>Local Outlier Factor</h2><p class="lede">LOF asks one question for every point: is this point in a much emptier spot than its neighbours are? If yes, it is an outlier.</p><div class="why"><div class="whyhd">LOF in one minute</div><div class="whygrid"><div class="wq w1"><h5>What it is</h5><p>A method for finding anomalies by comparing how <b>crowded</b> each point&rsquo;s neighbourhood is with how crowded its neighbours&rsquo; neighbourhoods are.</p></div><div class="wq w2"><h5>The key idea</h5><p>A normal point is about as crowded as its neighbours. An outlier sits in an empty spot while its neighbours sit in crowded ones.</p></div><div class="wq w3"><h5>The result</h5><p>LOF <b>about 1</b>: normal. LOF <b>clearly above 1</b> (for example 1.5 or more): outlier.</p></div></div></div><h3>See it on a picture</h3><p class="lede">Each circle reaches a point&rsquo;s 3 nearest neighbours. A small circle means a crowded spot; a big circle means an empty one.</p><div class="viz" id="wrap-lofs"><div class="controls"><button class="ghost" data-act="back" data-viz="lofs">&#9664; Back</button><button data-act="step" data-viz="lofs">Step &#9654;</button><button class="ghost" data-act="auto" data-viz="lofs">Auto-play</button><button class="ghost" data-act="reset" data-viz="lofs">Reset</button><span class="stepcount" id="sc-lofs">step <em>0</em> of 0</span></div><svg id="svg-lofs" viewBox="0 0 760 470"></svg><div class="status" id="st-lofs"></div><div class="legend"><span><i style="background:#ED771F;border:1.5px solid #ED771F"></i>the point being checked</span><span><i style="background:#5C2D91;border:1.5px solid #5C2D91"></i>its 3 nearest neighbours</span><span><i style="background:#fff;border:1.5px solid #B42318"></i>flagged as an outlier</span></div></div><div class="meth"><div class="methd">How it works, in three steps</div><ol><li><b>Find the neighbours.</b> For every point, find its <i>k</i> nearest neighbours (for example <i>k</i> = 3).</li><li><b>Measure how crowded it is.</b> The closer its neighbours, the more crowded the point&rsquo;s spot. This is its <b>local density</b>.</li><li><b>Compare.</b> LOF = how crowded the neighbours are &divide; how crowded the point is. About 1 means normal; much more than 1 means outlier.</li></ol></div><div class="warn"><b class="hd">Why &ldquo;local&rdquo; matters</b><br>Some groups are naturally spread out, others are tight. A point just outside a tight group can be closer to its neighbours than normal points of a spread-out group are to theirs, so one distance rule for the whole data would miss it. LOF compares each point only with its own neighbours, so it catches it.</div><div class="take"><b class="hd">Isolation Forest or LOF?</b><br>Isolation Forest is faster on very large data. LOF is better when the data has groups of different density, because it judges each point locally.</div><div class="prac"><div class="prhd">Practice: Local Outlier Factor<button class="ghost pall" data-all="prl">Show all answers</button></div><ol><li><div class="pq"><span class="ptask">Answer: what two things does LOF compare?</span>LOF gives every point a score by comparing two things.</div><button class="ghost pbtn" data-ans="prl-1">Show answer</button><div class="pa" id="prl-1">How <b>crowded</b> the point&rsquo;s own neighbourhood is, and how crowded its <b>neighbours&rsquo;</b> neighbourhoods are.</div></li><li><div class="pq"><span class="ptask">Find: which point is the outlier? Give the reason.</span>Point A has LOF = 1.02 and point B has LOF = 4.5.</div><button class="ghost pbtn" data-ans="prl-2">Show answer</button><div class="pa" id="prl-2"><b>B.</b> Its spot is about 4.5 times emptier than its neighbours&rsquo; spots. A (about 1) is as crowded as its neighbours, so it is normal.</div></li><li><div class="pq"><span class="ptask">Answer: why is it called &ldquo;local&rdquo;?</span>The method is called <i>Local</i> Outlier Factor.</div><button class="ghost pbtn" data-ans="prl-3">Show answer</button><div class="pa" id="prl-3">Each point is compared only with <b>its own neighbours</b>, not with the whole data. So a spread-out group is not flagged just for being spread out, and a point just outside a tight group is still caught.</div></li><li><div class="pq"><span class="ptask">Answer: which method suits better, LOF or Isolation Forest? Give the reason.</span>A dataset has one tight group and one spread-out group, and you need the points that are odd compared with their own neighbours.</div><button class="ghost pbtn" data-ans="prl-4">Show answer</button><div class="pa" id="prl-4"><b>LOF</b>, because it judges each point against its own neighbours. Isolation Forest only looks at how easy a point is to cut off from all the data.</div></li></ol></div></div></section>
 <section id="apps"><div class="wrap"><h2><span class="num">7</span>Applications: market basket, cybersecurity and fraud</h2><p class="lede">Three settings where these two families of method do the work.</p><div class="why"><div class="whyhd">Why this, and why not something else</div><div class="whygrid"><div class="wq w1"><h5>Why we do this</h5><p>These methods earn their place wherever labels arrive late, incompletely, or describe only attacks that have already happened. A method that needs no labels can flag the pattern nobody has seen before &mdash; which, in fraud and intrusion detection, is the only kind that matters.</p></div><div class="wq w2"><h5>Why not just do the simpler thing?</h5><p><b>&ldquo;Why not a supervised model trained on confirmed fraud?&rdquo;</b> Use one &mdash; but it can only recognise fraud that <i>resembles past fraud</i>, and attackers change tactics precisely to avoid that. The usual production design is both: unsupervised detection generates candidates, a supervised model ranks them.</p></div><div class="wq w3"><h5>What goes wrong if you skip it</h5><p>You set the threshold by the model's statistics instead of by <b>how many alerts a team can review</b>. A detector flagging 1% of a million daily transactions produces ten thousand alerts; nobody reads them, so within a fortnight the system catches <b>nothing</b> despite excellent AUC.</p></div></div></div><div class="grid"><div class="card"><h4>Market basket analysis</h4><p>Store layout, bundling, and recommendation. The classic lesson is that the valuable rules are the <b>surprising</b> ones &mdash; high lift on items nobody would have paired. A rule linking bread and butter has high confidence and tells you nothing you did not know.</p></div><div class="card"><h4>Intrusion detection</h4><p>Normal network traffic forms dense regions in feature space; an intrusion is a connection pattern outside them. Unsupervised methods matter here because the attacks that hurt most are the ones nobody has a signature for yet.</p></div><div class="card"><h4>Payment fraud</h4><p>Overwhelmingly imbalanced &mdash; often fewer than one in a thousand. Anomaly detection generates candidates and a supervised model (trained on confirmed fraud) ranks them, because neither approach is sufficient alone.</p></div><div class="card"><h4>Why unsupervised, specifically</h4><p>In all three, labels arrive late, are incomplete, and describe attacks that have already happened. A method that needs no labels can flag the pattern that has never been seen before &mdash; which is the only kind that matters.</p></div></div><h3>Where the thresholds actually bite</h3><div class="viz" id="wrap-alerts"><svg id="svg-alerts" viewBox="0 0 560 290"></svg><div class="status" id="st-alerts"></div></div><div class="take"><b class="hd">The number that decides whether the system is used</b><br>Not accuracy, not AUC &mdash; <b>how many alerts a day</b>, against how many a team can genuinely investigate. A detector with excellent statistics that produces more alerts than anyone can read is worth nothing, because within a fortnight everybody ignores it. The threshold is set by the review capacity, and the model is then judged on how much real fraud it catches within that budget.</div><div class="ex"><div class="exhd">Worked example &mdash; setting the threshold from review capacity, not from AUC</div><div class="exgiven">A bank processes <b>1 000 000</b> transactions a day. About <b>0.1%</b> are fraudulent, so roughly 1 000 real cases. The investigation team can review <b>200</b> alerts a day.</div><ol class="exsteps"><li><div class="exb"><span class="exl">Threshold at the top 5% of anomaly score</span><span class="exw">0.05 &#215; 1 000 000 = <b>50 000</b> alerts/day &mdash; 250&#215; the team's capacity</span></div></li><li><div class="exb"><span class="exl">Top 1%</span><span class="exw"><b>10 000</b> alerts/day &mdash; still 50&#215; over</span></div></li><li><div class="exb"><span class="exl">Top 0.1%</span><span class="exw"><b>1 000</b> alerts/day &mdash; 5&#215; over; the queue grows by 800 every day</span></div></li><li><div class="exb"><span class="exl">Top 0.02% &mdash; the only one that fits</span><span class="exw"><b>200</b> alerts/day &#8594; exactly reviewable</span></div></li><li><div class="exb"><span class="exl">Now ask the question that matters</span><span class="exw">of the 1 000 real frauds, how many land in those top 200? That is <b>recall at the operating point</b>, and it is the only number worth quoting</span></div></li><li><div class="exb"><span class="exl">Suppose the model puts 150 of them there</span><span class="exw">recall@200 = <span class="frac"><span class="num">150</span><span class="den">1000</span></span> = <b>15%</b>, precision = <span class="frac"><span class="num">150</span><span class="den">200</span></span> = <b>75%</b></span></div></li></ol><div class="exans"><b>Capacity sets the threshold; the model is then judged on recall at that threshold.</b> A model with better AUC that only reaches 12% recall@200 is the worse system here &mdash; which is why the headline metric and the deployed metric are rarely the same.</div></div></div></section>
 <footer><div class="wrap">INT396 &middot; Unsupervised Learning &middot; Unit V &mdash; Association Rule Mining and Anomaly Detection &mdash; Visual Walkthrough &middot;
 School of Computer Science &amp; Engineering &middot; Session 2026&ndash;27</div></footer>
@@ -375,176 +376,653 @@ function bkey(a){return a.slice().sort().join("");}
       line(svg,{x:xs[2]+26,y:176},{x:xs[2]+26,y:218},C.orange,2);}}
   register("rules",build,render);
 })();
-/* ---------- Apriori ---------- */
-(function(){
-  var MIN=3,N=BASKETS.length,ITEMS="BEJMU".split("");
+/* ---------- shared: the transactions table at the left of the two step-by-step walkthroughs ---------- */
+function txTable(svg,o){
+  var x0=14,y0=24,rh=23,ord=o.ord,w=ord?258:200,cx=ord?[14,52,150]:[14,52],yb=y0+22+BASKETS.length*rh;
+  txt(svg,x0,15,"Transactions",C.grey,10.5,"start","700");
+  box(svg,x0,y0,w,22,C.navy,null,0);
+  (ord?["TID","items","ordered by L"]:["TID","items"]).forEach(function(h,i){
+    txt(svg,cx[i]+8,y0+15,h,"#fff",10.5,"start","700");});
+  BASKETS.forEach(function(t,q){
+    var y=y0+22+q*rh,cur=o.cur===q;
+    box(svg,x0,y,w,rh,cur?"#FFF3E0":(q%2?"#F2F7FB":"#fff"),cur?C.orange:C.rule,0);
+    txt(svg,cx[0]+8,y+16,"T"+(q+1),C.grey,10.5,"start","700");
+    txt(svg,cx[1]+8,y+16,t.slice().sort().join(", "),C.navy,11,"start","600");
+    if(ord&&o.showOrd)txt(svg,cx[2]+8,y+16,ord[q].join(", "),cur?C.orange:C.purple,11,"start","700");
+    if(o.done!==undefined&&q<=o.done&&!cur)txt(svg,x0+w-8,y+16,"✓",C.green,11,"end","700");});
+  for(var i=1;i<cx.length;i++)line(svg,{x:cx[i],y:y0+22},{x:cx[i],y:yb},C.rule,1);
+  txt(svg,x0,yb+18,"B Bread · E Eggs · J Jam · M Milk · U Butter",C.grey,10,"start","600");
+  txt(svg,x0,yb+34,o.note||"minimum support = 3 of 7 baskets",C.grey,10,"start","600");}
+
+/* ---------- shared: Apriori run once on the seven baskets (levels, pruning, rules) ---------- */
+var APR=(function(){
+  var MIN=3,N=BASKETS.length,ITEMS=Object.keys(INAME).sort(),levels=[],k=1;
   function cnt(s){return Math.round(bsup(s)*N);}
-  function build(){
-    var out=[{lv:[],cand:[],k:0,
-      msg:"Minimum support <b>3 of 7</b>. Apriori counts one level at a time and uses each level's survivors to build the next."}];
-    var Lk=ITEMS.map(function(i){return[i];}),k=1,all=[];
-    while(Lk.length){
-      var counted=Lk.map(function(s){return{s:s,c:cnt(s)};});
-      var keep=counted.filter(function(o){return o.c>=MIN;});
-      out.push({lv:all.slice(),cand:counted,k:k,phase:"count",
-        msg:"<b>Level "+k+", count:</b> "+counted.map(function(o){
-          return "{"+bkey(o.s)+"} = "+o.c;}).join(", ")+"."});
-      var dead=counted.filter(function(o){return o.c<MIN;});
-      out.push({lv:all.slice(),cand:counted,keep:keep.map(function(o){return bkey(o.s);}),
-        k:k,phase:"prune",
-        msg:dead.length
-          ?("<b>Prune:</b> "+dead.map(function(o){return "{"+bkey(o.s)+"}";}).join(", ")+
-            " fall short. By downward closure every superset of them is infrequent too, so those are never counted — that is the saving.")
-          :"<b>Prune:</b> everything clears the threshold at this level."});
-      all=all.concat(keep.map(function(o){return{s:o.s,c:o.c,k:k};}));
-      var nxt=[],seen={},keys=keep.map(function(o){return bkey(o.s);});
-      for(var i=0;i<keep.length;i++)for(var j=i+1;j<keep.length;j++){
-        var u={},arr=[];
-        keep[i].s.concat(keep[j].s).forEach(function(x){if(!u[x]){u[x]=1;arr.push(x);}});
-        if(arr.length!==k+1)continue;
-        var kk=bkey(arr);if(seen[kk])continue;
-        var ok=true;
-        for(var q=0;q<arr.length;q++){
-          var sub=arr.slice();sub.splice(q,1);
-          if(keys.indexOf(bkey(sub))<0){ok=false;break;}}
-        if(!ok)continue;
-        seen[kk]=1;nxt.push(arr.sort());}
-      if(!nxt.length){
-        out.push({lv:all.slice(),cand:[],k:k,phase:"end",
-          msg:"<b>No level-"+(k+1)+" candidates survive the join, so the search stops.</b> The largest frequent itemset is <b>{Bread, Jam, Butter}</b> with support 3/7 — and that is where the useful rules come from."});
-        break;}
-      out.push({lv:all.slice(),cand:nxt.map(function(s){return{s:s,c:null};}),
-        k:k+1,phase:"join",
-        msg:"<b>Join → level "+(k+1)+":</b> "+nxt.map(function(s){
-          return "{"+bkey(s)+"}";}).join(", ")+". Only these need a database pass."});
-      Lk=nxt;k++;}
+  var cand=ITEMS.map(function(i){return{s:[i],why:null};});
+  while(cand.length){
+    cand.forEach(function(o){if(!o.why)o.c=cnt(o.s);});
+    var Lk=cand.filter(function(o){return !o.why&&o.c>=MIN;});
+    levels.push({k:k,cand:cand,L:Lk});
+    var keys=Lk.map(function(o){return o.s.join("");}),seen={},nxt=[];
+    for(var i=0;i<Lk.length;i++)for(var j=i+1;j<Lk.length;j++){
+      var u=Lk[i].s.concat(Lk[j].s).filter(function(x,q,a){return a.indexOf(x)===q;}).sort();
+      if(u.length!==k+1||seen[u.join("")])continue;
+      seen[u.join("")]=1;
+      var bad=null;
+      for(var q=0;q<u.length&&!bad;q++){var sub=u.slice();sub.splice(q,1);
+        if(keys.indexOf(sub.join(""))<0)bad=sub;}
+      nxt.push({s:u,why:bad});}
+    cand=nxt;k++;}
+  var top=levels.filter(function(l){return l.L.length;}).pop().L[0].s,rules=[];
+  function combos(a,r){var out=[];
+    (function go(st,acc){if(acc.length===r){out.push(acc.slice());return;}
+      for(var i=st;i<a.length;i++){acc.push(a[i]);go(i+1,acc);acc.pop();}})(0,[]);
     return out;}
-  function render(svg,s){
-    clr(svg);var W=560;
-    txt(svg,W/2,20,"frequent itemsets confirmed so far",C.grey,11);
-    var y=36;
-    for(var lev=1;lev<=3;lev++){
-      var row=s.lv.filter(function(o){return o.k===lev;});
-      if(!row.length)continue;
-      txt(svg,28,y+18,"L"+lev,C.grey,11,"start","700");
-      var x=60;
-      row.forEach(function(o){
-        var lbl=bkey(o.s),wd=Math.max(46,lbl.length*13+28);
-        box(svg,x,y,wd,26,"#E4F6EB",C.green,5);
-        txt(svg,x+wd/2,y+18,lbl+" :"+o.c,C.navy,11.5);x+=wd+8;});
-      y+=34;}
-    if(!s.lv.length)txt(svg,W/2,y+16,"(none yet)",C.grey,11,"middle","400");
-    y=Math.max(y+18,146);
-    txt(svg,W/2,y,s.phase==="join"?("level "+s.k+" candidates — generated, not yet counted")
-        :(s.phase==="prune"?("level "+s.k+" — pruning")
-        :(s.phase==="end"?"search complete":"level "+s.k+" — counting")),
-        s.phase==="join"?C.purple:(s.phase==="end"?C.green:C.orange),11.5);
-    y+=14;var x2=44,r2=0;
-    (s.cand||[]).forEach(function(o){
-      var lbl=bkey(o.s),wd=Math.max(50,lbl.length*13+34);
-      if(x2+wd>W-28){x2=44;r2++;}
-      var dead=s.phase==="prune"&&s.keep&&s.keep.indexOf(lbl)<0;
-      box(svg,x2,y+r2*32,wd,26,dead?"#FBE9E7":(o.c===null?"#F3EEFB":"#FDEBD9"),
-          dead?C.red:(o.c===null?C.purple:C.orange),5);
-      txt(svg,x2+wd/2,y+18+r2*32,lbl+(o.c===null?"":" :"+o.c),dead?C.red:C.navy,11.5);
-      if(dead)line(svg,{x:x2+5,y:y+13+r2*32},{x:x2+wd-5,y:y+13+r2*32},C.red,1.8);
-      x2+=wd+8;});
-    txt(svg,28,330,"baskets:",C.grey,10,"start","700");
-    BASKETS.forEach(function(t,q){
-      txt(svg,92+q*66,330,"T"+(q+1)+" "+t.slice().sort().join(""),C.navy,9.5,"start","600");});}
-  register("apri",build,render);
+  for(var r=top.length-1;r>=1;r--)combos(top,r).forEach(function(X){
+    var Y=top.filter(function(i){return X.indexOf(i)<0;});
+    rules.push({X:X,Y:Y,num:cnt(top),den:cnt(X),conf:cnt(top)/cnt(X)});});
+  var nf=0,cc=0,pr=0;
+  levels.forEach(function(l){nf+=l.L.length;
+    cc+=l.cand.filter(function(o){return !o.why;}).length;
+    pr+=l.cand.filter(function(o){return o.why;}).length;});
+  return{MIN:MIN,MINCONF:0.7,levels:levels,top:top,rules:rules,cnt:cnt,
+         scans:levels.length,counted:cc,pruned:pr,frequent:nf};
 })();
-/* ---------- FP-tree ---------- */
-(function(){
-  var MIN=3;
-  function build(){
-    var freq={};
-    BASKETS.forEach(function(t){t.forEach(function(i){freq[i]=(freq[i]||0)+1;});});
-    var order=Object.keys(freq).filter(function(i){return freq[i]>=MIN;})
-      .sort(function(a,b){return freq[b]-freq[a]||(a<b?-1:1);});
-    var out=[{tree:null,k:-1,freq:freq,order:order,
-      msg:"<b>Pass 1:</b> count every item. "+order.map(function(i){
-        return INAME[i]+" "+freq[i];}).join(", ")+". Items below support 3 are dropped now and never appear in the tree."}];
-    var root={c:"root",n:0,ch:{}};
-    BASKETS.forEach(function(t,ti){
-      var items=order.filter(function(i){return t.indexOf(i)>=0;});
-      var node=root;
-      items.forEach(function(i){
-        if(!node.ch[i])node.ch[i]={c:i,n:0,ch:{}};
-        node=node.ch[i];node.n++;});
-      out.push({tree:JSON.parse(JSON.stringify(root)),k:ti,path:items,order:order,freq:freq,
-        msg:"<b>T"+(ti+1)+"</b> = {"+t.slice().sort().map(function(x){return INAME[x];}).join(", ")+
-          "} → keep and sort by frequency → <b>"+
-          (items.length?items.map(function(x){return INAME[x];}).join(" → "):"(nothing frequent)")+
-          "</b>. "+(items.length?"Walk from the root, reusing any prefix that already exists and incrementing its count.":"Nothing to insert.")});});
-    out.push({tree:JSON.parse(JSON.stringify(root)),k:9,order:order,freq:freq,done:1,
-      msg:"<b>Tree complete after exactly two passes.</b> Every basket is now represented, shared prefixes are stored once, and mining proceeds by walking the tree — no candidate itemsets are ever generated."});
+
+/* ---------- shared: FP-Growth run once (order list, tree, node-links, mining) ---------- */
+var FPD=(function(){
+  var MIN=3,freq={};
+  BASKETS.forEach(function(t){t.forEach(function(i){freq[i]=(freq[i]||0)+1;});});
+  var L=Object.keys(freq).filter(function(i){return freq[i]>=MIN;})
+    .sort(function(a,b){return freq[b]-freq[a]||(a<b?-1:1);});
+  var ORD=BASKETS.map(function(t){return L.filter(function(i){return t.indexOf(i)>=0;});});
+  /* build the finished tree once, remembering when each node was born and every count after every basket */
+  var NODES=[{id:0,item:null,par:-1,ch:{},d:0,born:-1}],HIST=[],INS=[];
+  ORD.forEach(function(items,t){
+    var cur=0,path=[],fresh=[],c=t?HIST[t-1].slice():[];
+    items.forEach(function(i){
+      var nx=NODES[cur].ch[i];
+      if(nx===undefined){nx=NODES.length;fresh.push(nx);
+        NODES.push({id:nx,item:i,par:cur,ch:{},d:NODES[cur].d+1,born:t});
+        NODES[cur].ch[i]=nx;}
+      c[nx]=(c[nx]||0)+1;path.push(nx);cur=nx;});
+    HIST.push(c);INS.push({path:path,fresh:fresh});});
+  var CNT=HIST[HIST.length-1],nLeaf=0;
+  /* tidy layout: leaves on evenly spaced slots, every parent centred over its children */
+  (function lay(id){var k=Object.keys(NODES[id].ch);
+    if(!k.length){NODES[id].lx=nLeaf++;return;}
+    k.forEach(function(c){lay(NODES[id].ch[c]);});
+    NODES[id].lx=k.reduce(function(s,c){return s+NODES[NODES[id].ch[c]].lx;},0)/k.length;})(0);
+  var LINKS={};
+  L.forEach(function(i){LINKS[i]=NODES.filter(function(n){return n.item===i;})
+    .map(function(n){return n.id;});});
+  function up(id){var p=[],n=NODES[NODES[id].par];
+    while(n.item){p.unshift(n.id);n=NODES[n.par];}return p;}
+  function inL(a){return a.slice().sort(function(x,y){return L.indexOf(x)-L.indexOf(y);});}
+  function rank(a){return inL(a).map(function(i){return L.indexOf(i);}).join("");}
+  /* FP-growth on a pattern base: every frequent itemset that ends in `suffix` */
+  function growth(base,suffix,out){
+    var c={};
+    base.forEach(function(e){e.p.forEach(function(i){c[i]=(c[i]||0)+e.c;});});
+    var keep=L.filter(function(i){return (c[i]||0)>=MIN;});
+    keep.slice().reverse().forEach(function(i){
+      var pat=[i].concat(suffix),sub=[];
+      out.push({s:pat,c:c[i]});
+      base.forEach(function(e){
+        var p=e.p.filter(function(x){return keep.indexOf(x)>=0;}),k=p.indexOf(i);
+        if(k>0)sub.push({p:p.slice(0,k),c:e.c});});
+      growth(sub,pat,out);});
     return out;}
+  /* the conditional FP-tree, written as its root-to-leaf branches */
+  function branches(base,keep){
+    var root={ch:{},ks:[]},out=[];
+    base.forEach(function(e){var nd=root;
+      e.p.filter(function(x){return keep.indexOf(x)>=0;}).forEach(function(i){
+        if(!nd.ch[i]){nd.ch[i]={i:i,n:0,ch:{},ks:[]};nd.ks.push(i);}
+        nd=nd.ch[i];nd.n+=e.c;});});
+    (function walk(nd,acc){
+      if(!nd.ks.length){if(acc.length)out.push(acc.join(" → "));return;}
+      nd.ks.forEach(function(k){walk(nd.ch[k],acc.concat([k+":"+nd.ch[k].n]));});})(root,[]);
+    return out;}
+  var MINE=L.slice().reverse().map(function(x){
+    var base=LINKS[x].map(function(id){var u=up(id);
+      return{node:id,ids:u,p:u.map(function(v){return NODES[v].item;}),c:CNT[id]};});
+    var used=base.filter(function(e){return e.p.length;}),c={};
+    used.forEach(function(e){e.p.forEach(function(i){c[i]=(c[i]||0)+e.c;});});
+    var keep=L.filter(function(i){return (c[i]||0)>=MIN;});
+    var pats=growth(used,[x],[]).sort(function(a,b){
+      return a.s.length-b.s.length||(rank(a.s)<rank(b.s)?-1:1);});
+    return{x:x,base:base,used:used,c:c,keep:keep,br:branches(used,keep),pats:pats};});
+  var nf=L.length;MINE.forEach(function(m){nf+=m.pats.length;});
+  return{MIN:MIN,freq:freq,L:L,ORD:ORD,NODES:NODES,HIST:HIST,INS:INS,CNT:CNT,nLeaf:nLeaf,
+         LINKS:LINKS,up:up,inL:inL,MINE:MINE,frequent:nf};
+})();
+function fpSet(a){return "{"+FPD.inL(a).join(", ")+"}";}
+
+/* ---------- Apriori, the way it is done on paper: C1 -> L1 -> C2 -> L2 -> C3 -> L3, then the rules ---------- */
+(function(){
+  var A=APR,MIN=A.MIN,LV=A.levels,K=LV.length;
+  function lbl(s){return "{"+s.join(", ")+"}";}
+  function pct(v){return Math.round(v*100)+"%";}
+  function rtxt(r){return lbl(r.X)+" → "+lbl(r.Y);}
+  /* how far the run has got at a given step */
+  function progress(s){
+    var sc=0,cc=0,pr=0,done=[];
+    LV.forEach(function(l){
+      var counted=l.k<s.k||(l.k===s.k&&(s.ph==="count"||s.ph==="prune"));
+      if(counted){sc++;cc+=l.cand.filter(function(o){return !o.why;}).length;}
+      if(l.k<=s.k)pr+=l.cand.filter(function(o){return o.why;}).length;
+      if(l.k<s.k||(l.k===s.k&&s.ph==="prune"))done.push(l);});
+    return{sc:sc,cc:cc,pr:pr,done:done};}
+  function build(){
+    var out=[{ph:"intro",k:0,
+      msg:"<b>Seven baskets, minimum support 3, minimum confidence 70%.</b> Apriori works level by level: <b>C<sub>k</sub></b> is the list of <i>candidate</i> k-itemsets, <b>L<sub>k</sub></b> the ones that turn out to be frequent. Every level costs one scan of the baskets. B = Bread, E = Eggs, J = Jam, M = Milk, U = Butter."}];
+    LV.forEach(function(l){
+      var live=l.cand.filter(function(o){return !o.why;}),dead=l.cand.filter(function(o){return o.why;}),
+          low=live.filter(function(o){return o.c<MIN;});
+      if(l.k===2)out.push({ph:"join",k:2,
+        msg:"<b>Join L1 with itself → C2:</b> every pair of frequent items, <b>"+l.cand.length+
+          " candidates</b>. Nothing can be pruned yet: every single item is frequent, so every pair passes the Apriori check."});
+      if(l.k>2){
+        var why={};dead.forEach(function(o){var w=lbl(o.why);(why[w]=why[w]||[]).push(lbl(o.s));});
+        out.push({ph:"join",k:l.k,
+          msg:"<b>Join L"+(l.k-1)+" with itself → C"+l.k+"</b>, then the <b>Apriori check</b>: a "+l.k+
+            "-itemset can be frequent only if every "+(l.k-1)+"-item subset of it is in L"+(l.k-1)+". "+
+            (dead.length?Object.keys(why).map(function(w){var g=why[w];
+              return g.join(" and ")+(g.length>1?" contain ":" contains ")+w+", which is not in L"+(l.k-1);}).join("; ")+
+              ", so "+(dead.length>1?"they are":"it is")+" pruned <b>without being counted</b>. ":"Every candidate passes. ")+
+            "That leaves "+live.map(function(o){return lbl(o.s);}).join(" and ")+" to count."});}
+      out.push({ph:"count",k:l.k,
+        msg:"<b>Scan "+l.k+" → support of C"+l.k+":</b> count "+(l.k===1?"every single item":"the "+live.length+" candidates")+
+          " in the baskets: "+live.map(function(o){return lbl(o.s)+" "+o.c;}).join(", ")+"."});
+      out.push({ph:"prune",k:l.k,
+        msg:"<b>C"+l.k+" → L"+l.k+":</b> keep the itemsets with a count of at least "+MIN+". "+
+          (low.length?low.map(function(o){return lbl(o.s)+" ("+o.c+")";}).join(", ")+(low.length>1?" fall":" falls")+
+            " short and "+(low.length>1?"are":"is")+" crossed out. ":"All of them survive. ")+
+          "<b>L"+l.k+" = "+l.L.map(function(o){return lbl(o.s);}).join(", ")+"</b>."});});
+    var last=LV[K-1];
+    out.push({ph:"stop",k:K+1,
+      msg:"<b>Join L"+K+" with itself:</b> "+(last.L.length===1?"it holds a single itemset, so there is nothing to join":"no two of its itemsets can be joined")+
+        ". C"+(K+1)+" is empty and the search stops. Apriori read the baskets <b>"+A.scans+" times</b> and counted <b>"+A.counted+
+        "</b> candidate itemsets ("+A.pruned+" more were pruned without counting) to find <b>"+A.frequent+"</b> frequent itemsets."});
+    out.push({ph:"rules",k:K+1,
+      msg:"<b>Rules from the largest frequent itemset "+lbl(A.top)+".</b> Split it every possible way into X → Y and compute <b>confidence = support(X ∪ Y) / support(X)</b>. The numerator is always "+
+        A.cnt(A.top)+", the support of "+lbl(A.top)+"; only the antecedent X changes."});
+    var strong=A.rules.filter(function(r){return r.conf>=A.MINCONF;}),weak=A.rules.filter(function(r){return r.conf<A.MINCONF;});
+    out.push({ph:"end",k:K+1,
+      msg:"<b>Keep the rules with confidence ≥ 70%.</b> "+strong.length+" strong rules survive"+
+        (weak.length?"; "+weak.map(rtxt).join(" and ")+" reach only "+pct(weak[0].conf)+" and are rejected":"")+
+        ". In words: whenever bread is bought, jam and butter are bought too. The same splitting is then done for every itemset in L2, and section 1 shows why <b>lift</b> should be checked next."});
+    return out;}
+  function chipRow(svg,x,y,list,fill,stroke,col){
+    list.forEach(function(t){var w=t.length*6.3+16;
+      box(svg,x,y,w,24,fill,stroke,5);txt(svg,x+w/2,y+16,t,col,10.5,"middle","700");x+=w+6;});}
   function render(svg,s){
-    clr(svg);var W=560;
-    txt(svg,120,20,"header (by frequency)",C.grey,10.5);
-    (s.order||[]).forEach(function(i,q){
-      var y=36+q*24;
-      box(svg,36,y,166,20,"#F3EEFB",C.purple,4);
-      txt(svg,48,y+14,INAME[i],C.navy,10.5,"start","600");
-      txt(svg,192,y+14,String(s.freq[i]),C.purple,10.5,"end","700");});
-    if(!s.tree){txt(svg,380,140,"tree not started",C.grey,11);return;}
-    var lv=[];
-    (function walk(nd,d,lo,hi){
-      if(d>0){lv.push({nd:nd,d:d,x:(lo+hi)/2});}
-      var ks=Object.keys(nd.ch),wd=(hi-lo)/Math.max(1,ks.length);
-      ks.forEach(function(k,i){walk(nd.ch[k],d+1,lo+i*wd,lo+(i+1)*wd);});
-    })(s.tree,0,236,552);
-    var rx=394,ry=42;
-    el(svg,"circle",{cx:rx,cy:ry,r:17,fill:C.navy,stroke:"#fff","stroke-width":2});
-    txt(svg,rx,ry+4,"root","#fff",9);
-    lv.forEach(function(e){
-      var x=e.x,y=ry+e.d*58,on=s.path&&s.path.indexOf(e.nd.c)>=0;
-      var px=e.d===1?rx:(lv.filter(function(f){
-        return f.d===e.d-1&&Object.keys(f.nd.ch).indexOf(e.nd.c)>=0&&
-               Math.abs(f.x-e.x)<150;})[0]||{x:rx}).x;
-      var py=e.d===1?ry:ry+(e.d-1)*58;
-      line(svg,{x:px,y:py+17},{x:x,y:y-17},on?C.orange:"#D8DFE8",on?2.6:1.8);
-      el(svg,"circle",{cx:x,cy:y,r:17,fill:on?C.orange:"#E6F3FA",
-        stroke:on?C.orange:C.cyan,"stroke-width":2});
-      txt(svg,x,y+1,INAME[e.nd.c].slice(0,4),on?"#fff":C.navy,8.5);
-      txt(svg,x,y+12,":"+e.nd.n,on?"#fff":C.purple,9,"middle","700");});
-    txt(svg,394,330,"node label : how many baskets pass through it",C.grey,10,"middle","400");}
-  register("fptree",build,render);
+    clr(svg);
+    txTable(svg,{note:"min support = 3 baskets · min confidence = 70%"});
+    var X=236,cw=[96,50,116],Y=24,rh=21,X2=522;
+    var lv=s.ph==="stop"?LV[K-1]:LV.filter(function(l){return l.k===s.k;})[0];
+    var ph=s.ph==="stop"?"prune":s.ph;
+    if(s.ph==="intro")txt(svg,490,130,"C1 is counted in scan 1",C.grey,11,"middle","400");
+    if(lv&&s.ph!=="rules"&&s.ph!=="end"){
+      txt(svg,X,15,"C"+lv.k+" — candidate "+lv.k+"-itemsets",C.grey,10.5,"start","700");
+      box(svg,X,Y,262,22,C.navy,null,0);
+      txt(svg,X+8,Y+15,"itemset","#fff",10.5,"start","700");
+      txt(svg,X+cw[0]+cw[1]/2,Y+15,"count","#fff",10.5,"middle","700");
+      txt(svg,X+cw[0]+cw[1]+8,Y+15,"result","#fff",10.5,"start","700");
+      lv.cand.forEach(function(o,q){
+        var y=Y+22+q*rh,dead=!!o.why,low=!dead&&ph==="prune"&&o.c<MIN;
+        box(svg,X,y,262,rh,dead||low?"#FBE9E7":(q%2?"#F2F7FB":"#fff"),C.rule,0);
+        txt(svg,X+8,y+15,lbl(o.s),dead||low?C.red:C.navy,11,"start","600");
+        if(dead){
+          txt(svg,X+cw[0]+cw[1]/2,y+15,"—",C.red,11,"middle","700");
+          txt(svg,X+cw[0]+cw[1]+8,y+15,"pruned ("+lbl(o.why)+")",C.red,10,"start","700");}
+        else{
+          txt(svg,X+cw[0]+cw[1]/2,y+15,ph==="join"?"?":String(o.c),ph==="join"?C.grey:C.purple,11.5,"middle","700");
+          if(ph==="prune")txt(svg,X+cw[0]+cw[1]+8,y+15,o.c>=MIN?"✓ ≥ 3, keep":"✗ < 3, drop",
+            o.c>=MIN?C.green:C.red,10.5,"start","700");
+          else if(ph==="join")txt(svg,X+cw[0]+cw[1]+8,y+15,"to be counted",C.grey,10,"start","600");}
+        if(dead||low)line(svg,{x:X+6,y:y+11},{x:X+cw[0]-6,y:y+11},C.red,1.4);});
+      txt(svg,X2,15,"L"+lv.k+" — frequent "+lv.k+"-itemsets",C.grey,10.5,"start","700");
+      box(svg,X2,Y,224,22,C.green,null,0);
+      txt(svg,X2+8,Y+15,"itemset","#fff",10.5,"start","700");
+      txt(svg,X2+180,Y+15,"support","#fff",10.5,"middle","700");
+      if(ph==="prune")lv.L.forEach(function(o,q){var y=Y+22+q*rh;
+        box(svg,X2,y,224,rh,q%2?"#EEF8F2":"#fff",C.rule,0);
+        txt(svg,X2+8,y+15,lbl(o.s),C.navy,11,"start","700");
+        txt(svg,X2+180,y+15,String(o.c),C.green,11.5,"middle","700");});
+      else txt(svg,X2+112,Y+48,"filled in after the count",C.grey,10.5,"middle","400");
+      if(s.ph==="stop"){var yy=Y+22+lv.L.length*rh+26;
+        box(svg,X2,yy,224,58,"#FDEEEC",C.orange,5);
+        txt(svg,X2+112,yy+22,"join L"+K+" → C"+(K+1)+" = ∅",C.orange,13,"middle","700");
+        txt(svg,X2+112,yy+42,"nothing left to count: stop",C.navy,10.5,"middle","600");}}
+    if(s.ph==="rules"||s.ph==="end"){
+      txt(svg,X,15,"All frequent itemsets (support ≥ 3)",C.grey,10.5,"start","700");
+      LV.forEach(function(l,q){var y=30+q*44;
+        txt(svg,X,y+16,"L"+l.k,C.green,12,"start","700");
+        chipRow(svg,X+30,y,l.L.map(function(o){return lbl(o.s)+":"+o.c;}),"#E4F6EB",C.green,C.navy);});
+      var cy=30+K*44+6;
+      txt(svg,X,cy+14,A.frequent+" frequent itemsets · "+A.scans+" scans · "+A.counted+" candidates counted · "+A.pruned+" pruned unseen",C.grey,10.5,"start","600");
+      /* the rules table */
+      var cx=[14,214,520],T=282;
+      box(svg,14,T,732,24,C.navy,null,0);
+      txt(svg,cx[0]+8,T+16,"rule  X → Y","#fff",10.5,"start","700");
+      txt(svg,cx[1]+8,T+16,"confidence = support(X ∪ Y) / support(X)","#fff",10.5,"start","700");
+      txt(svg,cx[2]+8,T+16,"≥ 70% ?","#fff",10.5,"start","700");
+      A.rules.forEach(function(r,q){var y=T+24+q*25,ok=r.conf>=A.MINCONF,show=s.ph==="end";
+        box(svg,14,y,732,25,show?(ok?"#EEF8F2":"#FBE9E7"):(q%2?"#F2F7FB":"#fff"),C.rule,0);
+        txt(svg,cx[0]+8,y+17,rtxt(r),C.navy,11,"start","700");
+        txt(svg,cx[1]+8,y+17,r.num+" / "+r.den+" = "+pct(r.conf),C.purple,11,"start","700");
+        if(show)txt(svg,cx[2]+8,y+17,ok?"✓ strong rule":"✗ rejected",ok?C.green:C.red,11,"start","700");});
+      [cx[1],cx[2]].forEach(function(x){line(svg,{x:x,y:T+24},{x:x,y:T+24+A.rules.length*25},C.rule,1);});
+      return;}
+    /* bottom: what has been found so far, and what it cost */
+    var p=progress(s);
+    txt(svg,14,292,"Frequent itemsets found so far",C.grey,10.5,"start","700");
+    if(!p.done.length)txt(svg,14,318,"(none yet)",C.grey,10.5,"start","400");
+    p.done.forEach(function(l,q){var y=302+q*38;
+      txt(svg,14,y+17,"L"+l.k,C.green,12,"start","700");
+      chipRow(svg,44,y,l.L.map(function(o){return lbl(o.s)+":"+o.c;}),"#E4F6EB",C.green,C.navy);});
+    box(svg,520,284,226,150,"#F7FAFC",C.rule,6);
+    txt(svg,534,304,"cost so far",C.grey,10.5,"start","700");
+    [["scans of the baskets",p.sc],["candidates counted",p.cc],["pruned without counting",p.pr],
+     ["frequent itemsets",p.done.reduce(function(a,l){return a+l.L.length;},0)]].forEach(function(r,q){
+      txt(svg,534,330+q*26,r[0],C.navy,11,"start","600");
+      txt(svg,732,330+q*26,String(r[1]),q===0?C.orange:C.purple,13,"end","700");});}
+  register("apt",build,render);
+})();
+
+/* ---------- FP-Growth, the way it is done on paper: count, order, build the tree, then mine it ---------- */
+(function(){
+  var F=FPD,MIN=F.MIN,L=F.L,NODES=F.NODES,LAST=F.ORD.length-1,X0=414,X1=734;
+  var DX=F.nLeaf>1?(X1-X0)/(F.nLeaf-1):0;
+  var P=NODES.map(function(n){return{x:X0+n.lx*DX,y:36+n.d*52};});
+  var ABC=Object.keys(F.freq).sort();
+  function cpbText(m){return m.used.length?m.used.map(function(e){return fpSet(e.p)+":"+e.c;}).join(", ")
+    :"empty: "+m.x+" hangs from null";}
+  function treeText(m){
+    if(!m.used.length)return "—";
+    var drop=L.filter(function(i){return m.c[i]&&m.c[i]<MIN;});
+    if(!m.keep.length)return "empty ("+drop.map(function(i){return i+" "+m.c[i];}).join(", ")+": all < 3)";
+    return m.br.join("  and  ")+(drop.length?"  ("+drop.map(function(i){return i+" "+m.c[i];}).join(", ")+" dropped)":"");}
+  function patText(m){return m.pats.length?m.pats.map(function(o){return fpSet(o.s)+":"+o.c;}).join(", "):"none";}
+  function build(){
+    var out=[];
+    out.push({ph:"intro",
+      msg:"<b>Seven baskets, minimum support 3.</b> FP-Growth reads the data exactly <b>twice</b>: scan 1 counts the items, scan 2 builds the FP-tree. After that every frequent itemset is mined from the tree, without going back to the baskets. B = Bread, E = Eggs, J = Jam, M = Milk, U = Butter."});
+    out.push({ph:"count",
+      msg:"<b>Scan 1: count the support of every item:</b> "+ABC.map(function(i){return i+" "+F.freq[i];}).join(", ")+
+        ". Compare each with the minimum support of 3: "+(L.length===ABC.length?"all five reach it, so none is deleted":
+        "the others are deleted")+". (An item below 3 would be removed from every basket here and would never enter the tree.)"});
+    out.push({ph:"order",
+      msg:"<b>Sort the frequent items in descending support</b> to get the order list <b>L = "+L.join(", ")+
+        "</b>. J and U tie at 5, B and E tie at 3; ties are broken alphabetically. Every basket will follow this one order."});
+    out.push({ph:"ordered",
+      msg:"<b>Rewrite every basket in L order</b>, the 'ordered by L' column. {B, J, M, U} becomes J, U, M, B. Because the most frequent items always come first, baskets share their beginnings, and shared beginnings are exactly what the tree compresses."});
+    F.ORD.forEach(function(items,t){
+      var ins=F.INS[t],prev=t?F.HIST[t-1]:[];
+      var bits=ins.path.map(function(id){var it=NODES[id].item;
+        return ins.fresh.indexOf(id)>=0?"<b>"+it+"</b> is a new node (count 1)":"<b>"+it+"</b> "+prev[id]+" → "+F.HIST[t][id];});
+      var note=t===0?" The tree starts empty, so every node is new.":
+        (!ins.fresh.length?" Nothing new is created: the whole path already exists, so only the counts go up.":
+        (ins.fresh[0]===ins.path[0]?" null has no "+items[0]+" child yet, so a new branch starts at the root.":""));
+      out.push({ph:"ins",t:t,
+        msg:"<b>Scan 2, T"+(t+1)+"</b> = {"+BASKETS[t].slice().sort().join(", ")+"} → in L order <b>"+items.join(" → ")+
+          "</b>. Start at null and follow the path: "+bits.join("; ")+"."+note});});
+    var chk=L.map(function(i){var c=F.LINKS[i].map(function(id){return F.CNT[id];});
+      return i+": "+c.join(" + ")+" = "+F.freq[i];});
+    out.push({ph:"links",
+      msg:"<b>Tree complete: "+(NODES.length-1)+" nodes for "+BASKETS.length+" baskets.</b> Now link it to the <b>header table</b>: each item points to its first node, and the nodes of the same item are chained by dotted <b>node-links</b>. Check: the counts along each chain add up to the item's support ("+chk[chk.length-1]+")."});
+    F.MINE.forEach(function(m,r){
+      if(!m.used.length){
+        out.push({ph:"ctree",r:r,
+          msg:"<b>Mine "+m.x+" ("+INAME[m.x]+")</b>. "+m.x+" hangs directly from null, so the path above it is empty: "+m.x+
+            " has no conditional pattern base and adds only {"+m.x+"}:"+F.freq[m.x]+"."});
+        return;}
+      var paths=m.used.map(function(e){return e.p.join(" → ")+" (count "+e.c+")";}),
+          empty=m.base.length-m.used.length;
+      out.push({ph:"cpb",r:r,
+        msg:"<b>Mine "+m.x+" ("+INAME[m.x]+")</b>"+(r===0?", the bottom of the header table: the least frequent item goes first":"")+
+          ". Follow its node-links to its "+m.base.length+" node"+(m.base.length>1?"s":"")+" and read the path above each one, up to null: "+
+          paths.join(", ")+"."+(empty?" The "+m.x+" node directly under null has nothing above it and adds nothing.":"")+
+          " Each prefix path takes the count of the "+m.x+" node below it. Together they form "+m.x+"'s <b>conditional pattern base</b>."});
+      var cs=L.filter(function(i){return m.c[i];}).map(function(i){return i+" "+m.c[i];}).join(", "),
+          drop=L.filter(function(i){return m.c[i]&&m.c[i]<MIN;}),
+          msg="<b>"+m.x+": add up each item in the pattern base</b>: "+cs+". ";
+      if(!m.keep.length)msg+="Nothing reaches "+MIN+", so "+m.x+"'s conditional FP-tree is empty and "+m.x+
+        " is in no frequent pattern larger than {"+m.x+"}:"+F.freq[m.x]+".";
+      else{
+        msg+=(drop.length?drop.join(" and ")+(drop.length>1?" fall":" falls")+" below "+MIN+" and "+(drop.length>1?"are":"is")+" dropped. ":"")+
+          "Conditional FP-tree: <b>"+m.br.join("</b> and <b>")+"</b>. Join "+m.x+" with the frequent combinations in it: <b>"+patText(m)+"</b>.";
+        if(m.br.length===1&&m.keep.length>1)msg+=" A single path makes every combination of its items frequent, at the smallest count on the path.";
+        var full=m.keep.concat([m.x]),fc=Math.round(bsup(full)*BASKETS.length);
+        if(m.keep.length>1&&fc<MIN)msg+=" "+fpSet(full)+" is <b>not</b> frequent: "+m.keep.join(" and ")+
+          " lie on one path together in only "+fc+" of the "+m.x+" baskets.";}
+      out.push({ph:"ctree",r:r,msg:msg});});
+    var all=L.map(function(i){return "{"+i+"}:"+F.freq[i];});
+    F.MINE.forEach(function(m){m.pats.forEach(function(o){all.push(fpSet(o.s)+":"+o.c);});});
+    out.push({ph:"end",
+      msg:"<b>Every frequent itemset at support 3:</b> "+all.join(", ")+". That is <b>"+F.frequent+
+        "</b>, exactly the set Apriori finds, but FP-Growth read the baskets only twice and never generated a candidate. {J, U, B} is Apriori's {B, J, U}: Jam, Butter and Bread."});
+    return out;}
+  /* a vertical run at x between y1 and y2 must not pass through any node other than the two it joins */
+  function clear(x,y1,y2,a,b){
+    return NODES.every(function(n){var p=P[n.id];
+      return n.id===a||n.id===b||Math.abs(p.x-x)>=19||p.y+16<y1||p.y-16>y2;});}
+  /* node-links run in the gaps between tree levels: down from the deeper node to a band just below it,
+     across, then up into the shallower node from below, or from the side when a child sits in the way */
+  function hop(ia,ib,off){
+    var A=P[ia],B=P[ib];
+    if(A.y===B.y){var b0=A.y+off;
+      return " M"+A.x+","+(A.y+16)+" L"+A.x+","+b0+" L"+B.x+","+b0+" L"+B.x+","+(B.y+16);}
+    var dp=A.y>B.y?ia:ib,sh=dp===ia?ib:ia,D=P[dp],S=P[sh],band=D.y+off,side=D.x<S.x?-1:1;
+    var tries=[0,side*22,-side*22],dx=tries.filter(function(t){
+      return t?clear(S.x+t,S.y,band,dp,sh):clear(S.x,S.y+16,band,dp,sh);})[0];
+    if(dx===undefined)dx=0;
+    return " M"+D.x+","+(D.y+16)+" L"+D.x+","+band+" L"+(S.x+dx)+","+band+
+      (dx?" L"+(S.x+dx)+","+S.y+" L"+(S.x+(dx<0?-16:16))+","+S.y:" L"+S.x+","+(S.y+16));}
+  function links(svg,i,w,op){
+    var q=L.indexOf(i),ids=F.LINKS[i],off=20+q*3,vx=376+q*3,hy=58+q*26,a=P[ids[0]];
+    var d="M366,"+hy+" L"+vx+","+hy+" L"+vx+","+(a.y+off)+" L"+a.x+","+(a.y+off)+" L"+a.x+","+(a.y+16);
+    for(var k=1;k<ids.length;k++)d+=hop(ids[k-1],ids[k],off);
+    el(svg,"path",{d:d,fill:"none",stroke:C.purple,"stroke-width":w,"stroke-dasharray":"4 3",opacity:op});}
+  function render(svg,s){
+    clr(svg);
+    var mining=s.ph==="cpb"||s.ph==="ctree"||s.ph==="end",
+        upto=s.ph==="ins"?s.t:(s.ph==="links"||mining?LAST:-1),
+        m=(s.ph==="cpb"||s.ph==="ctree")?F.MINE[s.r]:null;
+    txTable(svg,{ord:F.ORD,showOrd:["intro","count","order"].indexOf(s.ph)<0,
+      cur:s.ph==="ins"?s.t:-1,done:s.ph==="ins"?s.t-1:(upto===LAST?LAST:-1)});
+    /* header table */
+    if(upto>=0){
+      txt(svg,296,15,"Header table",C.grey,10.5,"start","700");
+      box(svg,296,24,70,22,C.navy,null,0);
+      txt(svg,304,39,"item","#fff",10.5,"start","700");txt(svg,360,39,"supp","#fff",10.5,"end","700");
+      L.forEach(function(i,q){var y=46+q*26,on=m&&m.x===i;
+        box(svg,296,y,70,24,on?"#F3EEFB":"#fff",on?C.purple:C.rule,0);
+        txt(svg,308,y+16,i,on?C.purple:C.navy,11.5,"start","700");
+        txt(svg,360,y+16,String(F.freq[i]),C.purple,11,"end","700");});}
+    /* the tree */
+    txt(svg,746,15,"FP-tree  (node = item : count)",C.grey,10.5,"end","700");
+    if(upto<0)txt(svg,574,140,"the FP-tree is built in scan 2",C.grey,11,"middle","400");
+    else{
+      var cnt=F.HIST[upto],alive=NODES.filter(function(n){return n.id===0||n.born<=upto;}),
+          path=s.ph==="ins"?F.INS[s.t].path:[],fresh=s.ph==="ins"?F.INS[s.t].fresh:[],
+          XS=m?F.LINKS[m.x]:[],PS=[];
+      if(m)XS.forEach(function(id){F.up(id).forEach(function(u){if(PS.indexOf(u)<0)PS.push(u);});});
+      if(s.ph==="links")L.forEach(function(i){links(svg,i,1.1,0.55);});
+      if(m)links(svg,m.x,2,1);
+      alive.forEach(function(n){if(!n.id)return;
+        var hot=path.indexOf(n.id)>=0||(m&&(PS.indexOf(n.id)>=0||(XS.indexOf(n.id)>=0&&PS.indexOf(n.par)>=0)));
+        line(svg,P[n.par],P[n.id],hot?C.orange:"#C9D3DE",hot?2.8:1.6);});
+      alive.forEach(function(n){var p=P[n.id];
+        if(!n.id){el(svg,"circle",{cx:p.x,cy:p.y,r:16,fill:C.navy,stroke:"#fff","stroke-width":2});
+          txt(svg,p.x,p.y+4,"null","#fff",9.5);return;}
+        var fill="#E6F3FA",stroke=C.cyan,tc=C.navy,onp=path.indexOf(n.id)>=0;
+        if(onp){if(fresh.indexOf(n.id)>=0){fill=C.green;stroke=C.green;}else{fill=C.orange;stroke=C.orange;}tc="#fff";}
+        if(m){if(XS.indexOf(n.id)>=0){fill=C.purple;stroke=C.purple;tc="#fff";}
+          else if(PS.indexOf(n.id)>=0){fill="#FDEBD9";stroke=C.orange;}
+          else{fill="#F4F6F9";stroke="#D8DFE8";tc="#9AA7B5";}}
+        el(svg,"circle",{cx:p.x,cy:p.y,r:16,fill:fill,stroke:stroke,"stroke-width":2});
+        txt(svg,p.x,p.y+4,n.item+":"+cnt[n.id],tc,11,"middle","700");
+        if(onp&&fresh.indexOf(n.id)<0)txt(svg,p.x+18,p.y-11,"+1",C.orange,10,"start","700");});}
+    /* bottom area */
+    if(mining){
+      var cx=[14,62,296,506],hd=["item","conditional pattern base","conditional FP-tree","frequent patterns generated"];
+      box(svg,14,282,732,24,C.navy,null,0);
+      hd.forEach(function(h,i){txt(svg,cx[i]+8,298,h,"#fff",10.5,"start","700");});
+      F.MINE.forEach(function(mm,r){
+        var y=306+r*30,cur=!!m&&s.r===r,
+            showB=s.ph==="end"||(!!m&&r<=s.r),showT=s.ph==="end"||(!!m&&(r<s.r||(r===s.r&&s.ph==="ctree")));
+        box(svg,14,y,732,30,cur?"#FFF6E9":(r%2?"#F2F7FB":"#fff"),cur?C.orange:C.rule,0);
+        txt(svg,cx[0]+12,y+20,mm.x,cur?C.orange:C.purple,12.5,"start","700");
+        if(showB)txt(svg,cx[1]+8,y+20,cpbText(mm),C.navy,10.5,"start","600");
+        if(showT){txt(svg,cx[2]+8,y+20,treeText(mm),C.navy,10.5,"start","600");
+          txt(svg,cx[3]+8,y+20,patText(mm),mm.pats.length?C.green:C.grey,10.5,"start","700");}});
+      [cx[1],cx[2],cx[3]].forEach(function(x){line(svg,{x:x,y:306},{x:x,y:306+F.MINE.length*30},C.rule,1);});
+      return;}
+    if(s.ph!=="intro"){
+      var bx=14,bw=64,lw=96;
+      txt(svg,bx,292,"Scan 1: support of every item",C.grey,10.5,"start","700");
+      box(svg,bx,300,lw,24,C.navy,null,0);txt(svg,bx+8,316,"item","#fff",10.5,"start","700");
+      ABC.forEach(function(i,q){var x=bx+lw+q*bw;box(svg,x,300,bw,24,C.navy,"#fff",0);
+        txt(svg,x+bw/2,316,i+" ("+INAME[i]+")","#fff",9.5,"middle","700");});
+      [["support",function(i){return String(F.freq[i]);},C.purple,"#fff"],
+       ["≥ 3 ?",function(i){return F.freq[i]>=MIN?"✓ keep":"✗ delete";},null,"#F2F7FB"]].forEach(function(row,k){
+        var y=324+k*24;box(svg,bx,y,lw,24,row[3],C.rule,0);txt(svg,bx+8,y+16,row[0],C.navy,10.5,"start","700");
+        ABC.forEach(function(i,q){var x=bx+lw+q*bw;box(svg,x,y,bw,24,row[3],C.rule,0);
+          txt(svg,x+bw/2,y+16,row[1](i),row[2]||(F.freq[i]>=MIN?C.green:C.red),k?10.5:12,"middle","700");});});}
+    if(["intro","count"].indexOf(s.ph)<0){
+      txt(svg,14,398,"Order list L (descending support, ties alphabetical)",C.grey,10.5,"start","700");
+      L.forEach(function(i,q){var x=14+q*86;
+        box(svg,x,408,62,28,"#F3EEFB",C.purple,5);txt(svg,x+31,427,i+" : "+F.freq[i],C.purple,12,"middle","700");
+        if(q<L.length-1)txt(svg,x+74,427,"→",C.grey,13,"middle","700");});}
+    if(s.ph==="ins"||s.ph==="links"){
+      box(svg,480,284,266,172,"#F7FAFC",C.rule,6);
+      if(s.ph==="ins"){var ins=F.INS[s.t];
+        txt(svg,494,306,"Scan 2: inserting T"+(s.t+1),C.grey,10.5,"start","700");
+        [["path","null → "+F.ORD[s.t].join(" → ")],
+         ["new nodes",ins.fresh.length?ins.fresh.map(function(id){return NODES[id].item;}).join(", "):"none"],
+         ["nodes in the tree",String(NODES.filter(function(n){return n.id&&n.born<=s.t;}).length)],
+         ["baskets inserted",(s.t+1)+" of "+BASKETS.length]].forEach(function(r,q){
+          txt(svg,494,334+q*28,r[0],C.navy,11,"start","600");
+          txt(svg,732,334+q*28,r[1],q===1&&ins.fresh.length?C.green:C.purple,11.5,"end","700");});}
+      else{
+        txt(svg,494,306,"Node-link check: chain counts = support",C.grey,10.5,"start","700");
+        L.forEach(function(i,q){var c=F.LINKS[i].map(function(id){return F.CNT[id];});
+          txt(svg,494,332+q*24,i,C.purple,12,"start","700");
+          txt(svg,516,332+q*24,c.join(" + ")+" = "+F.freq[i]+"  ✓",C.navy,11,"start","600");});}}}
+  register("fpg",build,render);
+})();
+
+/* ---------- Apriori and FP-Growth side by side, on the same seven baskets ---------- */
+(function(){
+  var A=APR,F=FPD,LV=A.levels;
+  function lbl(s){return "{"+s.join(", ")+"}";}
+  var ROWS=[{y:94,h:66},{y:166,h:124},{y:296,h:90},{y:392,h:62}];
+  function build(){
+    return[
+      {k:0,msg:"Same seven baskets, same minimum support of 3. Step both algorithms forward together and watch the counters at the top: how often each one reads the data, and how many candidate itemsets it has to generate."},
+      {k:1,msg:"<b>Scan 1 is identical.</b> Both count the single items: "+F.L.map(function(i){return i+" "+F.freq[i];}).join(", ")+
+        ". Apriori calls this C1 → L1; FP-Growth uses the same counts to fix its order list L = "+F.L.join(", ")+"."},
+      {k:2,msg:"<b>Scan 2 is where they part.</b> Apriori must generate "+LV[1].cand.length+" candidate pairs and scan the baskets to count them, keeping "+
+        LV[1].L.length+". FP-Growth instead writes every basket into the FP-tree: "+BASKETS.length+" baskets in "+(F.NODES.length-1)+
+        " nodes. <b>FP-Growth never reads the baskets again.</b>"},
+      {k:3,msg:"<b>Apriori needs a third scan.</b> It joins L2 into "+LV[2].cand.length+" triples, prunes "+A.pruned+
+        " with the Apriori property and counts the other "+(LV[2].cand.length-A.pruned)+", keeping only "+lbl(LV[2].L[0].s)+
+        ". <b>FP-Growth does not scan at all:</b> it mines the tree in memory, one item at a time from the bottom of the header table, and finds the same pairs and the same triple."},
+      {k:4,msg:"<b>Same answer, different work.</b> Both return the same "+A.frequent+" frequent itemsets. Apriori: "+A.scans+" scans and "+A.counted+
+        " candidate itemsets counted. FP-Growth: 2 scans, 0 candidates, and a tree of "+(F.NODES.length-1)+
+        " nodes held in memory. On seven baskets the gap is small; on millions of baskets with a low support threshold, Apriori's extra scans and candidate explosion are what make FP-Growth much faster, as long as its tree fits in memory."}];}
+  function chips(svg,x,y,list,col,fill,size){
+    list.forEach(function(t){var w=t.length*(size||10)*0.6+12;
+      box(svg,x,y,w,21,fill,col,4);txt(svg,x+w/2,y+15,t,C.navy,size||10,"middle","700");x+=w+5;});
+    return x;}
+  function counter(svg,x,y,label,val,col){
+    box(svg,x,y,112,40,"#fff",C.rule,5);
+    txt(svg,x+56,y+15,label,C.grey,9.5,"middle","600");
+    txt(svg,x+56,y+33,val,col,val.length>4?11:15,"middle","700");}
+  function render(svg,s){
+    clr(svg);
+    var cols=[{x:10,name:"Apriori",col:C.cyan},{x:390,name:"FP-Growth",col:C.purple}],W=360;
+    cols.forEach(function(c){box(svg,c.x,8,W,30,c.col,null,5);
+      txt(svg,c.x+W/2,28,c.name,"#fff",14,"middle","700");});
+    var aSc=[0,1,2,3,3][s.k],aCand=0,fSc=[0,1,2,2,2][s.k];
+    LV.forEach(function(l){if(l.k<=s.k)aCand+=l.cand.filter(function(o){return !o.why;}).length;});
+    counter(svg,10,46,"scans of the data",String(aSc),C.orange);
+    counter(svg,134,46,"candidates counted",String(aCand),C.orange);
+    counter(svg,258,46,"held in memory",s.k>=2?"candidate lists":"—",C.cyan);
+    counter(svg,390,46,"scans of the data",String(fSc),C.orange);
+    counter(svg,514,46,"candidates counted","0",C.green);
+    counter(svg,638,46,"held in memory",s.k>=2?"tree, "+(F.NODES.length-1)+" nodes":"—",C.purple);
+    ROWS.forEach(function(R,r){
+      cols.forEach(function(c){
+        if(r>=s.k){box(svg,c.x,R.y,W,R.h,"#FAFCFE","#E3EAF1",6).setAttribute("stroke-dasharray","4 4");return;}
+        var cur=r===s.k-1;
+        box(svg,c.x,R.y,W,R.h,"#fff",cur?C.orange:C.rule,6).setAttribute("stroke-width",cur?2.2:1.2);});
+      if(r>=s.k){txt(svg,190,R.y+R.h/2+4,"…",C.grey,14);txt(svg,570,R.y+R.h/2+4,"…",C.grey,14);return;}
+      var ax=24,fx=404,ty=R.y+18;
+      if(r===0){
+        txt(svg,ax,ty,"Scan 1 · count single items: C1 → L1",C.navy,11.5,"start","700");
+        chips(svg,ax,ty+8,LV[0].L.map(function(o){return o.s[0]+":"+o.c;}),C.green,"#E4F6EB");
+        txt(svg,ax,ty+42,LV[0].cand.length+" candidates counted",C.grey,10,"start","600");
+        txt(svg,fx,ty,"Scan 1 · count single items → order list L",C.navy,11.5,"start","700");
+        chips(svg,fx,ty+8,F.L.map(function(i){return i+":"+F.freq[i];}),C.purple,"#F3EEFB");
+        txt(svg,fx,ty+42,"no candidates: this only fixes the order",C.grey,10,"start","600");}
+      if(r===1){
+        var l2=LV[1];
+        txt(svg,ax,ty,"Scan 2 · join L1 → C2 ("+l2.cand.length+" pairs), count → L2",C.navy,11.5,"start","700");
+        chips(svg,ax,ty+10,l2.L.map(function(o){return o.s.join("")+":"+o.c;}),C.green,"#E4F6EB");
+        txt(svg,ax,ty+52,"dropped after counting:",C.red,10,"start","700");
+        chips(svg,ax,ty+60,l2.cand.filter(function(o){return o.c<A.MIN;}).map(function(o){return o.s.join("")+":"+o.c;}),C.red,"#FBE9E7",9.5);
+        txt(svg,ax,ty+100,l2.cand.length+" candidates counted",C.grey,10,"start","600");
+        txt(svg,fx,ty,"Scan 2 · insert the "+BASKETS.length+" ordered baskets → FP-tree",C.navy,11.5,"start","700");
+        var X0=420,X1=600,DX=F.nLeaf>1?(X1-X0)/(F.nLeaf-1):0;
+        var MP=F.NODES.map(function(n){return{x:X0+n.lx*DX,y:R.y+36+n.d*19};});
+        F.NODES.forEach(function(n){if(n.id)line(svg,MP[n.par],MP[n.id],"#C9D3DE",1.4);});
+        F.NODES.forEach(function(n){var p=MP[n.id];
+          el(svg,"circle",{cx:p.x,cy:p.y,r:n.id?8.5:10,fill:n.id?"#F3EEFB":C.navy,stroke:n.id?C.purple:C.navy,"stroke-width":1.4});
+          txt(svg,p.x,p.y+3,n.id?n.item:"null",n.id?C.purple:"#fff",n.id?9:7,"middle","700");});
+        ["the tree from the","walkthrough above:",(F.NODES.length-1)+" nodes for "+BASKETS.length+" baskets.","The baskets are","never read again."].forEach(function(t,q){
+          txt(svg,620,R.y+46+q*15,t,q===2||q===4?C.purple:C.grey,10,"start",q===2||q===4?"700":"600");});}
+      if(r===2){
+        var l3=LV[2],dead=l3.cand.filter(function(o){return o.why;}),live=l3.cand.filter(function(o){return !o.why;});
+        txt(svg,ax,ty,"Scan 3 · join L2 → C3, Apriori check, count → L3",C.navy,11.5,"start","700");
+        txt(svg,ax,ty+20,"pruned unseen: "+dead.map(function(o){return lbl(o.s);}).join(", "),C.red,10,"start","700");
+        txt(svg,ax,ty+38,"counted: "+live.map(function(o){return lbl(o.s)+" "+o.c+(o.c>=A.MIN?" ✓":" ✗");}).join(",  "),C.navy,10,"start","700");
+        chips(svg,ax,ty+46,l3.L.map(function(o){return "L3 = "+lbl(o.s)+":"+o.c;}),C.green,"#E4F6EB");
+        txt(svg,fx,ty,"No scan · mine the tree in memory, bottom-up",C.navy,11.5,"start","700");
+        F.MINE.forEach(function(m,q){var y=ty+18+q*12.5;
+          txt(svg,fx,y,m.x+":",C.purple,10,"start","700");
+          txt(svg,fx+18,y,m.pats.length?m.pats.map(function(o){return fpSet(o.s);}).join("  "):"nothing",m.pats.length?C.navy:C.grey,9.5,"start","600");});}
+      if(r===3){
+        txt(svg,ax,ty,"C4 is empty → stop",C.navy,11.5,"start","700");
+        txt(svg,ax,ty+22,A.frequent+" frequent itemsets · "+A.scans+" scans · "+A.counted+" candidates counted",C.orange,11,"start","700");
+        txt(svg,fx,ty,"Done",C.navy,11.5,"start","700");
+        txt(svg,fx,ty+22,"the same "+F.frequent+" frequent itemsets · 2 scans · 0 candidates",C.green,11,"start","700");}});}
+  register("cmp",build,render);
+})();
+/* ---------- shared helpers for sections 4 and 6: seeded random numbers, score colours, a star marker ---------- */
+function rng(seed){return function(){seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(R){return Math.sqrt(-2*Math.log(R()+1e-12))*Math.cos(6.283185307*R());}
+/* score colour: white while normal, through orange to red */
+function scoreCol(s){
+  var st=[[0.45,[255,255,255]],[0.58,[250,214,180]],[0.68,[237,119,31]],[0.78,[180,35,24]]];
+  if(s<=st[0][0])return "rgb(255,255,255)";
+  for(var i=1;i<st.length;i++)if(s<=st[i][0]){var a=st[i-1],b=st[i],f=(s-a[0])/(b[0]-a[0]);
+    return "rgb("+a[1].map(function(v,k){return Math.round(v+(b[1][k]-v)*f);}).join(",")+")";}
+  return "rgb(180,35,24)";}
+function star(svg,x,y,r,fill,stroke){var p=[];
+  for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;p.push((x+rr*Math.cos(a))+","+(y+rr*Math.sin(a)));}
+  return el(svg,"polygon",{points:p.join(" "),fill:fill,stroke:stroke||"#fff","stroke-width":1.4});}
+
+/* ---------- outlier detection and novelty detection, side by side ---------- */
+(function(){
+  var R=rng(7),NORM=[],i,KN=3;
+  for(i=0;i<30;i++)NORM.push([5+gauss(R)*0.95,5+gauss(R)*0.85]);
+  var ODD=[[1.3,8.6],[8.7,1.6],[9.0,8.8]],MIX=NORM.concat(ODD),RAD=0.85;
+  var NEW=[{p:[5.3,4.7],n:"N1"},{p:[6.4,6.3],n:"N2"},{p:[1.6,1.9],n:"N3"}],TRAP={p:[8.4,2.0],n:"N4"};
+  /* a score students already know: how far a point is from its 3 nearest neighbours */
+  function kdist(j){var d=MIX.map(function(q,i){if(i===j)return Infinity;
+      var dx=q[0]-MIX[j][0],dy=q[1]-MIX[j][1];return Math.sqrt(dx*dx+dy*dy);})
+      .sort(function(a,b){return a-b;});return d[KN-1];}
+  var SC=MIX.map(function(p,j){return kdist(j);}),DMAX=Math.max.apply(null,SC),DMIN=Math.min.apply(null,SC);
+  var THR=SC.slice().sort(function(a,b){return b-a;})[ODD.length-1];
+  function col(d){return scoreCol(0.42+0.38*(d-DMIN)/(DMAX-DMIN));}
+  function inside(pt,train){return train.some(function(q){var dx=q[0]-pt[0],dy=q[1]-pt[1];return dx*dx+dy*dy<=RAD*RAD;});}
+  var hits=SC.filter(function(d,j){return d>=THR&&j>=NORM.length;}).length;
+  function f2(v){return v.toFixed(2);}
+  function build(){
+    return[
+      {k:0,msg:"<b>Two different jobs.</b> Left: the data <b>already has</b> a few odd points in it, and nobody has marked them. Right: the data is <b>known to be clean</b>, and odd points will only come later."},
+      {k:1,msg:"<b>Outlier detection.</b> Give every point a score: how far it is from its "+KN+" nearest neighbours (like DBSCAN noise in Unit 3). Darker colour = farther away. The odd points stand out because they have no close neighbours."},
+      {k:2,msg:"<b>Flag the "+ODD.length+" highest scores.</b> We expect about "+ODD.length+" of the "+MIX.length+" points (about "+Math.round(ODD.length/MIX.length*100)+"%) to be odd; this share is called the <b>contamination</b>. "+
+        (hits===ODD.length?"All "+ODD.length+" odd points are caught.":hits+" of the "+ODD.length+" odd points are caught.")+
+        " Notice: we checked <b>the same data we started with</b>."},
+      {k:3,msg:"<b>Novelty detection.</b> The data is clean: "+NORM.length+" normal points only. Learn the area where normal points live (shaded). Then wait for new points."},
+      {k:4,msg:"<b>New points arrive.</b> "+NEW.map(function(o){return o.n+(inside(o.p,NORM)?" is inside the shaded area: normal":" is outside it: <b>novel</b>");}).join(". ")+
+        ". Only the new points are judged."},
+      {k:5,msg:"<b>The trap.</b> Suppose the ‘clean’ data secretly had the "+ODD.length+" odd points in it. The shaded area now covers them too. A new fraud, "+TRAP.n+", similar to an old one, "+(inside(TRAP.p,MIX)?"lands inside and <b>passes as normal</b>":"still lands outside")+"."},
+      {k:6,msg:"<b>Rule to remember.</b> The data may already contain odd cases → <b>outlier detection</b>: check that data itself. The data is surely clean → <b>novelty detection</b>: judge only new points against it."}];}
+  function panel(svg,x0,title,colr,sub){
+    box(svg,x0,8,358,28,colr,null,5);txt(svg,x0+179,27,title,"#fff",13,"middle","700");
+    txt(svg,x0+179,52,sub,C.grey,10.5,"middle","600");
+    box(svg,x0,60,358,334,"#FAFCFE",C.rule,4);}
+  function render(svg,s){
+    clr(svg);
+    function X(x0,v){return x0+14+v/10*330;}function Y(v){return 386-v/10*318;}
+    panel(svg,14,"Outlier (anomaly) detection",C.cyan,"data to learn from: contaminated, no labels");
+    var trapStep=s.k>=5;
+    panel(svg,388,"Novelty detection",C.purple,trapStep?"data to learn from: contaminated by mistake":"data to learn from: known to be clean");
+    /* left panel */
+    MIX.forEach(function(p,j){var c={x:X(14,p[0]),y:Y(p[1])};
+      el(svg,"circle",{cx:c.x,cy:c.y,r:s.k>=1?6:4.5,fill:s.k>=1?col(SC[j]):"#9AA7B5",stroke:s.k>=1?C.navy:"#fff","stroke-width":1});
+      if(s.k>=2&&SC[j]>=THR)el(svg,"circle",{cx:c.x,cy:c.y,r:11,fill:"none",stroke:C.red,"stroke-width":2.2});});
+    if(s.k>=1){
+      for(var q=0;q<40;q++)box(svg,40+q*150/40,412,150/40+0.5,12,scoreCol(0.42+0.38*q/39),null,0);
+      box(svg,40,412,150,12,"none",C.rule,0);
+      txt(svg,40,406,"distance to 3 nearest neighbours",C.grey,10,"start","700");
+      txt(svg,40,438,"close",C.grey,9.5,"start","600");txt(svg,190,438,"far",C.grey,9.5,"end","600");}
+    /* right panel */
+    var train=trapStep?MIX:NORM;
+    if(s.k>=3){var g=el(svg,"g",{opacity:0.22});
+      train.forEach(function(p){el(g,"circle",{cx:X(388,p[0]),cy:Y(p[1]),r:RAD/10*330,fill:C.purple});});}
+    train.forEach(function(p,j){var odd=j>=NORM.length&&s.k===6;
+      el(svg,"circle",{cx:X(388,p[0]),cy:Y(p[1]),r:4.5,fill:"#9AA7B5",stroke:odd?C.red:"#fff","stroke-width":odd?2:1});});
+    function newPt(o,tr){var inn=inside(o.p,tr),c={x:X(388,o.p[0]),y:Y(o.p[1])};
+      star(svg,c.x,c.y,10,inn?C.green:C.red);
+      txt(svg,c.x+13,c.y-8,o.n+(inn?" normal":" novel"),inn?C.green:C.red,10.5,"start","700");}
+    if(s.k===4)NEW.forEach(function(o){newPt(o,NORM);});
+    if(s.k>=5){var c={x:X(388,TRAP.p[0]),y:Y(TRAP.p[1])};
+      star(svg,c.x,c.y,10,C.orange);
+      txt(svg,c.x-14,c.y+24,TRAP.n+": a new fraud, passes as normal",C.orange,10.5,"end","700");}
+    /* what each setting does with the data */
+    box(svg,214,404,172,46,"#F7FAFC",C.rule,5);
+    txt(svg,222,422,"score the data itself",C.cyan,11,"start","700");txt(svg,222,440,"a flag for each point you have",C.grey,9.5,"start","600");
+    box(svg,500,404,246,46,"#F7FAFC",C.rule,5);
+    txt(svg,508,422,"learn from clean data, judge new data",C.purple,11,"start","700");txt(svg,508,440,"a verdict for each new point",C.grey,9.5,"start","600");
+    if(s.k>=3){txt(svg,394,428,"shaded:",C.grey,10,"start","700");txt(svg,394,442,"learned normal",C.grey,10,"start","600");}}
+  register("nov",build,render);
 })();
 /* ---------- isolation forest ---------- */
 (function(){
   var P=[[3.0,3.2],[3.4,2.8],[2.7,3.5],[3.2,3.0],[2.9,2.9],[3.5,3.4],[3.1,3.6],
          [2.8,3.1],[8.4,8.1]];
-  var L="ABCDEFGHO",OUT=8,NORM=3;
-  /* a fixed, honest sequence of random splits for each target */
-  var SEQ={8:[["x",5.8],["y",6.2]],
-           3:[["x",5.8],["y",2.4],["x",2.75],["y",3.35],["x",3.3],["y",2.95],["x",3.05]]};
+  var L="ABCDEFGHO",OUT=8;
+  /* one honest random tree path per target: every cut lies between the smallest and largest
+     value of the points still in the box, and splitting stops as soon as the target is alone */
+  var SEQ={8:[["y",3.3],["x",6.0]],
+           3:[["x",5.8],["y",3.35],["x",2.85],["y",2.85],["x",3.1]]};
+  function inBox(bx){return P.filter(function(p){
+    return p[0]>=bx[0]&&p[0]<=bx[1]&&p[1]>=bx[2]&&p[1]<=bx[3];});}
   function build(){
     var out=[{t:null,box:[2.4,8.8,2.4,8.6],cuts:[],
-      msg:"Nine points: eight in a cluster and one, <b>O</b>, well away from them. Isolation Forest splits on a random feature at a random value and counts how many splits it takes to leave a point alone."}];
+      msg:"Eight points in a group and one point, <b>O</b>, far away. Isolation Forest splits the space at random, again and again, and counts <b>how many splits</b> it takes to leave a point alone. Each split falls between the smallest and largest value inside the box."}],res={};
     [8,3].forEach(function(tgt){
       var bx=[2.4,8.8,2.4,8.6],cuts=[],seq=SEQ[tgt];
       out.push({t:tgt,box:bx.slice(),cuts:[],
-        msg:"Now isolating <b>"+L[tgt]+"</b>"+(tgt===8?" (the far-away point)":" (a point in the middle of the crowd)")+". The shaded box is the region still containing it."});
-      seq.forEach(function(c,si){
-        var inside=P.map(function(p,i){
-          return p[0]>=bx[0]&&p[0]<=bx[1]&&p[1]>=bx[2]&&p[1]<=bx[3];});
+        msg:"Now isolating <b>"+L[tgt]+"</b>"+(tgt===8?" (the far point)":" (a point inside the group)")+". The shaded box is the part that still contains it."});
+      for(var si=0;si<seq.length;si++){
+        var c=seq[si],ax=c[0]==="x"?0:1,pts=inBox(bx),
+            lo=Math.min.apply(null,pts.map(function(p){return p[ax];})),
+            hi=Math.max.apply(null,pts.map(function(p){return p[ax];}));
+        if(!(c[1]>lo&&c[1]<hi))throw new Error("iso: cut "+c[1]+" is outside "+lo+" to "+hi);
         cuts=cuts.concat([[c[0],c[1],bx.slice()]]);
-        if(c[0]==="x"){ if(P[tgt][0]<c[1])bx[1]=c[1]; else bx[0]=c[1]; }
+        if(ax===0){ if(P[tgt][0]<c[1])bx[1]=c[1]; else bx[0]=c[1]; }
         else { if(P[tgt][1]<c[1])bx[3]=c[1]; else bx[2]=c[1]; }
-        var left=P.filter(function(p){
-          return p[0]>=bx[0]&&p[0]<=bx[1]&&p[1]>=bx[2]&&p[1]<=bx[3];}).length;
+        var left=inBox(bx).length;
         out.push({t:tgt,box:bx.slice(),cuts:cuts.slice(),depth:si+1,alone:left===1,
-          msg:"Split "+(si+1)+": cut "+c[0]+" at "+c[1]+". "+
-            (left===1?("<b>"+L[tgt]+" is now alone</b> — isolated after <b>"+(si+1)+
-                       "</b> split"+(si?"s":"")+".")
-                    :(left+" points still share the box, so keep splitting."))});});});
-    out.push({t:null,box:[2.4,8.8,2.4,8.6],cuts:[],done:1,
-      msg:"<b>O took 2 splits; D took 7.</b> That gap is the entire signal. Averaged over many random trees, a short path means <i>easy to separate</i> means <i>anomalous</i> — and no distance was ever computed."});
+          msg:"<b>Split "+(si+1)+":</b> "+c[0]+" = <b>"+c[1]+"</b> (inside the box, "+c[0]+" runs from "+lo+" to "+hi+"). "+
+            (left===1?("<b>"+L[tgt]+" is alone</b> after "+(si+1)+" split"+(si?"s":"")+".")
+                     :(left+" points are still in the box, so split again."))});
+        if(left===1){res[tgt]=si+1;break;}}
+      if(!res[tgt])throw new Error("iso: "+L[tgt]+" was never isolated");});
+    out.push({t:null,box:[2.4,8.8,2.4,8.6],cuts:[],done:1,res:res,
+      msg:"<b>O needed "+res[8]+" splits. D needed "+res[3]+".</b> A far-away point is cut off quickly. Short path = easy to separate = <b>anomaly</b>. No distances were measured at all."});
     return out;}
   function render(svg,s){
-    clr(svg);var W=560,L0=120,R=440,T0=26,B=250;
+    clr(svg);var L0=120,R=440,T0=26,B=250;
     function X(x){return L0+(x-2.2)/6.8*(R-L0);}
     function Y(y){return B-(y-2.2)/6.8*(B-T0);}
     box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
@@ -566,78 +1044,84 @@ function bkey(a){return a.slice().sort().join("");}
         s.alone?C.green:C.navy,24,"start","700");
     if(s.alone)txt(svg,px,T0+72,"isolated",C.green,10.5,"start","700");
     if(s.done){
-      txt(svg,px,T0+100,"O  →  2",C.red,12.5,"start","700");
-      txt(svg,px,T0+122,"D  →  7",C.cyan,12.5,"start","700");
+      txt(svg,px,T0+100,"O  →  "+s.res[8],C.red,12.5,"start","700");
+      txt(svg,px,T0+122,"D  →  "+s.res[3],C.cyan,12.5,"start","700");
       txt(svg,px,T0+148,"short path",C.grey,10,"start","400");
       txt(svg,px,T0+162,"= anomaly",C.grey,10,"start","400");}}
   register("iso",build,render);
 })();
-/* ---------- LOF ---------- */
+/* ---------- LOF: is a point in a much emptier spot than its neighbours? ---------- */
 (function(){
-  var P=[[1.0,1.0],[1.2,1.4],[0.8,1.3],[1.4,1.0],[4.0,4.0]],L="ABCDO",K=2;
-  function d(a,b){return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));}
+  /* hand-placed so the picture is easy to read: a tight 3 x 3 group and a spread-out group of 12 */
+  var P=[],i,K=3,NT=9,NS=12;
+  for(i=0;i<NT;i++)P.push([2.2+0.3*(i%3),6.5+0.3*Math.floor(i/3)]);
+  P=P.concat([[5.0,2.2],[6.2,2.0],[7.4,2.3],[8.4,2.6],[5.3,3.4],[6.5,3.3],[7.6,3.6],[8.3,3.9],
+              [5.0,4.6],[6.3,4.5],[7.5,4.8],[6.6,5.6]]);
+  var IP=P.length;P.push([3.7,7.4]);
+  var IQ=P.length;P.push([8.9,8.7]);
+  var D=P.map(function(a){return P.map(function(b){var dx=a[0]-b[0],dy=a[1]-b[1];return Math.sqrt(dx*dx+dy*dy);});});
+  var NN=D.map(function(row,j){return row.map(function(d,k){return[d,k];}).filter(function(e){return e[1]!==j;})
+    .sort(function(x,y){return x[0]-y[0];}).slice(0,K);});
+  var KD=NN.map(function(nn){return nn[K-1][0];});
+  var LRD=NN.map(function(nn){var s=0;nn.forEach(function(e){s+=Math.max(KD[e[1]],e[0]);});return K/s;});
+  var LOF=NN.map(function(nn,j){var s=0;nn.forEach(function(e){s+=LRD[e[1]];});return s/K/LRD[j];});
+  var THR=1.5,FLAG=LOF.map(function(v,j){return v>THR?j:-1;}).filter(function(j){return j>=0;});
+  /* A: the most spread-out point of the loose group that is still normal */
+  var IA=P.map(function(p,j){return j;}).filter(function(j){return j>=NT&&j<NT+NS&&LOF[j]<=THR;})
+    .sort(function(a,b){return KD[b]-KD[a];})[0];
+  var NAME={};NAME[IA]="A";NAME[IP]="P";NAME[IQ]="Q";
+  function f(v){return v.toFixed(2);}
+  function lcol(v){return scoreCol(0.45+Math.min(1,Math.max(0,(v-1)/1.5))*0.33);}
   function build(){
-    var N=P.length,kd=[],knn=[];
-    for(var i=0;i<N;i++){
-      var ds=[];for(var j=0;j<N;j++)if(j!==i)ds.push([d(P[i],P[j]),j]);
-      ds.sort(function(a,b){return a[0]-b[0];});
-      kd.push(ds[K-1][0]);knn.push(ds.slice(0,K).map(function(e){return e[1];}));}
-    var out=[{k:-1,kd:kd,knn:knn,
-      msg:"Four points in a tight cluster plus <b>O</b> on its own, with k = 2. First find each point's 2 nearest neighbours and its <b>k-distance</b> — the distance to the 2nd nearest."}];
-    for(i=0;i<N;i++)out.push({k:i,stage:"kd",kd:kd,knn:knn,
-      msg:"<b>"+L[i]+"</b>: nearest two are "+knn[i].map(function(j){return L[j];}).join(" and ")+
-        ", so k-dist("+L[i]+") = <b>"+kd[i].toFixed(4)+"</b>."});
-    function rd(i,o){return Math.max(kd[o],d(P[i],P[o]));}
-    var lrd=[];
-    for(i=0;i<N;i++){
-      var s=0;knn[i].forEach(function(o){s+=rd(i,o);});
-      lrd.push(1/(s/K));}
-    out.push({k:9,stage:"lrd",kd:kd,knn:knn,lrd:lrd,
-      msg:"<b>Local reachability density</b> = 1 / (average reachability distance to those 2 neighbours). "+
-        L.split("").map(function(c,i){return c+" = "+lrd[i].toFixed(3);}).join(", ")+
-        ". O's density is an order of magnitude lower."});
-    var lof=[];
-    for(i=0;i<N;i++){var s2=0;knn[i].forEach(function(o){s2+=lrd[o];});
-      lof.push(s2/K/lrd[i]);}
-    out.push({k:9,stage:"lof",kd:kd,knn:knn,lrd:lrd,lof:lof,
-      msg:"<b>LOF</b> = average neighbour density ÷ my own density. "+
-        L.split("").map(function(c,i){return c+" = "+lof[i].toFixed(3);}).join(", ")+"."});
-    out.push({k:9,stage:"done",kd:kd,knn:knn,lrd:lrd,lof:lof,
-      msg:"<b>A, B, C and D all sit at about 1.0</b> — each is as dense as its neighbours, which is what normal looks like. <b>O scores "+
-        lof[4].toFixed(2)+"</b>: its neighbours are roughly "+lof[4].toFixed(0)+
-        "× denser than it is. The threshold is usually set a little above 1, not at some absolute distance — which is exactly what makes LOF <i>local</i>."});
-    return out;}
+    var onlyPQ=FLAG.length===2&&FLAG.indexOf(IP)>=0&&FLAG.indexOf(IQ)>=0;
+    return[
+      {k:0,msg:"<b>"+(NT+NS)+" normal points:</b> a tight group (top left) and a spread-out group (bottom right). Plus two odd points: <b>P</b>, just outside the tight group, and <b>Q</b>, far from everything. Each circle will reach a point's "+K+" nearest neighbours: <b>small circle = crowded spot, big circle = empty spot</b>."},
+      {k:1,f:IA,msg:"<b>Point A</b> in the spread-out group. Its circle is fairly big, but its neighbours' circles are big too. A is about as crowded as its neighbours, so <b>LOF(A) = "+f(LOF[IA])+"</b>: normal."},
+      {k:2,f:IP,msg:"<b>Point P.</b> Its circle is big, but its neighbours in the tight group have tiny circles. P sits in a much emptier spot than its neighbours, so <b>LOF(P) = "+f(LOF[IP])+"</b>: outlier."},
+      {k:3,f:IQ,msg:"<b>Point Q</b>, far from everything. Its circle is huge compared with its neighbours' circles, so <b>LOF(Q) = "+f(LOF[IQ])+"</b>: outlier."},
+      {k:4,msg:"<b>Colour every point by its LOF.</b> Points above "+THR+" are flagged"+(onlyPQ?": only <b>P and Q</b>":" ("+FLAG.length+" points)")+
+        ". No point of the spread-out group is flagged, even though its points are far apart, because each point is compared only with <b>its own neighbours</b>. That is what ‘local’ means."+
+        (KD[IP]<KD[IA]?" A single distance rule would fail here: P's circle ("+f(KD[IP])+") is even smaller than A's ("+f(KD[IA])+").":"")}];}
   function render(svg,s){
-    clr(svg);var W=560,L0=56,R=300,T0=28,B=232;
-    function X(x){return L0+(x-0.4)/4.2*(R-L0);}
-    function Y(y){return B-(y-0.4)/4.2*(B-T0);}
-    box(svg,L0,T0,R-L0,B-T0,"#FAFCFE",C.rule,4);
-    if(s.k>=0&&s.k<5&&s.stage==="kd"){
-      el(svg,"circle",{cx:X(P[s.k][0]),cy:Y(P[s.k][1]),
-        r:s.kd[s.k]/4.2*(R-L0),fill:"rgba(0,150,199,.10)",stroke:C.cyan,
-        "stroke-width":1.6,"stroke-dasharray":"4 3"});
-      s.knn[s.k].forEach(function(j){
-        line(svg,{x:X(P[s.k][0]),y:Y(P[s.k][1])},{x:X(P[j][0]),y:Y(P[j][1])},C.cyan,2);});}
-    P.forEach(function(p,i){
-      var hot=s.k===i,anom=s.lof&&s.lof[i]>1.5;
-      dot(svg,{x:X(p[0]),y:Y(p[1])},hot?9:7,hot?C.orange:(anom?C.red:C.cyan));
-      txt(svg,X(p[0]),Y(p[1])-13,L[i],hot?C.orange:(anom?C.red:C.navy),11);});
-    var cx=R+28,hdr=["pt","k-dist","lrd","LOF"],xs=[cx,cx+58,cx+120,cx+188];
-    hdr.forEach(function(h,i){txt(svg,xs[i],T0+6,h,C.grey,10,"middle","700");});
-    L.split("").forEach(function(c,i){
-      var y=T0+28+i*26,anom=s.lof&&s.lof[i]>1.5;
-      txt(svg,xs[0],y,c,anom?C.red:C.navy,11,"middle","700");
-      txt(svg,xs[1],y,s.kd?s.kd[i].toFixed(3):"·",
-          (s.stage==="kd"&&s.k>=i)||s.lrd?C.navy:"#C8D2DC",10.5,"middle","500");
-      txt(svg,xs[2],y,s.lrd?s.lrd[i].toFixed(3):"·",s.lrd?C.navy:"#C8D2DC",10.5,"middle","500");
-      txt(svg,xs[3],y,s.lof?s.lof[i].toFixed(3):"·",
-          s.lof?(anom?C.red:C.green):"#C8D2DC",11.5,"middle","700");});
-    if(s.stage==="done"){
-      line(svg,{x:xs[3]-24,y:T0+120},{x:xs[3]+24,y:T0+120},C.rule,1.4);
-      txt(svg,xs[3],T0+160,"≈ 1 → normal",C.green,10,"middle","600");
-      txt(svg,xs[3],T0+176,"≫ 1 → outlier",C.red,10,"middle","600");}
-    txt(svg,(L0+R)/2,B+22,"k = 2",C.grey,10.5,"middle","400");}
-  register("lofviz",build,render);
+    clr(svg);var x0=20,y0=20,W=430;
+    function X(v){return x0+v/10*W;}function Y(v){return y0+W-v/10*W;}
+    function Rd(d){return d/10*W;}
+    box(svg,x0,y0,W,W,"#FAFCFE",C.rule,4);
+    if(s.f!==undefined){
+      NN[s.f].forEach(function(e){var q=P[e[1]];
+        el(svg,"circle",{cx:X(q[0]),cy:Y(q[1]),r:Rd(KD[e[1]]),fill:"rgba(92,45,145,.10)",stroke:C.purple,"stroke-width":1.2});});
+      var p=P[s.f];
+      el(svg,"circle",{cx:X(p[0]),cy:Y(p[1]),r:Rd(KD[s.f]),fill:"rgba(237,119,31,.10)",stroke:C.orange,"stroke-width":2});
+      NN[s.f].forEach(function(e){var q=P[e[1]];line(svg,{x:X(p[0]),y:Y(p[1])},{x:X(q[0]),y:Y(q[1])},C.orange,1.6);});}
+    P.forEach(function(p,j){
+      var nb=s.f!==undefined&&NN[s.f].some(function(e){return e[1]===j;}),me=s.f===j;
+      el(svg,"circle",{cx:X(p[0]),cy:Y(p[1]),r:me?7:5,fill:s.k===4?lcol(LOF[j]):(me?C.orange:(nb?C.purple:C.navy)),
+        stroke:s.k===4?C.navy:"#fff","stroke-width":1.2});
+      if(s.k===4&&FLAG.indexOf(j)>=0)el(svg,"circle",{cx:X(p[0]),cy:Y(p[1]),r:12,fill:"none",stroke:C.red,"stroke-width":2.2});
+      if(NAME[j]&&(j!==IA||s.k>=1))txt(svg,X(p[0])+10,Y(p[1])-9,NAME[j],me?C.orange:C.navy,12,"start","700");});
+    /* right panel */
+    var px=480;
+    txt(svg,px,40,"Points to watch",C.grey,10.5,"start","700");
+    box(svg,px,50,266,24,C.navy,null,0);
+    txt(svg,px+10,66,"point","#fff",10.5,"start","700");txt(svg,px+150,66,"circle size","#fff",10.5,"middle","700");
+    txt(svg,px+236,66,"LOF","#fff",10.5,"middle","700");
+    [[IA,1],[IP,2],[IQ,3]].forEach(function(r,q){var j=r[0],show=s.k>=r[1],y=74+q*30,cur=s.f===j;
+      box(svg,px,y,266,30,cur?"#FFF6E9":"#fff",cur?C.orange:C.rule,0);
+      txt(svg,px+10,y+20,NAME[j],C.navy,12,"start","700");
+      txt(svg,px+150,y+20,show?f(KD[j]):"·",C.purple,11.5,"middle","700");
+      txt(svg,px+236,y+20,show?f(LOF[j]):"·",show?(LOF[j]>THR?C.red:C.green):C.grey,12,"middle","700");});
+    txt(svg,px,200,"circle size = distance to the 3rd",C.grey,10,"start","600");
+    txt(svg,px,214,"nearest neighbour",C.grey,10,"start","600");
+    txt(svg,px,250,"Reading LOF",C.grey,10.5,"start","700");
+    [["about 1","normal",C.green],["clearly above 1 (e.g. > "+THR+")","outlier",C.red]].forEach(function(r,q){
+      txt(svg,px,274+q*22,r[0],C.navy,11,"start","600");txt(svg,px+266,274+q*22,r[1],r[2],11,"end","700");});
+    if(s.k===4){
+      for(var q=0;q<40;q++)box(svg,px+q*266/40,330,266/40+0.5,12,scoreCol(0.45+0.33*q/39),null,0);
+      box(svg,px,330,266,12,"none",C.rule,0);
+      txt(svg,px,324,"point colour = LOF",C.grey,10,"start","700");
+      txt(svg,px,356,"1",C.grey,9.5,"start","600");txt(svg,px+266,356,"2.5 or more",C.grey,9.5,"end","600");
+      txt(svg,px,388,"flagged (LOF > "+THR+"): "+FLAG.map(function(j){return NAME[j]||"?";}).join(", "),C.red,11.5,"start","700");}}
+  register("lofs",build,render);
 })();
 /* ---------- alert budget ---------- */
 (function(){
